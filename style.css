@@ -11,9 +11,10 @@ body{
     transform: translate(-50%, -50%);
 }
 input{
+    font-size: large;
     width: 10mm
 }
 input[type="checkbox"]:checked + label {
-    text-shadow: 0 0 10px #00b0ff;
+    text-shadow: 0 0 15px #00b0ff, 0 0 15px #00b0ff, 0 0 15px #00b0ff
 }
 /* text-shadow: 0 0 5px #00b0ff; */
