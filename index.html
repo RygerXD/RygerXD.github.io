@@ -16,25 +16,25 @@
   </form>
   <br>
   <form>
-    <input type="checkbox" id="expertPlus" title="This is a test!">
+    <input type="checkbox" style="display:none" id="expertPlus" title="This is a test!">
     <label for="expertPlus" title="Maximum difficulty that makes sense for the song.">Expert Plus</label> $20/m
     <br>
-    <input type="checkbox" id="expert"> 
+    <input type="checkbox" style="display:none" id="expert"> 
     <label for="expert" title="A gradual step down in difficulty from E+">Expert</label> $15/m
     <br>
-    <input type="checkbox" id="hard">
+    <input type="checkbox" style="display:none" id="hard">
     <label for="hard" title="Another step down.">Hard</label> $10/m
     <br>
-    <input type="checkbox" id="mediumPlusEasy">
+    <input type="checkbox" style="display:none" id="mediumPlusEasy">
     <label for="mediumPlusEasy" title="Noobies gotta start somewhere right?">Medium + Easy</label> $10/m
     <br>
-    <input type="checkbox" id="lights">
+    <input type="checkbox" style="display:none" id="lights">
     <label for="lights" title="Without this option I will use autolighter.
 With it I'll do as much as I can without blinding you :)">Lights</label> $10/m
   </form>
   <br>
-  <p>Total: $<span id="total" title="In doll hairs."></span></p>
-  <script src="./pricingMath.js"></script>
+  <p title="In doll hairs">Total: <span id="total"></span></p>
+  
 </head>
-
+<script src="./pricingMath.js"></script>
 </html>

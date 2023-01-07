@@ -1,11 +1,10 @@
 body{
     background-color: #161616;
     font-family: Arial, Helvetica, sans-serif;
-    font-size:x-large;
+    font-size:xx-large;
     color: #00b0ff;
     display: block;
     margin: auto;
-    width: 50%; /* or any other width */
     position: absolute;
     top: 50%;
     left: 50%;
@@ -17,32 +16,4 @@ input{
 input[type="checkbox"]:checked + label {
     text-shadow: 0 0 10px #00b0ff;
 }
-
-label {
-    position: relative;
-  }
-  
-  label::before {
-    content: attr(title);
-    position: absolute;
-    top: -20px;
-    left: 50%;
-    transform: translate(-50%, 0);
-    white-space: nowrap;
-    background-color: #333;
-    color: #fff;
-    padding: 5px 10px;
-    border-radius: 5px;
-    visibility: hidden;
-    opacity: 0;
-    transition: visibility 0s linear 0.3s, opacity 0.3s linear;
-  }
-  
-  label:hover::before {
-    visibility: visible;
-    opacity: 1;
-    transition-delay: 0.5s;
-  }
-  
-
 /* text-shadow: 0 0 5px #00b0ff; */
