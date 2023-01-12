@@ -27,7 +27,7 @@ function calculateTotal() {
   }
 
   // Calculate the total cost based on the number of minutes and seconds
-  const totalCost = minutes * pricePerMinute + seconds * pricePerMinute / 60;
+  const totalCost = (minutes * pricePerMinute) + (seconds * (pricePerMinute / 60));
 
   // Display the total cost
   document.getElementById("total").innerHTML = totalCost.toFixed(2);

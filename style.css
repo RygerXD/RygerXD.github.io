@@ -1,10 +1,8 @@
 body{
-    background-color: #191919;
+    background-color: #161616;
     font-family: Arial, Helvetica, sans-serif;
     font-size:xx-large;
     color: #00b0ff;
-    display: block;
-    margin: auto;
     position: absolute;
     top: 50%;
     left: 50%;
@@ -18,3 +16,34 @@ input[type="checkbox"]:checked + label {
     text-shadow: 0 0 15px #00b0ff, 0 0 15px #00b0ff, 0 0 15px #00b0ff
 }
 
+input[type="checkbox"] {
+    display: none; /* hide the default checkboxes */
+}
+
+input[type="checkbox"] + label:before {
+    /* create the custom checkbox */
+    content: "";
+    display: inline-block;
+    width: 32px;
+    height: 32px;
+    margin-right: 10px;
+    background: #f8f8f8;
+}
+
+input[type="checkbox"]:checked + label:before {
+    /* style the custom checkbox when it's checked */
+    background-image: url('./checked.png');
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+input[type="checkbox"]:not(:checked) + label:before {
+    /* style the custom checkbox when it's not checked */
+    background-image: url('./unchecked.png');
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+a{
+    color: #92aaff;
+}
