@@ -30,7 +30,7 @@ function calculateTotal() {
   document.getElementById("total").innerHTML = `$${Math.ceil(totalCost)}`;
 
   // Update meta description
-  document.head.querySelector('meta[name="description"]').content = `Total: $${Math.ceil(totalCost)}`;
+  document.head.querySelector('meta[property="og:description"]').content = `Total: $${Math.ceil(totalCost)}`;
 
   // Update Query Params
   const url = new URL(window.location.href);
