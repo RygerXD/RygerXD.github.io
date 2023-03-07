@@ -1,11 +1,11 @@
 <!doctype html>
 <html>
-
-<link rel="icon" href="./RygerHead.ico">
 <head>
   <title>Mapping Price Calculator</title>
+  <meta name="description" content="">
+  <link rel="icon" href="./RygerHead.ico">
+  <link rel="stylesheet" href="./style.css">
 </head>
-<link rel="stylesheet" href="./style.css">
 <body>
   <form>
     <label for="minutes">Minutes:</label>
@@ -19,7 +19,7 @@
     <input type="checkbox"  id="expertPlus">
     <label for="expertPlus" title="Maximum difficulty that makes sense for the song.">Expert Plus</label> $20/m
     <br>
-    <input type="checkbox"  id="expert"> 
+    <input type="checkbox"  id="expert">
     <label for="expert" title="A gradual step down in difficulty from E+">Expert</label> $15/m
     <br>
     <input type="checkbox"  id="hard">
@@ -32,15 +32,13 @@
     <label for="lights" title="Without this option I will use autolighter.
 With it I'll do as much as I can without blinding you :)">Lights</label> $10/m
   </form>
+
   <p title="In doll hairs">Total: <span id="total"></span></p>
+
   <a href="https://discordapp.com/channels/@me/Ryger#4549/" target="_blank" rel="noopener noreferrer">Discord DM</a>
   <br>
   <a href="https://trello.com/b/M3a2X5cI/beat-saber-comissions" target="_blank" rel="noopener noreferrer">Comission Queue</a>
-  
+
+  <script src="./pricingMath.js"></script>
 </body>
-  
-</head>
-
-<script src="./pricingMath.js"></script>
-
 </html>
