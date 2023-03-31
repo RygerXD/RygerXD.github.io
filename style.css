@@ -32,10 +32,16 @@ input[type="checkbox"] + label:before {
 
 input[type="checkbox"]:checked + label:before {
     /* style the custom checkbox when it's checked */
+    background: transparent;
     background-image: url('./checked.png');
     background-repeat: no-repeat;
     background-position: center;
 }
+input[type="checkbox"].smile-checkbox:checked + label:before {
+    /* Checkbox specific for lights */
+    background-image: url('./SmileLights.gif');
+    background-size: 100%; /* Scale down the .gif by 50% */
+  }
 
 input[type="checkbox"]:not(:checked) + label:before {
     /* style the custom checkbox when it's not checked */

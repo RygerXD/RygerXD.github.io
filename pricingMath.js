@@ -47,10 +47,10 @@ function calculateTotal() {
 }
 
 function prefillFormFromQuery() {
-  // grab values from url query
+  // Grab values from url query
   const params = new URLSearchParams(window.location.search);
 
-  // parse & apply values to inputs
+  // Parse & apply values to inputs
   document.getElementById('minutes').value = parseNumberParam(params.get('min')) || 4;
   document.getElementById('seconds').value = parseNumberParam(params.get('sec') || 20);
   document.getElementById('expertPlus').checked = parseBoolParam(params.get('expertPlus'));
@@ -59,25 +59,25 @@ function prefillFormFromQuery() {
   document.getElementById('mediumPlusEasy').checked = parseBoolParam(params.get('mediumPlusEasy'));
   document.getElementById('lights').checked = parseBoolParam(params.get('lights'));
 
-  // recalculate total
+  // Recalculate total
   calculateTotal();
 }
 
-// numeric params
+// Numeric params
 function parseNumberParam(val) {
   if (!val) return null;
   val = Number(val);
   return val && !isNaN(val) ? val : null;
 }
 
-// bool params as 1 or 0
+// Bool params as 1 or 0
 function parseBoolParam(val) {
   if (!val) return false;
   val = Number(val);
   return val === 1;
 }
 
-// execute preill function on page load
+// Execute prefill function on page load
 prefillFormFromQuery();
 
 // Add event listeners to the minutes and seconds input elements
