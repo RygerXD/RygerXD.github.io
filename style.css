@@ -1,26 +1,30 @@
-body{
+body {
     background-color: #161616;
     font-family: Arial, Helvetica, sans-serif;
-    font-size:xx-large;
+    font-size: 8vw;
     color: #00b0ff;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-}
-input{
-    font-size: x-large;
-    width: 15mm
-}
-input[type="checkbox"]:checked + label {
-    text-shadow: 0 0 15px #00b0ff, 0 0 15px #00b0ff, 0 0 15px #00b0ff
-}
-
-input[type="checkbox"] {
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    width: 100vw;
+  }
+  
+  input {
+    font-size: 6vw;
+    width: 15vw;
+  }
+  
+  input[type="checkbox"]:checked + label {
+    text-shadow: 0 0 15px #00b0ff, 0 0 15px #00b0ff, 0 0 15px #00b0ff;
+  }
+  
+  input[type="checkbox"] {
     display: none; /* hide the default checkboxes */
-}
-
-input[type="checkbox"] + label:before {
+  }
+  
+  input[type="checkbox"] + label:before {
     /* create the custom checkbox */
     content: "";
     display: inline-block;
@@ -28,28 +32,50 @@ input[type="checkbox"] + label:before {
     height: 32px;
     margin-right: 10px;
     background: #f8f8f8;
-}
-
-input[type="checkbox"]:checked + label:before {
+  }
+  
+  input[type="checkbox"]:checked + label:before {
     /* style the custom checkbox when it's checked */
     background: transparent;
     background-image: url('./checked.png');
     background-repeat: no-repeat;
     background-position: center;
-}
-input[type="checkbox"].smile-checkbox:checked + label:before {
+  }
+  
+  input[type="checkbox"].smile-checkbox:checked + label:before {
     /* Checkbox specific for lights */
     background-image: url('./SmileLights.gif');
-    background-size: 100%; /* Scale down the .gif by 50% */
+    background-size: 100%;
   }
-
-input[type="checkbox"]:not(:checked) + label:before {
+  
+  input[type="checkbox"]:not(:checked) + label:before {
     /* style the custom checkbox when it's not checked */
     background-image: url('./unchecked.png');
     background-repeat: no-repeat;
     background-position: center;
-}
-
-a{
+  }
+  
+  a {
     color: #92aaff;
-}
+  }
+  
+  .centered-content {
+    display: flex;
+    flex-direction: column; /* Stack the elements on top of each other */
+    align-items: center; /* Center the elements horizontally */
+    text-align: center; /* Center the text within the elements */
+    width: 80%; /* Set a default width */
+  }
+  
+  @media (max-width: 480px) {
+    .centered-content {
+      width: 100%; /* Set the width to 100% for small screens */
+    }
+  }
+  
+  @media (min-width: 1200px) {
+    .centered-content {
+      width: 15%; /* Set the width to 15% for large screens */
+    }
+  }
+  

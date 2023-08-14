@@ -1,5 +1,6 @@
 <!doctype html>
 <html>
+
 <head>
   <title>Mapping Price Calculator</title>
   <meta property="og:title" content="Mapping Price Calculator" />
@@ -11,39 +12,44 @@
   <link rel="icon" href="./RygerHead.ico">
   <link rel="stylesheet" href="./style.css">
 </head>
+
 <body>
-  <form>
-    <label for="minutes">Minutes:</label>
-    <input type="number" id="minutes" name="minutes" min="0" value="4">
+  <div>
+    <form>
+      <label for="minutes">Minutes:</label>
+      <input type="number" id="minutes" name="minutes" min="0" value="4">
+      <br>
+      <label for="seconds">Seconds:</label>
+      <input type="number" id="seconds" name="seconds" min="0" max="59" value="20">
+    </form>
     <br>
-    <label for="seconds">Seconds:</label>
-    <input type="number" id="seconds" name="seconds" min="0" max="59" value="20">
-  </form>
-  <br>
-  <form>
-    <input type="checkbox"  id="expertPlus">
-    <label for="expertPlus" title="Maximum difficulty that makes sense for the song.">Expert Plus</label> $20/m
-    <br>
-    <input type="checkbox"  id="expert">
-    <label for="expert" title="A gradual step down in difficulty from E+">Expert</label> $15/m
-    <br>
-    <input type="checkbox"  id="hard">
-    <label for="hard" title="Another step down.">Hard</label> $10/m
-    <br>
-    <input type="checkbox"  id="mediumPlusEasy">
-    <label for="mediumPlusEasy" title="Noobies gotta start somewhere right?">Medium+Easy</label> $10/m
-    <br>
-    <input type="checkbox"  id="lights" class="smile-checkbox">
-    <label for="lights" title="Without this option I will use autolighter.
+    <form>
+      <input type="checkbox" id="expertPlus">
+      <label for="expertPlus" title="Maximum difficulty that makes sense for the song.">Expert Plus</label> $20/m
+      <br>
+      <input type="checkbox" id="expert">
+      <label for="expert" title="A gradual step down in difficulty from E+">Expert</label> $15/m
+      <br>
+      <input type="checkbox" id="hard">
+      <label for="hard" title="Another step down.">Hard</label> $10/m
+      <br>
+      <input type="checkbox" id="mediumPlusEasy">
+      <label for="mediumPlusEasy" title="Noobies gotta start somewhere right?">Medium+Easy</label> $10/m
+      <br>
+      <input type="checkbox" id="lights" class="smile-checkbox">
+      <label for="lights" title="Without this option I will use autolighter. 
 With it I'll do as much as I can without blinding you :)">Lights</label> $10/m
-  </form>
+    </form>
 
-  <p title="In doll hairs">Total: <span id="total"></span></p>
+    <p title="In doll hairs">Total: <span id="total"></span></p>
 
-  <a href="https://discordapp.com/channels/@me/Ryger#4549/" target="_blank" rel="noopener noreferrer">Discord DM</a>
-  <br>
-  <a href="https://trello.com/b/M3a2X5cI/beat-saber-comissions" target="_blank" rel="noopener noreferrer">Comission Queue</a>
+    <a href="https://discordapp.com/channels/@me/Ryger#4549/" target="_blank" rel="noopener noreferrer">Discord DM</a>
+    <br>
+    <a href="https://trello.com/b/M3a2X5cI/beat-saber-comissions" target="_blank" rel="noopener noreferrer">Comission
+      Queue</a>
 
-  <script src="./pricingMath.js"></script>
+    <script src="./pricingMath.js"></script>
+  </div>
 </body>
+
 </html>
