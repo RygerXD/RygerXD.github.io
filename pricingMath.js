@@ -8,7 +8,7 @@ function calculateTotal() {
 
   // Check each of the checkboxes and add the corresponding value to the price per minute
   if (document.getElementById("expertPlus").checked) {
-    pricePerMinute += 25;
+    pricePerMinute += 20;
   }
   if (document.getElementById("expert").checked) {
     pricePerMinute += 15;
