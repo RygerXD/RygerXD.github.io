@@ -8,19 +8,19 @@ function calculateTotal() {
 
   // Check each of the checkboxes and add the corresponding value to the price per minute
   if (document.getElementById("expertPlus").checked) {
-    pricePerMinute += 20;
+    pricePerMinute += 25;
   }
   if (document.getElementById("expert").checked) {
-    pricePerMinute += 15;
+    pricePerMinute += 20;
   }
   if (document.getElementById("hard").checked) {
-    pricePerMinute += 10;
+    pricePerMinute += 15;
   }
   if (document.getElementById("mediumPlusEasy").checked) {
     pricePerMinute += 10;
   }
   if (document.getElementById("lights").checked) {
-    pricePerMinute += 10;
+    pricePerMinute += 15;
   }
 
   // Calculate the total cost based on the number of minutes and seconds
