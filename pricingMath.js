@@ -51,7 +51,7 @@ function prefillFormFromQuery() {
   const params = new URLSearchParams(window.location.search);
 
   // Parse & apply values to inputs
-  document.getElementById('minutes').value = parseNumberParam(params.get('min')) || 4;
+  document.getElementById('minutes').value = parseNumberParam(params.get('min')) !== null ? parseNumberParam(params.get('min')) : 0;
   document.getElementById('seconds').value = parseNumberParam(params.get('sec') || 20);
   document.getElementById('expertPlus').checked = parseBoolParam(params.get('expertPlus'));
   document.getElementById('expert').checked = parseBoolParam(params.get('expert'));
