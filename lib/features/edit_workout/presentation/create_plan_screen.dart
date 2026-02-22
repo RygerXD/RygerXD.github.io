@@ -1,0 +1,222 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:uuid/uuid.dart';
+import 'package:workout_app_rewrite/core/theme/tokens.dart';
+import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
+import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
+
+class CreatePlanScreen extends ConsumerStatefulWidget {
+  const CreatePlanScreen({super.key});
+
+  @override
+  ConsumerState<CreatePlanScreen> createState() => _CreatePlanScreenState();
+}
+
+class _CreatePlanScreenState extends ConsumerState<CreatePlanScreen> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _authorController = TextEditingController();
+  final TextEditingController _tagController = TextEditingController();
+  
+  final List<String> _tags = <String>[];
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    _authorController.dispose();
+    _tagController.dispose();
+    super.dispose();
+  }
+
+  void _addTag() {
+    final String tag = _tagController.text.trim();
+    if (tag.isNotEmpty && !_tags.contains(tag)) {
+      setState(() {
+        _tags.add(tag);
+        _tagController.clear();
+      });
+    }
+  }
+
+  void _removeTag(String tag) {
+    setState(() {
+      _tags.remove(tag);
+    });
+  }
+
+  Future<void> _createPlan() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final WorkoutPlan newPlan = WorkoutPlan(
+        schemaVersion: 1,
+        planId: const Uuid().v4(),
+        name: _nameController.text.trim(),
+        description: _descriptionController.text.trim().isEmpty 
+            ? null 
+            : _descriptionController.text.trim(),
+        author: _authorController.text.trim().isEmpty 
+            ? null 
+            : _authorController.text.trim(),
+        tags: _tags,
+        workouts: <Workout>[],
+        exercises: <Exercise>[],
+      );
+
+      await ref.read(loadedWorkoutPlansNotifierProvider.notifier).loadPlan(newPlan);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Created "${newPlan.name}"')),
+        );
+        
+        // Go straight to the detail screen so they can add workouts to it
+        context.go('/library/detail/${newPlan.planId}');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error creating plan: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Create Workout Plan'),
+        actions: <Widget>[
+          TextButton.icon(
+            onPressed: _isLoading ? null : _createPlan,
+            icon: _isLoading 
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.check),
+            label: const Text('Create'),
+          ),
+        ],
+      ),
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          children: <Widget>[
+            TextFormField(
+              controller: _nameController,
+              decoration: const InputDecoration(
+                labelText: 'Plan Name *',
+                hintText: 'e.g., My Custom Workout',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.fitness_center),
+              ),
+              validator: (String? value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Please enter a plan name';
+                }
+                return null;
+              },
+              textCapitalization: TextCapitalization.words,
+              autofocus: true,
+            ),
+            const SizedBox(height: AppSpacing.md),
+
+            TextFormField(
+              controller: _descriptionController,
+              decoration: const InputDecoration(
+                labelText: 'Description',
+                hintText: 'Describe your workout plan...',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.description),
+              ),
+              maxLines: 3,
+              textCapitalization: TextCapitalization.sentences,
+            ),
+            const SizedBox(height: AppSpacing.md),
+
+            TextFormField(
+              controller: _authorController,
+              decoration: const InputDecoration(
+                labelText: 'Author',
+                hintText: 'Your name',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.person),
+              ),
+              textCapitalization: TextCapitalization.words,
+            ),
+            const SizedBox(height: AppSpacing.xl),
+
+            Text(
+              'Tags',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: TextFormField(
+                    controller: _tagController,
+                    decoration: const InputDecoration(
+                      hintText: 'Add a tag...',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.tag),
+                    ),
+                    onFieldSubmitted: (_) => _addTag(),
+                    textInputAction: TextInputAction.done,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                IconButton.filled(
+                  onPressed: _addTag,
+                  icon: const Icon(Icons.add),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            if (_tags.isNotEmpty)
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: _tags.map((String tag) => Chip(
+                  label: Text(tag),
+                  deleteIcon: const Icon(Icons.close, size: 18),
+                  onDeleted: () => _removeTag(tag),
+                )).toList(),
+              ),
+            
+            const SizedBox(height: AppSpacing.xxl),
+            
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Row(
+                  children: <Widget>[
+                    Icon(Icons.info_outline, color: Theme.of(context).colorScheme.primary),
+                    const SizedBox(width: AppSpacing.sm),
+                    const Expanded(
+                      child: Text('After creating your plan, you can add workouts and exercises to it.'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

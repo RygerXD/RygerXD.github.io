@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "planId": "plan-beginner-a",
+  "name": "Beginner Strength A",
+  "description": "Simple full body routine",
+  "author": "Workout App",
+  "tags": ["strength", "beginner"],
+  "exercises": [
+    {
+      "exerciseId": "exercise-squat",
+      "name": "Squat",
+      "description": "Bodyweight squat"
+    },
+    {
+      "exerciseId": "exercise-plank",
+      "name": "Plank",
+      "description": "Forearm plank hold"
+    }
+  ],
+  "workouts": [
+    {
+      "workoutId": "workout-a",
+      "title": "Workout A",
+      "sets": [
+        {
+          "setId": "set-1",
+          "loopCount": 3,
+          "restBetweenLoopsSeconds": 60,
+          "moves": [
+            {
+              "moveId": "move-1",
+              "exerciseId": "exercise-squat",
+              "type": "reps",
+              "repCount": 12,
+              "prepTimeSeconds": 10,
+              "finishTimeSeconds": 5
+            },
+            {
+              "moveId": "move-2",
+              "exerciseId": "exercise-plank",
+              "type": "duration",
+              "durationSeconds": 30,
+              "prepTimeSeconds": 10,
+              "finishTimeSeconds": 5
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

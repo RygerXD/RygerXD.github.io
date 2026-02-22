@@ -1,0 +1,19 @@
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    avoid_print: true
+    prefer_single_quotes: true
+    always_declare_return_types: true
+    always_use_package_imports: true
+    directives_ordering: true
+    prefer_final_locals: true
+    avoid_dynamic_calls: false
+
+analyzer:
+  exclude:
+    - build/**
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true

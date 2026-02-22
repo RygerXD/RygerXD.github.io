@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 99,
+  "planId": "",
+  "name": "Invalid Plan",
+  "exercises": [],
+  "workouts": [
+    {
+      "workoutId": "w1",
+      "title": "Workout",
+      "sets": [
+        {
+          "setId": "s1",
+          "loopCount": 0,
+          "restBetweenLoopsSeconds": 20,
+          "moves": [
+            {
+              "moveId": "m1",
+              "exerciseId": "missing-exercise",
+              "type": "reps"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
