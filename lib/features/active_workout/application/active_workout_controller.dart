@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/workout_state_machine.dart';
@@ -118,7 +119,7 @@ class ActiveWorkoutController extends Notifier<WorkoutState> {
         status: status,
       );
     } catch (e) {
-      // For now, suppress error if DB isn't wired fully
+      debugPrint('[ActiveWorkoutController] Error saving session: $e');
     }
   }
 }

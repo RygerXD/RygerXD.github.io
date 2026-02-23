@@ -48,6 +48,8 @@ class HistoryDatabase extends _$HistoryDatabase {
 
   Future<List<WorkoutSessionEntity>> getAllSessions() => select(workoutSessions).get();
 
+  Stream<List<WorkoutSessionEntity>> watchAllSessions() => select(workoutSessions).watch();
+
   Future<void> insertSession(WorkoutSessionEntity session) => into(workoutSessions).insert(session, mode: InsertMode.insertOrReplace);
 
   Future<void> clearHistory() => delete(workoutSessions).go();

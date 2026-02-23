@@ -4,6 +4,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
+import 'package:workout_app_rewrite/features/history/application/history_providers.dart';
+import 'package:workout_app_rewrite/features/history/data/history_db.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
 
@@ -18,6 +20,24 @@ class DashboardScreen extends ConsumerWidget {
       >= 12 && < 17 => 'Good Afternoon,',
       _ => 'Good Evening,',
     };
+
+    // Compute weekly stats from live session data
+    final AsyncValue<List<WorkoutSessionEntity>> sessionsAsync = ref.watch(allSessionsProvider);
+    final List<WorkoutSessionEntity> sessions = sessionsAsync.value ?? <WorkoutSessionEntity>[];
+
+    final DateTime today = DateTime(now.year, now.month, now.day);
+    final DateTime startOfWeek = today.subtract(Duration(days: today.weekday - 1));
+    final int startOfWeekMs = startOfWeek.millisecondsSinceEpoch;
+
+    int weeklyWorkouts = 0;
+    int weeklyDurationSeconds = 0;
+    for (final WorkoutSessionEntity session in sessions) {
+      if (session.status == 'completed' && session.startedAt >= startOfWeekMs) {
+        weeklyWorkouts += 1;
+        weeklyDurationSeconds += session.durationSeconds;
+      }
+    }
+    final int weeklyMinutes = (weeklyDurationSeconds / 60).round();
 
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: AppSpacing.xxl),
@@ -39,20 +59,20 @@ class DashboardScreen extends ConsumerWidget {
         ),
         const SizedBox(height: AppSpacing.xxl),
         Row(
-          children: const <Widget>[
+          children: <Widget>[
             Expanded(
               child: _StatCard(
                 title: 'Workouts',
-                value: '0',
+                value: '$weeklyWorkouts',
                 subtitle: 'This Week',
                 icon: Icons.local_fire_department_rounded,
               ),
             ),
-            SizedBox(width: AppSpacing.md),
+            const SizedBox(width: AppSpacing.md),
             Expanded(
               child: _StatCard(
                 title: 'Active Time',
-                value: '0',
+                value: '$weeklyMinutes',
                 subtitle: 'Minutes',
                 icon: Icons.timer_rounded,
               ),

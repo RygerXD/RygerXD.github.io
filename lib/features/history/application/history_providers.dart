@@ -1,4 +1,5 @@
 import 'package:drift/web.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workout_app_rewrite/features/history/data/history_db.dart';
 
@@ -9,22 +10,22 @@ final Provider<HistoryDatabase> historyDatabaseProvider = Provider<HistoryDataba
   return HistoryDatabase(WebDatabase('history_db'));
 });
 
-// A future provider to fetch all sessions
-final FutureProvider<List<WorkoutSessionEntity>> allSessionsProvider = FutureProvider<List<WorkoutSessionEntity>>((ref) {
+// A stream provider that reactively watches all sessions in the database.
+// Drift's .watch() emits a new list whenever the table changes.
+final StreamProvider<List<WorkoutSessionEntity>> allSessionsProvider = StreamProvider<List<WorkoutSessionEntity>>((ref) {
   final HistoryDatabase db = ref.watch(historyDatabaseProvider);
-  return db.getAllSessions();
+  return db.watchAllSessions();
 });
 
 // A service provider to expose saving functionality
 final Provider<HistoryService> historyServiceProvider = Provider<HistoryService>((ref) {
-  return HistoryService(ref.watch(historyDatabaseProvider), ref);
+  return HistoryService(ref.watch(historyDatabaseProvider));
 });
 
 class HistoryService {
-  HistoryService(this._db, this._ref);
+  HistoryService(this._db);
 
   final HistoryDatabase _db;
-  final Ref _ref;
 
   Future<void> saveSession({
     required String sessionId,
@@ -35,7 +36,7 @@ class HistoryService {
     required String status,
   }) async {
     final int duration = endedAt.difference(startedAt).inSeconds;
-    
+
     await _db.insertSession(
       WorkoutSessionEntity(
         sessionId: sessionId,
@@ -48,7 +49,6 @@ class HistoryService {
       ),
     );
 
-    // Refresh the sessions list so UI updates automatically
-    _ref.invalidate(allSessionsProvider);
+    debugPrint('[HistoryService] Session saved: $sessionId ($status)');
   }
 }
