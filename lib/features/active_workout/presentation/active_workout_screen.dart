@@ -2,11 +2,13 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/active_workout_controller.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/rep_history_service.dart';
 import 'package:workout_app_rewrite/features/active_workout/domain/workout_phase.dart';
+import 'package:workout_app_rewrite/features/settings/application/app_settings_controller.dart';
 import 'package:workout_app_rewrite/features/active_workout/domain/workout_state.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
@@ -246,7 +248,9 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     });
   }
 
-  Future<void> _onTimerComplete() {
+  Future<void> _onTimerComplete() async {
+    await _playAudioCue();
+
     final WorkoutState state = ref.read(activeWorkoutControllerProvider);
     final WorkoutPhase displayPhase = _displayPhase(state);
     final ActiveWorkoutController controller = ref.read(activeWorkoutControllerProvider.notifier);
@@ -265,6 +269,14 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     }
 
     return Future<void>.value();
+  }
+
+  Future<void> _playAudioCue() async {
+    final bool audioCuesEnabled = ref.read(audioCuesEnabledProvider);
+    if (!audioCuesEnabled) {
+      return;
+    }
+    await SystemSound.play(SystemSoundType.alert);
   }
 
   Future<void> _completeCurrentMove() {

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workout_app_rewrite/core/navigation/app_router.dart';
 import 'package:workout_app_rewrite/core/theme/app_theme.dart';
+import 'package:workout_app_rewrite/features/settings/application/app_settings_controller.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
 
 Future<void> main() async {
@@ -26,11 +27,13 @@ class WorkoutApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final GoRouter router = ref.watch(appRouterProvider);
+    final ThemeMode appThemeMode = ref.watch(appThemeModeProvider);
     return MaterialApp.router(
       title: 'Workout App',
+      debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
-      themeMode: ThemeMode.system,
+      themeMode: appThemeMode,
       routerConfig: router,
     );
   }
