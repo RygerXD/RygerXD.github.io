@@ -10,7 +10,8 @@ import 'package:workout_app_rewrite/features/library/presentation/library_screen
 import 'package:workout_app_rewrite/features/settings/presentation/settings_screen.dart';
 import 'package:workout_app_rewrite/features/workout_detail/presentation/workout_detail_screen.dart';
 
-final Provider<GoRouter> appRouterProvider = Provider<GoRouter>((Ref<GoRouter> ref) {
+final Provider<GoRouter> appRouterProvider =
+    Provider<GoRouter>((Ref<GoRouter> ref) {
   return GoRouter(
     initialLocation: '/dashboard',
     routes: <RouteBase>[
@@ -58,7 +59,8 @@ final Provider<GoRouter> appRouterProvider = Provider<GoRouter>((Ref<GoRouter> r
                         path: 'edit-workout',
                         builder: (BuildContext context, GoRouterState state) {
                           final String planId = state.pathParameters['planId']!;
-                          final String? workoutId = state.uri.queryParameters['workoutId'];
+                          final String? workoutId =
+                              state.uri.queryParameters['workoutId'];
                           return EditWorkoutScreen(
                             planId: planId,
                             workoutId: workoutId,
@@ -111,14 +113,20 @@ class AppScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: navigationShell,
+      body: SafeArea(
+        bottom: false,
+        child: navigationShell,
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: navigationShell.currentIndex,
         destinations: const <Widget>[
           NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.fitness_center), label: 'Library'),
-          NavigationDestination(icon: Icon(Icons.insights_outlined), label: 'Analysis'),
-          NavigationDestination(icon: Icon(Icons.settings_outlined), label: 'Settings'),
+          NavigationDestination(
+              icon: Icon(Icons.fitness_center), label: 'Library'),
+          NavigationDestination(
+              icon: Icon(Icons.insights_outlined), label: 'Analysis'),
+          NavigationDestination(
+              icon: Icon(Icons.settings_outlined), label: 'Settings'),
         ],
         onDestinationSelected: (int index) {
           navigationShell.goBranch(index);

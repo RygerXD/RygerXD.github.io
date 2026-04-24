@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -13,15 +14,18 @@ void main() {
     SharedPreferences.setMockInitialValues(<String, Object>{});
   });
 
-  testWidgets('app shell renders and navigates between tabs', (WidgetTester tester) async {
-    final SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+  testWidgets('app shell renders and navigates between tabs',
+      (WidgetTester tester) async {
+    final SharedPreferences sharedPreferences =
+        await SharedPreferences.getInstance();
     final WorkoutRepository workoutRepository = InMemoryWorkoutRepository();
 
     await tester.pumpWidget(
       ProviderScope(
         overrides: <Override>[
           allSessionsProvider.overrideWith(
-            (ref) => Stream<List<WorkoutSessionEntity>>.value(<WorkoutSessionEntity>[]),
+            (ref) => Stream<List<WorkoutSessionEntity>>.value(
+                <WorkoutSessionEntity>[]),
           ),
           sharedPreferencesProvider.overrideWithValue(sharedPreferences),
           workoutRepositoryProvider.overrideWithValue(workoutRepository),
@@ -34,6 +38,16 @@ void main() {
 
     expect(find.text('Quick Actions'), findsOneWidget);
     expect(find.text('Import Workout JSON'), findsOneWidget);
+    final Iterable<SafeArea> shellSafeAreas = tester.widgetList<SafeArea>(
+      find.ancestor(
+        of: find.text('Quick Actions'),
+        matching: find.byType(SafeArea),
+      ),
+    );
+    expect(
+        shellSafeAreas
+            .any((SafeArea safeArea) => safeArea.top && !safeArea.bottom),
+        isTrue);
 
     await tester.tap(find.text('Library'));
     await tester.pump();
