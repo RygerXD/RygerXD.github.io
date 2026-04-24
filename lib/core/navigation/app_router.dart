@@ -5,8 +5,8 @@ import 'package:workout_app_rewrite/features/active_workout/presentation/active_
 import 'package:workout_app_rewrite/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:workout_app_rewrite/features/edit_workout/presentation/create_plan_screen.dart';
 import 'package:workout_app_rewrite/features/edit_workout/presentation/edit_workout_screen.dart';
-import 'package:workout_app_rewrite/features/library/presentation/library_screen.dart';
 import 'package:workout_app_rewrite/features/history/presentation/analysis_screen.dart';
+import 'package:workout_app_rewrite/features/library/presentation/library_screen.dart';
 import 'package:workout_app_rewrite/features/settings/presentation/settings_screen.dart';
 import 'package:workout_app_rewrite/features/workout_detail/presentation/workout_detail_screen.dart';
 

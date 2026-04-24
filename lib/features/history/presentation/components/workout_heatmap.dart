@@ -187,24 +187,24 @@ class _HeatmapSquare extends StatelessWidget {
   const _HeatmapSquare({
     this.hasWorkout = false,
     this.isEmpty = false,
-    this.size = 12,
   });
+
+  static const double _size = 12;
 
   final bool hasWorkout;
   final bool isEmpty;
-  final double size;
 
   @override
   Widget build(BuildContext context) {
     final ColorScheme colorScheme = Theme.of(context).colorScheme;
     
     if (isEmpty) {
-      return SizedBox(width: size + 2, height: size + 2);
+      return const SizedBox(width: _size + 2, height: _size + 2);
     }
 
     return Container(
-      width: size,
-      height: size,
+      width: _size,
+      height: _size,
       margin: const EdgeInsets.all(1),
       decoration: BoxDecoration(
         color: hasWorkout 

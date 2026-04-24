@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,8 +7,8 @@ import 'package:go_router/go_router.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/active_workout_controller.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/rep_history_service.dart';
 import 'package:workout_app_rewrite/features/active_workout/domain/workout_phase.dart';
-import 'package:workout_app_rewrite/features/settings/application/app_settings_controller.dart';
 import 'package:workout_app_rewrite/features/active_workout/domain/workout_state.dart';
+import 'package:workout_app_rewrite/features/settings/application/app_settings_controller.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
 
@@ -17,7 +16,8 @@ class ActiveWorkoutScreen extends ConsumerStatefulWidget {
   const ActiveWorkoutScreen({super.key});
 
   @override
-  ConsumerState<ActiveWorkoutScreen> createState() => _ActiveWorkoutScreenState();
+  ConsumerState<ActiveWorkoutScreen> createState() =>
+      _ActiveWorkoutScreenState();
 }
 
 class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
@@ -47,14 +47,18 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   @override
   Widget build(BuildContext context) {
     final WorkoutState state = ref.watch(activeWorkoutControllerProvider);
-    final ActiveWorkoutController controller = ref.read(activeWorkoutControllerProvider.notifier);
+    final ActiveWorkoutController controller =
+        ref.read(activeWorkoutControllerProvider.notifier);
     final Workout? workout = controller.workout;
     final WorkoutSet? currentSet = controller.currentSet;
     final Move? currentMove = controller.currentMove;
 
     ref.listen<WorkoutState>(activeWorkoutControllerProvider, _syncUiWithState);
 
-    if (workout == null || currentSet == null || currentMove == null || _isInactiveState(state)) {
+    if (workout == null ||
+        currentSet == null ||
+        currentMove == null ||
+        _isInactiveState(state)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           _exitPlayer();
@@ -63,7 +67,8 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       return const Scaffold();
     }
 
-    final List<WorkoutPlan>? plans = ref.watch(loadedWorkoutPlansNotifierProvider).valueOrNull;
+    final List<WorkoutPlan>? plans =
+        ref.watch(loadedWorkoutPlansNotifierProvider).valueOrNull;
     final WorkoutPlan? plan = _findPlanById(plans, controller.planId);
     final WorkoutPhase displayPhase = _displayPhase(state);
     final String moveLabel = _resolveMoveLabel(currentMove, plan);
@@ -71,11 +76,20 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     final String statusLabel = _statusLabel(displayPhase);
     final bool isPaused = state.phase == WorkoutPhase.paused;
     final bool isPrep = displayPhase == WorkoutPhase.prep;
-    final bool isRest = displayPhase == WorkoutPhase.restBetweenLoops || displayPhase == WorkoutPhase.rest;
+    final bool isRest = displayPhase == WorkoutPhase.restBetweenLoops ||
+        displayPhase == WorkoutPhase.rest;
     final bool isMove = displayPhase == WorkoutPhase.move;
 
-    return WillPopScope(
-      onWillPop: _confirmExit,
+    return PopScope<Object?>(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, Object? result) async {
+        if (didPop) {
+          return;
+        }
+        if (await _confirmExit() && mounted) {
+          _exitPlayer();
+        }
+      },
       child: Scaffold(
         backgroundColor: Theme.of(context).colorScheme.surface,
         body: SafeArea(
@@ -130,7 +144,8 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                       _PhaseChip(label: statusLabel, color: statusColor),
                       const SizedBox(height: 24),
                       if (isPrep || isRest) ...<Widget>[
-                        _TimerDisplay(seconds: _timerSeconds, color: statusColor),
+                        _TimerDisplay(
+                            seconds: _timerSeconds, color: statusColor),
                         const SizedBox(height: 16),
                         if (isPrep)
                           Text(
@@ -140,17 +155,22 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                       ] else if (isMove) ...<Widget>[
                         Text(
                           moveLabel,
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 32),
                         if (currentMove.type == MoveType.duration)
-                          _TimerDisplay(seconds: _timerSeconds, color: statusColor)
+                          _TimerDisplay(
+                              seconds: _timerSeconds, color: statusColor)
                         else
                           _AdjustableRepDisplay(
                             move: currentMove,
                             currentReps: _currentReps,
-                            onRepsChanged: (int value) => setState(() => _currentReps = value),
+                            onRepsChanged: (int value) =>
+                                setState(() => _currentReps = value),
                             lastReps: _lastRepsForCurrentMove,
                           ),
                       ],
@@ -165,15 +185,20 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                     if (isMove) ...<Widget>[
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: _isProcessing ? null : () => _runGuarded(() => controller.skipMove()),
-                          style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+                          onPressed: _isProcessing
+                              ? null
+                              : () => _runGuarded(() => controller.skipMove()),
+                          style: OutlinedButton.styleFrom(
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 16)),
                           child: const Text('SKIP'),
                         ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: _isProcessing ? null : _completeCurrentMove,
+                          onPressed:
+                              _isProcessing ? null : _completeCurrentMove,
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             backgroundColor: Colors.blue,
@@ -188,12 +213,13 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                           onPressed: _isProcessing
                               ? null
                               : () => _runGuarded(() {
-                                  if (displayPhase == WorkoutPhase.restBetweenLoops) {
-                                    controller.completeRestBetweenLoops();
-                                  } else {
-                                    controller.completeRest();
-                                  }
-                                }),
+                                    if (displayPhase ==
+                                        WorkoutPhase.restBetweenLoops) {
+                                      controller.completeRestBetweenLoops();
+                                    } else {
+                                      controller.completeRest();
+                                    }
+                                  }),
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             backgroundColor: Colors.green,
@@ -207,7 +233,8 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                         child: ElevatedButton(
                           onPressed: _isProcessing
                               ? null
-                              : () => _runGuarded(() => controller.startPrepNow()),
+                              : () =>
+                                  _runGuarded(() => controller.startPrepNow()),
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             backgroundColor: Colors.orange,
@@ -253,7 +280,8 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
 
     final WorkoutState state = ref.read(activeWorkoutControllerProvider);
     final WorkoutPhase displayPhase = _displayPhase(state);
-    final ActiveWorkoutController controller = ref.read(activeWorkoutControllerProvider.notifier);
+    final ActiveWorkoutController controller =
+        ref.read(activeWorkoutControllerProvider.notifier);
 
     if (displayPhase == WorkoutPhase.prep) {
       return _runGuarded(() => controller.startPrepNow());
@@ -264,7 +292,8 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     if (displayPhase == WorkoutPhase.rest) {
       return _runGuarded(() => controller.completeRest());
     }
-    if (displayPhase == WorkoutPhase.move && controller.currentMove?.type == MoveType.duration) {
+    if (displayPhase == WorkoutPhase.move &&
+        controller.currentMove?.type == MoveType.duration) {
       return _completeCurrentMove();
     }
 
@@ -281,7 +310,8 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
 
   Future<void> _completeCurrentMove() {
     return _runGuarded(() async {
-      final ActiveWorkoutController controller = ref.read(activeWorkoutControllerProvider.notifier);
+      final ActiveWorkoutController controller =
+          ref.read(activeWorkoutControllerProvider.notifier);
       final WorkoutState state = ref.read(activeWorkoutControllerProvider);
       final Move? currentMove = controller.currentMove;
       final WorkoutSet? currentSet = controller.currentSet;
@@ -289,7 +319,9 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       if (currentMove == null) {
         return;
       }
-      if (currentMove.type == MoveType.reps && currentSet != null && workout != null) {
+      if (currentMove.type == MoveType.reps &&
+          currentSet != null &&
+          workout != null) {
         await ref.read(repHistoryServiceProvider).saveReps(
               workoutId: workout.workoutId,
               setId: currentSet.setId,
@@ -331,24 +363,27 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       return;
     }
 
-    final ActiveWorkoutController controller = ref.read(activeWorkoutControllerProvider.notifier);
+    final ActiveWorkoutController controller =
+        ref.read(activeWorkoutControllerProvider.notifier);
     final Move? move = controller.currentMove;
     final WorkoutSet? set = controller.currentSet;
     if (move == null || set == null) {
       return;
     }
 
-    final String moveKey = '${next.setIndex}:${next.loopIndex}:${next.moveIndex}:${move.moveId}';
+    final String moveKey =
+        '${next.setIndex}:${next.loopIndex}:${next.moveIndex}:${move.moveId}';
     final bool moveChanged = moveKey != _lastMoveKey;
-    final bool resumedFromPause = previous?.phase == WorkoutPhase.paused && next.phase != WorkoutPhase.paused;
+    final bool resumedFromPause = previous?.phase == WorkoutPhase.paused &&
+        next.phase != WorkoutPhase.paused;
     final bool phaseChanged = previous?.phase != next.phase;
-    final bool positionChanged =
-        previous == null ||
+    final bool positionChanged = previous == null ||
         previous.setIndex != next.setIndex ||
         previous.loopIndex != next.loopIndex ||
         previous.moveIndex != next.moveIndex;
-    final bool shouldResetTimer =
-        !resumedFromPause && next.phase != WorkoutPhase.paused && (previous == null || phaseChanged || positionChanged);
+    final bool shouldResetTimer = !resumedFromPause &&
+        next.phase != WorkoutPhase.paused &&
+        (previous == null || phaseChanged || positionChanged);
 
     int? nextTimer;
     if (shouldResetTimer) {
@@ -366,7 +401,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
         _lastRepsForCurrentMove = null;
       }
       if (nextTimer != null) {
-        _timerSeconds = nextTimer!;
+        _timerSeconds = nextTimer;
       }
     });
 
@@ -386,7 +421,8 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     required Move move,
     required WorkoutSet set,
   }) async {
-    final Workout? workout = ref.read(activeWorkoutControllerProvider.notifier).workout;
+    final Workout? workout =
+        ref.read(activeWorkoutControllerProvider.notifier).workout;
     if (workout == null) {
       return;
     }
@@ -516,7 +552,8 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     }
     _isExiting = true;
 
-    final ActiveWorkoutController controller = ref.read(activeWorkoutControllerProvider.notifier);
+    final ActiveWorkoutController controller =
+        ref.read(activeWorkoutControllerProvider.notifier);
     final String? planId = controller.planId;
     controller.clearActiveWorkout();
 
@@ -584,51 +621,55 @@ class _AdjustableRepDisplay extends StatelessWidget {
       children: <Widget>[
         const Text(
           'ACTUAL REPS',
-          style: TextStyle(color: Colors.grey, letterSpacing: 1.2, fontWeight: FontWeight.bold),
+          style: TextStyle(
+              color: Colors.grey,
+              letterSpacing: 1.2,
+              fontWeight: FontWeight.bold),
         ),
+        const SizedBox(height: 8),
+        Text(
+          currentReps.toString(),
+          style: const TextStyle(
+              fontSize: 84, fontWeight: FontWeight.bold, color: Colors.blue),
+        ),
+        Text(
+          'Recommended: ${move.repCount ?? 0}',
+          style: const TextStyle(color: Colors.grey, fontSize: 16),
+          textAlign: TextAlign.center,
+        ),
+        if (lastReps != null)
+          Text(
+            'Last: $lastReps',
+            style: const TextStyle(color: Colors.orange, fontSize: 16),
+            textAlign: TextAlign.center,
+          ),
         const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 12,
+          runSpacing: 12,
           children: <Widget>[
             _RepButton(
               label: '-10',
               icon: Icons.keyboard_double_arrow_left,
-              onPressed: currentReps >= 10 ? () => onRepsChanged(currentReps - 10) : null,
+              onPressed: currentReps >= 10
+                  ? () => onRepsChanged(currentReps - 10)
+                  : null,
               color: Colors.blue,
             ),
-            const SizedBox(width: 8),
             _RepButton(
               label: '-1',
               icon: Icons.remove,
-              onPressed: currentReps > 0 ? () => onRepsChanged(currentReps - 1) : null,
+              onPressed:
+                  currentReps > 0 ? () => onRepsChanged(currentReps - 1) : null,
               color: Colors.blue,
             ),
-            const SizedBox(width: 32),
-            Column(
-              children: <Widget>[
-                Text(
-                  currentReps.toString(),
-                  style: const TextStyle(fontSize: 84, fontWeight: FontWeight.bold, color: Colors.blue),
-                ),
-                Text(
-                  'Recommended: ${move.repCount ?? 0}',
-                  style: const TextStyle(color: Colors.grey, fontSize: 16),
-                ),
-                if (lastReps != null)
-                  Text(
-                    'Last: $lastReps',
-                    style: const TextStyle(color: Colors.orange, fontSize: 16),
-                  ),
-              ],
-            ),
-            const SizedBox(width: 32),
             _RepButton(
               label: '+1',
               icon: Icons.add,
               onPressed: () => onRepsChanged(currentReps + 1),
               color: Colors.blue,
             ),
-            const SizedBox(width: 8),
             _RepButton(
               label: '+10',
               icon: Icons.keyboard_double_arrow_right,
@@ -657,23 +698,28 @@ class _RepButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: <Widget>[
-        IconButton.filled(
-          onPressed: onPressed,
-          icon: Icon(icon, size: 32),
-          style: IconButton.styleFrom(
-            backgroundColor: color.withValues(alpha: 0.2),
-            foregroundColor: color,
-            padding: const EdgeInsets.all(16),
+    return SizedBox(
+      width: 58,
+      child: Column(
+        children: <Widget>[
+          IconButton.filled(
+            onPressed: onPressed,
+            icon: Icon(icon, size: 28),
+            style: IconButton.styleFrom(
+              backgroundColor: color.withValues(alpha: 0.2),
+              foregroundColor: color,
+              fixedSize: const Size.square(56),
+              padding: EdgeInsets.zero,
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: TextStyle(color: color.withValues(alpha: 0.7), fontSize: 12),
-        ),
-      ],
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: TextStyle(color: color.withValues(alpha: 0.7), fontSize: 12),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 }

@@ -1,13 +1,13 @@
-import 'package:drift/web.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:workout_app_rewrite/features/history/data/history_database_connection.dart';
 import 'package:workout_app_rewrite/features/history/data/history_db.dart';
 
 // Provides the singleton instance of the HistoryDatabase
 final Provider<HistoryDatabase> historyDatabaseProvider = Provider<HistoryDatabase>((ref) {
-  // We use WebDatabase to ensure it compiles successfully for flutter build web.
-  // In a full production app, we would use conditional imports or WasmDatabase.
-  return HistoryDatabase(WebDatabase('history_db'));
+  final HistoryDatabase database = HistoryDatabase(openHistoryDatabaseConnection());
+  ref.onDispose(database.close);
+  return database;
 });
 
 // A stream provider that reactively watches all sessions in the database.

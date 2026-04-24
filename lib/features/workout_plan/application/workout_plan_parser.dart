@@ -114,7 +114,7 @@ class WorkoutPlanParser {
     final Object? value = json[key];
     if (value is! String || value.trim().isEmpty) {
       issues.add(PlanValidationIssue(
-        path: '\$.${key}',
+        path: '\$.$key',
         message: '$key must be a non-empty string.',
       ));
     }
@@ -128,7 +128,7 @@ class WorkoutPlanParser {
     final Object? value = json[key];
     if (value is! List<dynamic>) {
       issues.add(PlanValidationIssue(
-        path: '\$.${key}',
+        path: '\$.$key',
         message: '$key must be a list.',
       ));
     }

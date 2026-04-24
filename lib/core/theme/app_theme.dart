@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
 
 class AppTheme {
@@ -18,7 +17,7 @@ class AppTheme {
       colorScheme: scheme,
       useMaterial3: true,
       scaffoldBackgroundColor: AppColors.neutralSurface,
-      textTheme: GoogleFonts.outfitTextTheme(baseTextTheme),
+      textTheme: baseTextTheme,
       appBarTheme: const AppBarTheme(
         centerTitle: false,
         backgroundColor: Colors.transparent,
@@ -57,7 +56,7 @@ class AppTheme {
       colorScheme: scheme,
       useMaterial3: true,
       scaffoldBackgroundColor: AppColors.neutralSurfaceDark,
-      textTheme: GoogleFonts.outfitTextTheme(baseTextTheme),
+      textTheme: baseTextTheme,
       appBarTheme: const AppBarTheme(
         centerTitle: false,
         backgroundColor: Colors.transparent,

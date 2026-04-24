@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
-import 'package:uuid/uuid.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/workout_state_machine.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/workout_transition_event.dart';
 import 'package:workout_app_rewrite/features/active_workout/domain/workout_phase.dart';
@@ -147,4 +147,3 @@ class ActiveWorkoutController extends Notifier<WorkoutState> {
     }
   }
 }
-
