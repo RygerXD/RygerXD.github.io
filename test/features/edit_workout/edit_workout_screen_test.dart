@@ -236,6 +236,109 @@ void main() {
     expect(updatedPlan?.workouts.single.sets.single.moves.single.repCount, 15);
   });
 
+  testWidgets('existing picker searches exercises and resets move settings',
+      (WidgetTester tester) async {
+    final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
+    await repository.savePlan(
+      const WorkoutPlan(
+        schemaVersion: 1,
+        planId: 'plan-1',
+        name: 'Plan 1',
+        workouts: <Workout>[
+          Workout(
+            workoutId: 'source-workout',
+            title: 'Source',
+            sets: <WorkoutSet>[
+              WorkoutSet(
+                setId: 'source-set',
+                loopCount: 1,
+                restBetweenLoopsSeconds: 30,
+                moves: <Move>[
+                  Move(
+                    moveId: 'source-move',
+                    exerciseId: 'burpee',
+                    type: MoveType.reps,
+                    repCount: 99,
+                    prepTimeSeconds: 12,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+        exercises: <Exercise>[
+          Exercise(
+            exerciseId: 'burpee',
+            name: 'Burpee',
+            imageUrl: 'https://example.com/burpee.gif',
+          ),
+        ],
+      ),
+    );
+
+    final ProviderContainer container = ProviderContainer(
+      overrides: <Override>[
+        workoutRepositoryProvider.overrideWithValue(repository),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container.read(loadedWorkoutPlansNotifierProvider.future);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(
+          home: EditWorkoutScreen(planId: 'plan-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField).at(0), 'Workout A');
+    await tester.tap(find.text('Existing'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Search exercises'), findsOneWidget);
+    await tester.enterText(
+        find.widgetWithText(TextField, 'Search exercises'), 'brp');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Burpee'));
+    await tester.pumpAndSettle();
+
+    final Finder dialogFields = find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.byType(TextField),
+    );
+    expect(
+      tester.widget<TextField>(dialogFields.at(0)).controller?.text,
+      'Burpee',
+    );
+    expect(
+      tester.widget<TextField>(dialogFields.at(1)).controller?.text,
+      'https://example.com/burpee.gif',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Add'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Burpee'), findsOneWidget);
+    expect(find.text('10 reps'), findsOneWidget);
+    expect(find.text('99 reps'), findsNothing);
+
+    await tester.tap(find.text('SAVE'));
+    await tester.pumpAndSettle();
+
+    final WorkoutPlan updatedPlan = (await repository.getPlanById('plan-1'))!;
+    final Workout addedWorkout = updatedPlan.workouts
+        .singleWhere((Workout workout) => workout.title == 'Workout A');
+    final Move addedMove = addedWorkout.sets.single.moves.single;
+    expect(addedMove.exerciseId, 'burpee');
+    expect(addedMove.repCount, 10);
+    expect(addedMove.prepTimeSeconds, 5);
+    expect(updatedPlan.exercises.single.imageUrl,
+        'https://example.com/burpee.gif');
+  });
+
   testWidgets('saves set names and loop counts', (WidgetTester tester) async {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(

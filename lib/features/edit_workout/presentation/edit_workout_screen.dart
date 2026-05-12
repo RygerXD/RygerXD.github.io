@@ -106,10 +106,11 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
     });
   }
 
-  void _showAddMoveDialog(int setIndex) {
+  void _showAddMoveDialog(int setIndex, {Exercise? initialExercise}) {
     showDialog<void>(
       context: context,
       builder: (BuildContext context) => AddMoveDialog(
+        initialExercise: initialExercise,
         onAdd: (Move move, Exercise newExercise) {
           _upsertExerciseInPlan(newExercise);
           setState(() {
@@ -162,25 +163,13 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
     final List<WorkoutPlan> plans =
         ref.read(loadedWorkoutPlansNotifierProvider).value ?? <WorkoutPlan>[];
 
-    final MoveWithExercise? selectedMove = await showDialog<MoveWithExercise>(
+    final Exercise? selectedExercise = await showDialog<Exercise>(
       context: context,
       builder: (BuildContext context) => ExistingMovePickerDialog(plans: plans),
     );
 
-    if (selectedMove != null) {
-      _upsertExerciseInPlan(selectedMove.exercise);
-      setState(() {
-        final WorkoutSet originalSet = _sets[setIndex];
-        final List<Move> updatedMoves = List<Move>.from(originalSet.moves)
-          ..add(selectedMove.move);
-        _sets[setIndex] = WorkoutSet(
-          setId: originalSet.setId,
-          name: originalSet.name,
-          loopCount: originalSet.loopCount,
-          restBetweenLoopsSeconds: originalSet.restBetweenLoopsSeconds,
-          moves: updatedMoves,
-        );
-      });
+    if (selectedExercise != null && mounted) {
+      _showAddMoveDialog(setIndex, initialExercise: selectedExercise);
     }
   }
 

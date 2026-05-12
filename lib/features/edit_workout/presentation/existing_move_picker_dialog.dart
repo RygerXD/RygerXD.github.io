@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:uuid/uuid.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
 
-class ExistingMovePickerDialog extends StatelessWidget {
+class ExistingMovePickerDialog extends StatefulWidget {
   const ExistingMovePickerDialog({
     super.key,
     required this.plans,
@@ -11,82 +10,69 @@ class ExistingMovePickerDialog extends StatelessWidget {
   final List<WorkoutPlan> plans;
 
   @override
+  State<ExistingMovePickerDialog> createState() =>
+      _ExistingMovePickerDialogState();
+}
+
+class _ExistingMovePickerDialogState extends State<ExistingMovePickerDialog> {
+  final TextEditingController _searchController = TextEditingController();
+  late final List<Exercise> _exercises = _collectExercises();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Extract all moves with their associated exercise
-    final Map<String, MoveWithExercise> uniqueMoves =
-        <String, MoveWithExercise>{};
-
-    for (final WorkoutPlan plan in plans) {
-      final Map<String, Exercise> exerciseMap = <String, Exercise>{
-        for (final Exercise e in plan.exercises) e.exerciseId: e,
-      };
-
-      for (final Workout workout in plan.workouts) {
-        for (final WorkoutSet set in workout.sets) {
-          for (final Move move in set.moves) {
-            final Exercise? exercise = exerciseMap[move.exerciseId];
-            if (exercise != null) {
-              // Create a signature so we don't show identical moves multiple times
-              final String signature =
-                  '${exercise.name}_${move.type.name}_${move.repCount}_${move.durationSeconds}_${move.metronomeSpeed}';
-              if (!uniqueMoves.containsKey(signature)) {
-                uniqueMoves[signature] =
-                    MoveWithExercise(move: move, exercise: exercise);
-              }
-            }
-          }
-        }
-      }
-    }
-
-    final List<MoveWithExercise> movesList = uniqueMoves.values.toList()
-      ..sort((MoveWithExercise a, MoveWithExercise b) =>
-          a.exercise.name.compareTo(b.exercise.name));
+    final List<Exercise> filteredExercises = _filteredExercises();
 
     return AlertDialog(
-      title: const Text('Select Existing Move'),
+      title: const Text('Select Existing Exercise'),
       content: SizedBox(
         width: double.maxFinite,
-        child: movesList.isEmpty
-            ? const Center(child: Text('No existing moves found.'))
-            : ListView.builder(
-                shrinkWrap: true,
-                itemCount: movesList.length,
-                itemBuilder: (BuildContext context, int index) {
-                  final MoveWithExercise item = movesList[index];
-                  final Move move = item.move;
-                  final Exercise exercise = item.exercise;
-
-                  return ListTile(
-                    title: Text(exercise.name),
-                    subtitle: Text(
-                      move.type == MoveType.reps
-                          ? '${move.repCount ?? 0} reps'
-                          : _durationMoveSummary(move),
-                    ),
-                    onTap: () {
-                      // Return a new move duplicating the properties but giving a new moveId
-                      final Move duplicatedMove = Move(
-                        moveId: const Uuid().v4(),
-                        exerciseId: move.exerciseId,
-                        type: move.type,
-                        prepTimeSeconds: move.prepTimeSeconds,
-                        repCount: move.repCount,
-                        durationSeconds: move.durationSeconds,
-                        finishTimeSeconds: move.finishTimeSeconds,
-                        targetWeight: move.targetWeight,
-                        targetWeightUnit: move.targetWeightUnit,
-                        metronomeSpeed: move.metronomeSpeed,
-                      );
-
-                      // We must return both the Move and the Exercise in case the Workout Plan
-                      // doesn't have this exercise yet.
-                      Navigator.of(context).pop(MoveWithExercise(
-                          move: duplicatedMove, exercise: exercise));
-                    },
-                  );
-                },
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            TextField(
+              controller: _searchController,
+              decoration: const InputDecoration(
+                labelText: 'Search exercises',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.search),
               ),
+              autofocus: true,
+              onChanged: (String value) {
+                setState(() {
+                  _query = value;
+                });
+              },
+            ),
+            const SizedBox(height: 12),
+            Flexible(
+              child: _exercises.isEmpty
+                  ? const Center(child: Text('No existing exercises found.'))
+                  : filteredExercises.isEmpty
+                      ? const Center(child: Text('No matching exercises.'))
+                      : ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: filteredExercises.length,
+                          itemBuilder: (BuildContext context, int index) {
+                            final Exercise exercise = filteredExercises[index];
+                            return ListTile(
+                              leading: _ExerciseThumbnail(
+                                imageUrl: _optionalText(exercise.imageUrl),
+                              ),
+                              title: Text(exercise.name),
+                              onTap: () => Navigator.of(context).pop(exercise),
+                            );
+                          },
+                        ),
+            ),
+          ],
+        ),
       ),
       actions: <Widget>[
         TextButton(
@@ -97,21 +83,116 @@ class ExistingMovePickerDialog extends StatelessWidget {
     );
   }
 
-  String _durationMoveSummary(Move move) {
-    final int? bpm = move.metronomeSpeed;
-    if (bpm == null) {
-      return '${move.durationSeconds ?? 0} seconds';
+  List<Exercise> _collectExercises() {
+    final Map<String, Exercise> exercisesByName = <String, Exercise>{};
+
+    for (final WorkoutPlan plan in widget.plans) {
+      final Map<String, Exercise> exerciseMap = <String, Exercise>{
+        for (final Exercise exercise in plan.exercises)
+          exercise.exerciseId: exercise,
+      };
+
+      for (final Workout workout in plan.workouts) {
+        for (final WorkoutSet set in workout.sets) {
+          for (final Move move in set.moves) {
+            final Exercise? exercise = exerciseMap[move.exerciseId];
+            if (exercise == null) {
+              continue;
+            }
+            final String key = exercise.name.trim().toLowerCase();
+            exercisesByName.putIfAbsent(key, () => exercise);
+          }
+        }
+      }
     }
-    return '${move.durationSeconds ?? 0} seconds - $bpm BPM';
+
+    return exercisesByName.values.toList(growable: false)
+      ..sort((Exercise a, Exercise b) => a.name.compareTo(b.name));
+  }
+
+  List<Exercise> _filteredExercises() {
+    final String query = _query.trim().toLowerCase();
+    if (query.isEmpty) {
+      return _exercises;
+    }
+
+    final List<_ScoredExercise> matches = <_ScoredExercise>[];
+    for (final Exercise exercise in _exercises) {
+      final int? score = _fuzzyScore(exercise.name.toLowerCase(), query);
+      if (score != null) {
+        matches.add(_ScoredExercise(exercise: exercise, score: score));
+      }
+    }
+
+    matches.sort((_ScoredExercise a, _ScoredExercise b) {
+      final int scoreCompare = a.score.compareTo(b.score);
+      if (scoreCompare != 0) {
+        return scoreCompare;
+      }
+      return a.exercise.name.compareTo(b.exercise.name);
+    });
+
+    return matches
+        .map((_ScoredExercise match) => match.exercise)
+        .toList(growable: false);
+  }
+
+  int? _fuzzyScore(String candidate, String query) {
+    if (candidate.contains(query)) {
+      return candidate.indexOf(query);
+    }
+
+    int candidateIndex = 0;
+    int score = 0;
+    for (final int queryCodeUnit in query.codeUnits) {
+      final int matchIndex =
+          candidate.indexOf(String.fromCharCode(queryCodeUnit), candidateIndex);
+      if (matchIndex < 0) {
+        return null;
+      }
+      score += matchIndex - candidateIndex + 1;
+      candidateIndex = matchIndex + 1;
+    }
+    return score + candidate.length;
+  }
+
+  String? _optionalText(String? value) {
+    final String? trimmed = value?.trim();
+    if (trimmed == null || trimmed.isEmpty) {
+      return null;
+    }
+    return trimmed;
   }
 }
 
-class MoveWithExercise {
-  const MoveWithExercise({
-    required this.move,
-    required this.exercise,
+class _ExerciseThumbnail extends StatelessWidget {
+  const _ExerciseThumbnail({
+    required this.imageUrl,
   });
 
-  final Move move;
+  final String? imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    if (imageUrl == null) {
+      return const CircleAvatar(child: Icon(Icons.fitness_center));
+    }
+
+    return CircleAvatar(
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+      foregroundImage: NetworkImage(imageUrl!),
+      onForegroundImageError: (_, __) {},
+      child: const Icon(Icons.fitness_center),
+    );
+  }
+}
+
+class _ScoredExercise {
+  const _ScoredExercise({
+    required this.exercise,
+    required this.score,
+  });
+
   final Exercise exercise;
+  final int score;
 }
