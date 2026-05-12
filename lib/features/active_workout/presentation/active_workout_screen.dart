@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/active_workout_controller.dart';
+import 'package:workout_app_rewrite/features/active_workout/application/metronome_audio.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/metronome_rep_counter.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/rep_history_service.dart';
 import 'package:workout_app_rewrite/features/active_workout/domain/workout_phase.dart';
@@ -330,7 +331,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     if (!audioCuesEnabled) {
       return;
     }
-    await SystemSound.play(SystemSoundType.click);
+    await MetronomeAudio.playClick();
   }
 
   Future<void> _completeCurrentMove() {
