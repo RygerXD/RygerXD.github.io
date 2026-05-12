@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
 import 'package:workout_app_rewrite/features/history/presentation/components/analysis_session_item.dart';
-import 'package:workout_app_rewrite/features/history/presentation/components/session_detail_sheet.dart';
 
 class SessionCard extends StatelessWidget {
   const SessionCard({
@@ -15,7 +15,8 @@ class SessionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme colors = theme.colorScheme;
-    final _StatusStyle statusStyle = _StatusStyle.fromSessionStatus(item.session.status, colors);
+    final _StatusStyle statusStyle =
+        _StatusStyle.fromSessionStatus(item.session.status, colors);
 
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -31,14 +32,7 @@ class SessionCard extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(AppRadii.lg),
         onTap: () {
-          showModalBottomSheet<void>(
-            context: context,
-            isScrollControlled: true,
-            showDragHandle: false,
-            builder: (BuildContext context) {
-              return SessionDetailSheet(item: item);
-            },
-          );
+          context.go('/analysis/session/${item.session.sessionId}');
         },
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
@@ -64,7 +58,8 @@ class SessionCard extends StatelessWidget {
                   children: <Widget>[
                     Text(
                       item.workoutName,
-                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                      style: theme.textTheme.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -76,15 +71,18 @@ class SessionCard extends StatelessWidget {
                     const SizedBox(height: AppSpacing.xs),
                     Row(
                       children: <Widget>[
-                        Icon(Icons.access_time, size: 14, color: colors.onSurfaceVariant),
+                        Icon(Icons.access_time,
+                            size: 14, color: colors.onSurfaceVariant),
                         const SizedBox(width: AppSpacing.xs),
                         Text(
                           _formatTime(item.startedAt),
-                          style: theme.textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
+                          style: theme.textTheme.bodySmall
+                              ?.copyWith(color: colors.onSurfaceVariant),
                         ),
                         const SizedBox(width: AppSpacing.sm),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.sm, vertical: 2),
                           decoration: BoxDecoration(
                             color: statusStyle.backgroundColor,
                             borderRadius: BorderRadius.circular(AppRadii.pill),
@@ -108,11 +106,13 @@ class SessionCard extends StatelessWidget {
                 children: <Widget>[
                   Text(
                     _formatDuration(item.session.durationSeconds),
-                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                    style: theme.textTheme.titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w800),
                   ),
                   Text(
                     'duration',
-                    style: theme.textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: colors.onSurfaceVariant),
                   ),
                 ],
               ),

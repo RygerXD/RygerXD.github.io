@@ -4,21 +4,32 @@ import 'package:workout_app_rewrite/features/history/data/history_database_conne
 import 'package:workout_app_rewrite/features/history/data/history_db.dart';
 
 // Provides the singleton instance of the HistoryDatabase
-final Provider<HistoryDatabase> historyDatabaseProvider = Provider<HistoryDatabase>((ref) {
-  final HistoryDatabase database = HistoryDatabase(openHistoryDatabaseConnection());
+final Provider<HistoryDatabase> historyDatabaseProvider =
+    Provider<HistoryDatabase>((ref) {
+  final HistoryDatabase database =
+      HistoryDatabase(openHistoryDatabaseConnection());
   ref.onDispose(database.close);
   return database;
 });
 
 // A stream provider that reactively watches all sessions in the database.
 // Drift's .watch() emits a new list whenever the table changes.
-final StreamProvider<List<WorkoutSessionEntity>> allSessionsProvider = StreamProvider<List<WorkoutSessionEntity>>((ref) {
+final StreamProvider<List<WorkoutSessionEntity>> allSessionsProvider =
+    StreamProvider<List<WorkoutSessionEntity>>((ref) {
   final HistoryDatabase db = ref.watch(historyDatabaseProvider);
   return db.watchAllSessions();
 });
 
+final StreamProvider<List<WorkoutMovePerformanceEntity>>
+    allMovePerformancesProvider =
+    StreamProvider<List<WorkoutMovePerformanceEntity>>((ref) {
+  final HistoryDatabase db = ref.watch(historyDatabaseProvider);
+  return db.watchAllMovePerformances();
+});
+
 // A service provider to expose saving functionality
-final Provider<HistoryService> historyServiceProvider = Provider<HistoryService>((ref) {
+final Provider<HistoryService> historyServiceProvider =
+    Provider<HistoryService>((ref) {
   return HistoryService(ref.watch(historyDatabaseProvider));
 });
 
@@ -50,5 +61,32 @@ class HistoryService {
     );
 
     debugPrint('[HistoryService] Session saved: $sessionId ($status)');
+  }
+
+  Future<void> saveMovePerformance({
+    required String sessionId,
+    required String workoutId,
+    required String setId,
+    required int loopIndex,
+    required String moveId,
+    required String exerciseId,
+    required int repCount,
+    required int elapsedSeconds,
+    required DateTime completedAt,
+  }) async {
+    await _db.insertMovePerformance(
+      WorkoutMovePerformanceEntity(
+        performanceId: '$sessionId|$setId|$loopIndex|$moveId',
+        sessionId: sessionId,
+        workoutId: workoutId,
+        setId: setId,
+        loopIndex: loopIndex,
+        moveId: moveId,
+        exerciseId: exerciseId,
+        repCount: repCount,
+        elapsedSeconds: elapsedSeconds,
+        completedAt: completedAt.millisecondsSinceEpoch,
+      ),
+    );
   }
 }

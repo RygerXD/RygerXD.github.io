@@ -8,8 +8,10 @@ import 'package:workout_app_rewrite/features/active_workout/domain/workout_state
 import 'package:workout_app_rewrite/features/history/application/history_providers.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
 
-final NotifierProvider<ActiveWorkoutController, WorkoutState> activeWorkoutControllerProvider =
-    NotifierProvider<ActiveWorkoutController, WorkoutState>(ActiveWorkoutController.new);
+final NotifierProvider<ActiveWorkoutController, WorkoutState>
+    activeWorkoutControllerProvider =
+    NotifierProvider<ActiveWorkoutController, WorkoutState>(
+        ActiveWorkoutController.new);
 
 class ActiveWorkoutController extends Notifier<WorkoutState> {
   WorkoutStateMachine? _machine;
@@ -19,6 +21,7 @@ class ActiveWorkoutController extends Notifier<WorkoutState> {
 
   Workout? get workout => _machine?.workout;
   String? get planId => _planId;
+  String? get sessionId => _sessionId;
 
   WorkoutSet? get currentSet {
     final Workout? activeWorkout = _machine?.workout;
@@ -52,7 +55,8 @@ class ActiveWorkoutController extends Notifier<WorkoutState> {
     _sessionId = const Uuid().v4();
     _startedAt = DateTime.now();
 
-    final WorkoutStateMachine machine = WorkoutStateMachine(workout: workout)..start();
+    final WorkoutStateMachine machine = WorkoutStateMachine(workout: workout)
+      ..start();
     _machine = machine;
     state = machine.state;
   }
@@ -64,31 +68,48 @@ class ActiveWorkoutController extends Notifier<WorkoutState> {
   void startPrepNow() => _run((WorkoutStateMachine m) => m.startPrepNow());
   void completeMove() => _run((WorkoutStateMachine m) => m.completeMove());
   void completeRest() => _run((WorkoutStateMachine m) => m.completeRest());
-  void completeRestBetweenLoops() => _run((WorkoutStateMachine m) => m.completeRestBetweenLoops());
+  void completeRestBetweenLoops() =>
+      _run((WorkoutStateMachine m) => m.completeRestBetweenLoops());
   void skipMove() => _run((WorkoutStateMachine m) => m.skipMove());
   void skipRest() => _run((WorkoutStateMachine m) => m.skipRest());
   void pause() => _run((WorkoutStateMachine m) => m.pause());
   void resume() => _run((WorkoutStateMachine m) => m.resume());
-  
+
   void abandon() {
     final WorkoutStateMachine? machine = _machine;
     final String? planId = _planId;
     final String? sessionId = _sessionId;
     final DateTime? startedAt = _startedAt;
     _run((WorkoutStateMachine m) => m.abandon());
-    if (machine != null && planId != null && sessionId != null && startedAt != null) {
-      _saveSession(machine: machine, planId: planId, sessionId: sessionId, startedAt: startedAt, status: 'abandoned');
+    if (machine != null &&
+        planId != null &&
+        sessionId != null &&
+        startedAt != null) {
+      _saveSession(
+          machine: machine,
+          planId: planId,
+          sessionId: sessionId,
+          startedAt: startedAt,
+          status: 'abandoned');
     }
   }
-  
+
   void finishEarly() {
     final WorkoutStateMachine? machine = _machine;
     final String? planId = _planId;
     final String? sessionId = _sessionId;
     final DateTime? startedAt = _startedAt;
     _run((WorkoutStateMachine m) => m.finishEarly());
-    if (machine != null && planId != null && sessionId != null && startedAt != null) {
-      _saveSession(machine: machine, planId: planId, sessionId: sessionId, startedAt: startedAt, status: 'completed');
+    if (machine != null &&
+        planId != null &&
+        sessionId != null &&
+        startedAt != null) {
+      _saveSession(
+          machine: machine,
+          planId: planId,
+          sessionId: sessionId,
+          startedAt: startedAt,
+          status: 'completed');
     }
   }
 
@@ -109,7 +130,7 @@ class ActiveWorkoutController extends Notifier<WorkoutState> {
       action(machine);
 
       // Capture session data BEFORE setting state. Setting state triggers
-      // Riverpod listeners synchronously, which call _exitPlayer() →
+      // Riverpod listeners synchronously, which call _exitPlayer() and
       // clearActiveWorkout(), nulling _machine/_planId/_sessionId/_startedAt.
       final bool shouldSave = machine.state.phase == WorkoutPhase.completed;
       final String? planId = _planId;
@@ -118,8 +139,16 @@ class ActiveWorkoutController extends Notifier<WorkoutState> {
 
       state = machine.state;
 
-      if (shouldSave && planId != null && sessionId != null && startedAt != null) {
-        _saveSession(machine: machine, planId: planId, sessionId: sessionId, startedAt: startedAt, status: 'completed');
+      if (shouldSave &&
+          planId != null &&
+          sessionId != null &&
+          startedAt != null) {
+        _saveSession(
+            machine: machine,
+            planId: planId,
+            sessionId: sessionId,
+            startedAt: startedAt,
+            status: 'completed');
       }
     } on InvalidTransitionException {
       return;
@@ -135,13 +164,13 @@ class ActiveWorkoutController extends Notifier<WorkoutState> {
   }) async {
     try {
       await ref.read(historyServiceProvider).saveSession(
-        sessionId: sessionId,
-        planId: planId,
-        workoutId: machine.workout.workoutId,
-        startedAt: startedAt,
-        endedAt: DateTime.now(),
-        status: status,
-      );
+            sessionId: sessionId,
+            planId: planId,
+            workoutId: machine.workout.workoutId,
+            startedAt: startedAt,
+            endedAt: DateTime.now(),
+            status: status,
+          );
     } catch (e) {
       debugPrint('[ActiveWorkoutController] Error saving session: $e');
     }

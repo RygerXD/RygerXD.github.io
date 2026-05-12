@@ -10,6 +10,7 @@ import 'package:workout_app_rewrite/features/active_workout/application/metronom
 import 'package:workout_app_rewrite/features/active_workout/application/rep_history_service.dart';
 import 'package:workout_app_rewrite/features/active_workout/domain/workout_phase.dart';
 import 'package:workout_app_rewrite/features/active_workout/domain/workout_state.dart';
+import 'package:workout_app_rewrite/features/history/application/history_providers.dart';
 import 'package:workout_app_rewrite/features/settings/application/app_settings_controller.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
@@ -32,6 +33,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   String? _lastMoveKey;
   String? _activeMetronomeKey;
   int? _lastRepsForCurrentMove;
+  final Stopwatch _moveStopwatch = Stopwatch();
 
   @override
   void initState() {
@@ -46,6 +48,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   void dispose() {
     _ticker?.cancel();
     _stopMetronome();
+    _moveStopwatch.stop();
     super.dispose();
   }
 
@@ -361,6 +364,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       final Move? currentMove = controller.currentMove;
       final WorkoutSet? currentSet = controller.currentSet;
       final Workout? workout = controller.workout;
+      final String? sessionId = controller.sessionId;
       if (currentMove == null) {
         return;
       }
@@ -371,6 +375,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       final int? repsToSave =
           currentMove.type == MoveType.reps ? _currentReps : metronomeReps;
       if (repsToSave != null && currentSet != null && workout != null) {
+        final int elapsedSeconds = _elapsedSecondsForMove(currentMove);
         await ref.read(repHistoryServiceProvider).saveReps(
               workoutId: workout.workoutId,
               setId: currentSet.setId,
@@ -378,6 +383,19 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
               exerciseId: currentMove.exerciseId,
               reps: repsToSave,
             );
+        if (sessionId != null) {
+          await ref.read(historyServiceProvider).saveMovePerformance(
+                sessionId: sessionId,
+                workoutId: workout.workoutId,
+                setId: currentSet.setId,
+                loopIndex: state.loopIndex,
+                moveId: currentMove.moveId,
+                exerciseId: currentMove.exerciseId,
+                repCount: repsToSave,
+                elapsedSeconds: elapsedSeconds,
+                completedAt: DateTime.now(),
+              );
+        }
         _lastRepsForCurrentMove = repsToSave;
       }
       controller.completeMove();
@@ -440,6 +458,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     }
 
     _syncMetronomeWithState(next, move: move);
+    _syncMoveStopwatch(next, moveChanged: moveChanged);
 
     if (!moveChanged && nextTimer == null) {
       return;
@@ -518,9 +537,26 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   int _elapsedSecondsForMove(Move move) {
     final int durationSeconds = move.durationSeconds ?? 0;
     if (move.type != MoveType.duration || durationSeconds <= 0) {
-      return 0;
+      return _moveStopwatch.elapsed.inSeconds;
     }
     return (durationSeconds - _timerSeconds).clamp(0, durationSeconds);
+  }
+
+  void _syncMoveStopwatch(WorkoutState state, {required bool moveChanged}) {
+    if (moveChanged) {
+      _moveStopwatch
+        ..stop()
+        ..reset();
+    }
+
+    final bool shouldRun = state.phase == WorkoutPhase.move;
+    if (shouldRun && !_moveStopwatch.isRunning) {
+      _moveStopwatch.start();
+      return;
+    }
+    if (!shouldRun && _moveStopwatch.isRunning) {
+      _moveStopwatch.stop();
+    }
   }
 
   void _syncMetronomeWithState(WorkoutState state, {required Move move}) {

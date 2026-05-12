@@ -6,6 +6,7 @@ import 'package:workout_app_rewrite/features/dashboard/presentation/dashboard_sc
 import 'package:workout_app_rewrite/features/edit_workout/presentation/create_plan_screen.dart';
 import 'package:workout_app_rewrite/features/edit_workout/presentation/edit_workout_screen.dart';
 import 'package:workout_app_rewrite/features/history/presentation/analysis_screen.dart';
+import 'package:workout_app_rewrite/features/history/presentation/workout_progress_screen.dart';
 import 'package:workout_app_rewrite/features/library/presentation/library_screen.dart';
 import 'package:workout_app_rewrite/features/settings/presentation/settings_screen.dart';
 import 'package:workout_app_rewrite/features/workout_detail/presentation/workout_detail_screen.dart';
@@ -80,6 +81,16 @@ final Provider<GoRouter> appRouterProvider =
                 builder: (BuildContext context, GoRouterState state) {
                   return const AnalysisScreen();
                 },
+                routes: <RouteBase>[
+                  GoRoute(
+                    path: 'session/:sessionId',
+                    builder: (BuildContext context, GoRouterState state) {
+                      final String sessionId =
+                          state.pathParameters['sessionId']!;
+                      return WorkoutProgressScreen(sessionId: sessionId);
+                    },
+                  ),
+                ],
               ),
             ],
           ),

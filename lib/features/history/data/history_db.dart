@@ -25,12 +25,30 @@ class WorkoutPlansTable extends Table {
   Set<Column<Object>> get primaryKey => <Column<Object>>{planId};
 }
 
-@DriftDatabase(tables: <Type>[WorkoutSessions, WorkoutPlansTable])
+@DataClassName('WorkoutMovePerformanceEntity')
+class WorkoutMovePerformances extends Table {
+  TextColumn get performanceId => text()();
+  TextColumn get sessionId => text()();
+  TextColumn get workoutId => text()();
+  TextColumn get setId => text()();
+  IntColumn get loopIndex => integer()();
+  TextColumn get moveId => text()();
+  TextColumn get exerciseId => text()();
+  IntColumn get repCount => integer()();
+  IntColumn get elapsedSeconds => integer()();
+  IntColumn get completedAt => integer()();
+
+  @override
+  Set<Column<Object>> get primaryKey => <Column<Object>>{performanceId};
+}
+
+@DriftDatabase(
+    tables: <Type>[WorkoutSessions, WorkoutPlansTable, WorkoutMovePerformances])
 class HistoryDatabase extends _$HistoryDatabase {
   HistoryDatabase(super.e);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration {
@@ -42,21 +60,43 @@ class HistoryDatabase extends _$HistoryDatabase {
         if (from == 1) {
           await m.createTable(workoutPlansTable);
         }
+        if (from < 3) {
+          await m.createTable(workoutMovePerformances);
+        }
       },
     );
   }
 
-  Future<List<WorkoutSessionEntity>> getAllSessions() => select(workoutSessions).get();
+  Future<List<WorkoutSessionEntity>> getAllSessions() =>
+      select(workoutSessions).get();
 
-  Stream<List<WorkoutSessionEntity>> watchAllSessions() => select(workoutSessions).watch();
+  Stream<List<WorkoutSessionEntity>> watchAllSessions() =>
+      select(workoutSessions).watch();
 
-  Future<void> insertSession(WorkoutSessionEntity session) => into(workoutSessions).insert(session, mode: InsertMode.insertOrReplace);
+  Future<void> insertSession(WorkoutSessionEntity session) =>
+      into(workoutSessions).insert(session, mode: InsertMode.insertOrReplace);
 
-  Future<void> clearHistory() => delete(workoutSessions).go();
+  Future<void> clearHistory() async {
+    await transaction(() async {
+      await delete(workoutMovePerformances).go();
+      await delete(workoutSessions).go();
+    });
+  }
 
-  Future<List<WorkoutPlanEntity>> getAllWorkoutPlans() => select(workoutPlansTable).get();
+  Stream<List<WorkoutMovePerformanceEntity>> watchAllMovePerformances() =>
+      select(workoutMovePerformances).watch();
 
-  Future<void> insertWorkoutPlan(WorkoutPlanEntity plan) => into(workoutPlansTable).insert(plan, mode: InsertMode.insertOrReplace);
+  Future<void> insertMovePerformance(
+          WorkoutMovePerformanceEntity performance) =>
+      into(workoutMovePerformances)
+          .insert(performance, mode: InsertMode.insertOrReplace);
 
-  Future<void> deleteWorkoutPlan(String planId) => (delete(workoutPlansTable)..where((t) => t.planId.equals(planId))).go();
+  Future<List<WorkoutPlanEntity>> getAllWorkoutPlans() =>
+      select(workoutPlansTable).get();
+
+  Future<void> insertWorkoutPlan(WorkoutPlanEntity plan) =>
+      into(workoutPlansTable).insert(plan, mode: InsertMode.insertOrReplace);
+
+  Future<void> deleteWorkoutPlan(String planId) =>
+      (delete(workoutPlansTable)..where((t) => t.planId.equals(planId))).go();
 }
