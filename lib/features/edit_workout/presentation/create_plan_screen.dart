@@ -19,7 +19,7 @@ class _CreatePlanScreenState extends ConsumerState<CreatePlanScreen> {
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _authorController = TextEditingController();
   final TextEditingController _tagController = TextEditingController();
-  
+
   final List<String> _tags = <String>[];
   bool _isLoading = false;
 
@@ -58,24 +58,22 @@ class _CreatePlanScreenState extends ConsumerState<CreatePlanScreen> {
         schemaVersion: 1,
         planId: const Uuid().v4(),
         name: _nameController.text.trim(),
-        description: _descriptionController.text.trim().isEmpty 
-            ? null 
+        description: _descriptionController.text.trim().isEmpty
+            ? null
             : _descriptionController.text.trim(),
-        author: _authorController.text.trim().isEmpty 
-            ? null 
+        author: _authorController.text.trim().isEmpty
+            ? null
             : _authorController.text.trim(),
         tags: _tags,
         workouts: <Workout>[],
         exercises: <Exercise>[],
       );
 
-      await ref.read(loadedWorkoutPlansNotifierProvider.notifier).loadPlan(newPlan);
+      await ref
+          .read(loadedWorkoutPlansNotifierProvider.notifier)
+          .loadPlan(newPlan);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Created "${newPlan.name}"')),
-        );
-        
         // Go straight to the detail screen so they can add workouts to it
         context.go('/library/detail/${newPlan.planId}');
       }
@@ -100,7 +98,7 @@ class _CreatePlanScreenState extends ConsumerState<CreatePlanScreen> {
         actions: <Widget>[
           TextButton.icon(
             onPressed: _isLoading ? null : _createPlan,
-            icon: _isLoading 
+            icon: _isLoading
                 ? const SizedBox(
                     width: 16,
                     height: 16,
@@ -134,7 +132,6 @@ class _CreatePlanScreenState extends ConsumerState<CreatePlanScreen> {
               autofocus: true,
             ),
             const SizedBox(height: AppSpacing.md),
-
             TextFormField(
               controller: _descriptionController,
               decoration: const InputDecoration(
@@ -147,7 +144,6 @@ class _CreatePlanScreenState extends ConsumerState<CreatePlanScreen> {
               textCapitalization: TextCapitalization.sentences,
             ),
             const SizedBox(height: AppSpacing.md),
-
             TextFormField(
               controller: _authorController,
               decoration: const InputDecoration(
@@ -159,7 +155,6 @@ class _CreatePlanScreenState extends ConsumerState<CreatePlanScreen> {
               textCapitalization: TextCapitalization.words,
             ),
             const SizedBox(height: AppSpacing.xl),
-
             Text(
               'Tags',
               style: Theme.of(context).textTheme.titleMedium,
@@ -191,24 +186,26 @@ class _CreatePlanScreenState extends ConsumerState<CreatePlanScreen> {
               Wrap(
                 spacing: AppSpacing.sm,
                 runSpacing: AppSpacing.sm,
-                children: _tags.map((String tag) => Chip(
-                  label: Text(tag),
-                  deleteIcon: const Icon(Icons.close, size: 18),
-                  onDeleted: () => _removeTag(tag),
-                )).toList(),
+                children: _tags
+                    .map((String tag) => Chip(
+                          label: Text(tag),
+                          deleteIcon: const Icon(Icons.close, size: 18),
+                          onDeleted: () => _removeTag(tag),
+                        ))
+                    .toList(),
               ),
-            
             const SizedBox(height: AppSpacing.xxl),
-            
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(AppSpacing.md),
                 child: Row(
                   children: <Widget>[
-                    Icon(Icons.info_outline, color: Theme.of(context).colorScheme.primary),
+                    Icon(Icons.info_outline,
+                        color: Theme.of(context).colorScheme.primary),
                     const SizedBox(width: AppSpacing.sm),
                     const Expanded(
-                      child: Text('After creating your plan, you can add workouts and exercises to it.'),
+                      child: Text(
+                          'After creating your plan, you can add workouts and exercises to it.'),
                     ),
                   ],
                 ),
