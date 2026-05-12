@@ -76,7 +76,9 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
         ref.watch(loadedWorkoutPlansNotifierProvider).valueOrNull;
     final WorkoutPlan? plan = _findPlanById(plans, controller.planId);
     final WorkoutPhase displayPhase = _displayPhase(state);
-    final String moveLabel = _resolveMoveLabel(currentMove, plan);
+    final Exercise? currentExercise = _resolveMoveExercise(currentMove, plan);
+    final String moveLabel = currentExercise?.name ?? currentMove.exerciseId;
+    final String? moveMediaUrl = _optionalText(currentExercise?.imageUrl);
     final Color statusColor = _statusColor(displayPhase);
     final String statusLabel = _statusLabel(displayPhase);
     final bool isPaused = state.phase == WorkoutPhase.paused;
@@ -149,6 +151,10 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                       _PhaseChip(label: statusLabel, color: statusColor),
                       const SizedBox(height: 24),
                       if (isPrep || isRest) ...<Widget>[
+                        if (isPrep && moveMediaUrl != null) ...<Widget>[
+                          _MoveMedia(url: moveMediaUrl),
+                          const SizedBox(height: 16),
+                        ],
                         _TimerDisplay(
                             seconds: _timerSeconds, color: statusColor),
                         const SizedBox(height: 16),
@@ -158,6 +164,10 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                       ] else if (isMove) ...<Widget>[
+                        if (moveMediaUrl != null) ...<Widget>[
+                          _MoveMedia(url: moveMediaUrl),
+                          const SizedBox(height: 16),
+                        ],
                         Text(
                           moveLabel,
                           style: Theme.of(context)
@@ -585,16 +595,24 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     return null;
   }
 
-  String _resolveMoveLabel(Move move, WorkoutPlan? plan) {
+  Exercise? _resolveMoveExercise(Move move, WorkoutPlan? plan) {
     if (plan == null) {
-      return move.exerciseId;
+      return null;
     }
     for (final Exercise exercise in plan.exercises) {
       if (exercise.exerciseId == move.exerciseId) {
-        return exercise.name;
+        return exercise;
       }
     }
-    return move.exerciseId;
+    return null;
+  }
+
+  String? _optionalText(String? value) {
+    final String? trimmed = value?.trim();
+    if (trimmed == null || trimmed.isEmpty) {
+      return null;
+    }
+    return trimmed;
   }
 
   Color _statusColor(WorkoutPhase phase) {
@@ -666,6 +684,60 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       return;
     }
     context.go('/library');
+  }
+}
+
+class _MoveMedia extends StatelessWidget {
+  const _MoveMedia({
+    required this.url,
+  });
+
+  final String url;
+
+  @override
+  Widget build(BuildContext context) {
+    final Size screenSize = MediaQuery.sizeOf(context);
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        constraints: BoxConstraints(
+          maxWidth: screenSize.width * 0.9,
+          maxHeight: screenSize.height * 0.24,
+        ),
+        color: colorScheme.surfaceContainerHighest,
+        child: Image.network(
+          url,
+          fit: BoxFit.contain,
+          loadingBuilder: (
+            BuildContext context,
+            Widget child,
+            ImageChunkEvent? loadingProgress,
+          ) {
+            if (loadingProgress == null) {
+              return child;
+            }
+            return const SizedBox(
+              width: 160,
+              height: 120,
+              child: Center(child: CircularProgressIndicator()),
+            );
+          },
+          errorBuilder: (
+            BuildContext context,
+            Object error,
+            StackTrace? stackTrace,
+          ) {
+            return const SizedBox(
+              width: 160,
+              height: 120,
+              child: Icon(Icons.broken_image_outlined, size: 40),
+            );
+          },
+        ),
+      ),
+    );
   }
 }
 

@@ -19,6 +19,7 @@ class AddMoveDialog extends StatefulWidget {
 
 class _AddMoveDialogState extends State<AddMoveDialog> {
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _mediaUrlController = TextEditingController();
   final TextEditingController _prepController =
       TextEditingController(text: '5');
   final TextEditingController _repsController =
@@ -33,6 +34,7 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
   @override
   void dispose() {
     _nameController.dispose();
+    _mediaUrlController.dispose();
     _prepController.dispose();
     _repsController.dispose();
     _durationController.dispose();
@@ -55,6 +57,7 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
     final Exercise exercise = Exercise(
       exerciseId: exerciseId,
       name: name,
+      imageUrl: _optionalText(_mediaUrlController.text),
     );
 
     final Move move = Move(
@@ -73,6 +76,11 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
     Navigator.of(context).pop();
   }
 
+  String? _optionalText(String value) {
+    final String trimmed = value.trim();
+    return trimmed.isEmpty ? null : trimmed;
+  }
+
   int? _parseMetronomeSpeed() {
     if (_isRepBased || !_useMetronome) {
       return null;
@@ -86,97 +94,120 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final Size screenSize = MediaQuery.sizeOf(context);
+    final double dialogWidth = screenSize.width * 0.9;
+    final double contentWidth =
+        (dialogWidth - (AppSpacing.xl * 2)).clamp(0.0, dialogWidth).toDouble();
+
     return AlertDialog(
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: screenSize.width * 0.05,
+        vertical: AppSpacing.xl,
+      ),
       title: const Text('Add New Move'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Exercise Name',
-                border: OutlineInputBorder(),
-              ),
-              textCapitalization: TextCapitalization.words,
-              autofocus: true,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            SegmentedButton<bool>(
-              segments: const <ButtonSegment<bool>>[
-                ButtonSegment<bool>(
-                  value: true,
-                  label: Text('Reps'),
-                  icon: Icon(Icons.repeat),
-                ),
-                ButtonSegment<bool>(
-                  value: false,
-                  label: Text('Duration'),
-                  icon: Icon(Icons.timer),
-                ),
-              ],
-              selected: <bool>{_isRepBased},
-              onSelectionChanged: (Set<bool> selected) {
-                setState(() {
-                  _isRepBased = selected.first;
-                });
-              },
-            ),
-            const SizedBox(height: AppSpacing.md),
-            TextField(
-              controller: _prepController,
-              decoration: const InputDecoration(
-                labelText: 'Prep Time (sec)',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            if (_isRepBased)
+      content: SizedBox(
+        width: contentWidth,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
               TextField(
-                controller: _repsController,
+                controller: _nameController,
                 decoration: const InputDecoration(
-                  labelText: 'Rep Count',
+                  labelText: 'Exercise Name',
+                  border: OutlineInputBorder(),
+                ),
+                textCapitalization: TextCapitalization.words,
+                autofocus: true,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              TextField(
+                controller: _mediaUrlController,
+                decoration: const InputDecoration(
+                  labelText: 'Image or GIF URL',
+                  hintText: 'https://example.com/move.gif',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.image_outlined),
+                ),
+                keyboardType: TextInputType.url,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              SegmentedButton<bool>(
+                segments: const <ButtonSegment<bool>>[
+                  ButtonSegment<bool>(
+                    value: true,
+                    label: Text('Reps'),
+                    icon: Icon(Icons.repeat),
+                  ),
+                  ButtonSegment<bool>(
+                    value: false,
+                    label: Text('Duration'),
+                    icon: Icon(Icons.timer),
+                  ),
+                ],
+                selected: <bool>{_isRepBased},
+                onSelectionChanged: (Set<bool> selected) {
+                  setState(() {
+                    _isRepBased = selected.first;
+                  });
+                },
+              ),
+              const SizedBox(height: AppSpacing.md),
+              TextField(
+                controller: _prepController,
+                decoration: const InputDecoration(
+                  labelText: 'Prep Time (sec)',
                   border: OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.number,
-              )
-            else
-              Column(
-                children: <Widget>[
-                  TextField(
-                    controller: _durationController,
-                    decoration: const InputDecoration(
-                      labelText: 'Duration (sec)',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              if (_isRepBased)
+                TextField(
+                  controller: _repsController,
+                  decoration: const InputDecoration(
+                    labelText: 'Rep Count',
+                    border: OutlineInputBorder(),
                   ),
-                  const SizedBox(height: AppSpacing.md),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('Metronome'),
-                    subtitle: const Text('Count one rep per beat'),
-                    value: _useMetronome,
-                    onChanged: (bool value) {
-                      setState(() {
-                        _useMetronome = value;
-                      });
-                    },
-                  ),
-                  if (_useMetronome)
+                  keyboardType: TextInputType.number,
+                )
+              else
+                Column(
+                  children: <Widget>[
                     TextField(
-                      controller: _metronomeController,
+                      controller: _durationController,
                       decoration: const InputDecoration(
-                        labelText: 'BPM',
+                        labelText: 'Duration (sec)',
                         border: OutlineInputBorder(),
                       ),
                       keyboardType: TextInputType.number,
                     ),
-                ],
-              ),
-          ],
+                    const SizedBox(height: AppSpacing.md),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Metronome'),
+                      subtitle: const Text('Count one rep per beat'),
+                      value: _useMetronome,
+                      onChanged: (bool value) {
+                        setState(() {
+                          _useMetronome = value;
+                        });
+                      },
+                    ),
+                    if (_useMetronome)
+                      TextField(
+                        controller: _metronomeController,
+                        decoration: const InputDecoration(
+                          labelText: 'BPM',
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                  ],
+                ),
+            ],
+          ),
         ),
       ),
       actions: <Widget>[

@@ -119,4 +119,55 @@ void main() {
     expect(find.text('Jumping Jacks'), findsOneWidget);
     expect(find.text('30 seconds - 72 BPM'), findsOneWidget);
   });
+
+  testWidgets('saves image or GIF URL for new moves',
+      (WidgetTester tester) async {
+    final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
+    await repository.savePlan(
+      const WorkoutPlan(
+        schemaVersion: 1,
+        planId: 'plan-1',
+        name: 'Plan 1',
+        workouts: <Workout>[],
+        exercises: <Exercise>[],
+      ),
+    );
+
+    final ProviderContainer container = ProviderContainer(
+      overrides: <Override>[
+        workoutRepositoryProvider.overrideWithValue(repository),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container.read(loadedWorkoutPlansNotifierProvider.future);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(
+          home: EditWorkoutScreen(planId: 'plan-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('New Move'));
+    await tester.pumpAndSettle();
+
+    final Finder dialogFields = find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.byType(TextField),
+    );
+    await tester.enterText(dialogFields.at(0), 'Plank');
+    await tester.enterText(
+      dialogFields.at(1),
+      'https://example.com/plank.gif',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Add'));
+    await tester.pumpAndSettle();
+
+    final WorkoutPlan? updatedPlan = await repository.getPlanById('plan-1');
+    expect(updatedPlan?.exercises.single.imageUrl,
+        'https://example.com/plank.gif');
+  });
 }
