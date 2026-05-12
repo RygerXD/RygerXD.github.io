@@ -13,7 +13,8 @@ class ExistingMovePickerDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Extract all moves with their associated exercise
-    final Map<String, MoveWithExercise> uniqueMoves = <String, MoveWithExercise>{};
+    final Map<String, MoveWithExercise> uniqueMoves =
+        <String, MoveWithExercise>{};
 
     for (final WorkoutPlan plan in plans) {
       final Map<String, Exercise> exerciseMap = <String, Exercise>{
@@ -26,9 +27,11 @@ class ExistingMovePickerDialog extends StatelessWidget {
             final Exercise? exercise = exerciseMap[move.exerciseId];
             if (exercise != null) {
               // Create a signature so we don't show identical moves multiple times
-              final String signature = '${exercise.name}_${move.type.name}_${move.repCount}_${move.durationSeconds}';
+              final String signature =
+                  '${exercise.name}_${move.type.name}_${move.repCount}_${move.durationSeconds}_${move.metronomeSpeed}';
               if (!uniqueMoves.containsKey(signature)) {
-                uniqueMoves[signature] = MoveWithExercise(move: move, exercise: exercise);
+                uniqueMoves[signature] =
+                    MoveWithExercise(move: move, exercise: exercise);
               }
             }
           }
@@ -37,7 +40,8 @@ class ExistingMovePickerDialog extends StatelessWidget {
     }
 
     final List<MoveWithExercise> movesList = uniqueMoves.values.toList()
-      ..sort((MoveWithExercise a, MoveWithExercise b) => a.exercise.name.compareTo(b.exercise.name));
+      ..sort((MoveWithExercise a, MoveWithExercise b) =>
+          a.exercise.name.compareTo(b.exercise.name));
 
     return AlertDialog(
       title: const Text('Select Existing Move'),
@@ -58,7 +62,7 @@ class ExistingMovePickerDialog extends StatelessWidget {
                     subtitle: Text(
                       move.type == MoveType.reps
                           ? '${move.repCount ?? 0} reps'
-                          : '${move.durationSeconds ?? 0} seconds',
+                          : _durationMoveSummary(move),
                     ),
                     onTap: () {
                       // Return a new move duplicating the properties but giving a new moveId
@@ -74,10 +78,11 @@ class ExistingMovePickerDialog extends StatelessWidget {
                         targetWeightUnit: move.targetWeightUnit,
                         metronomeSpeed: move.metronomeSpeed,
                       );
-                      
+
                       // We must return both the Move and the Exercise in case the Workout Plan
                       // doesn't have this exercise yet.
-                      Navigator.of(context).pop(MoveWithExercise(move: duplicatedMove, exercise: exercise));
+                      Navigator.of(context).pop(MoveWithExercise(
+                          move: duplicatedMove, exercise: exercise));
                     },
                   );
                 },
@@ -90,6 +95,14 @@ class ExistingMovePickerDialog extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  String _durationMoveSummary(Move move) {
+    final int? bpm = move.metronomeSpeed;
+    if (bpm == null) {
+      return '${move.durationSeconds ?? 0} seconds';
+    }
+    return '${move.durationSeconds ?? 0} seconds - $bpm BPM';
   }
 }
 

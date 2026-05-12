@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/active_workout_controller.dart';
+import 'package:workout_app_rewrite/features/active_workout/application/metronome_rep_counter.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/rep_history_service.dart';
 import 'package:workout_app_rewrite/features/active_workout/domain/workout_phase.dart';
 import 'package:workout_app_rewrite/features/active_workout/domain/workout_state.dart';
@@ -22,11 +23,13 @@ class ActiveWorkoutScreen extends ConsumerStatefulWidget {
 
 class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   Timer? _ticker;
+  Timer? _metronomeTimer;
   int _timerSeconds = 0;
   int _currentReps = 0;
   bool _isProcessing = false;
   bool _isExiting = false;
   String? _lastMoveKey;
+  String? _activeMetronomeKey;
   int? _lastRepsForCurrentMove;
 
   @override
@@ -41,6 +44,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   @override
   void dispose() {
     _ticker?.cancel();
+    _stopMetronome();
     super.dispose();
   }
 
@@ -162,10 +166,22 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 32),
-                        if (currentMove.type == MoveType.duration)
+                        if (currentMove.type == MoveType.duration) ...<Widget>[
                           _TimerDisplay(
-                              seconds: _timerSeconds, color: statusColor)
-                        else
+                              seconds: _timerSeconds, color: statusColor),
+                          if (currentMove.metronomeSpeed != null) ...<Widget>[
+                            const SizedBox(height: 8),
+                            _MetronomeSummary(
+                              bpm: currentMove.metronomeSpeed!,
+                              estimatedReps: metronomeRepsForElapsedTime(
+                                    move: currentMove,
+                                    elapsedSeconds:
+                                        currentMove.durationSeconds ?? 0,
+                                  ) ??
+                                  0,
+                            ),
+                          ],
+                        ] else
                           _AdjustableRepDisplay(
                             move: currentMove,
                             currentReps: _currentReps,
@@ -276,6 +292,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   }
 
   Future<void> _onTimerComplete() async {
+    _stopMetronome();
     await _playAudioCue();
 
     final WorkoutState state = ref.read(activeWorkoutControllerProvider);
@@ -308,6 +325,14 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     await SystemSound.play(SystemSoundType.alert);
   }
 
+  Future<void> _playMetronomeTick() async {
+    final bool audioCuesEnabled = ref.read(audioCuesEnabledProvider);
+    if (!audioCuesEnabled) {
+      return;
+    }
+    await SystemSound.play(SystemSoundType.click);
+  }
+
   Future<void> _completeCurrentMove() {
     return _runGuarded(() async {
       final ActiveWorkoutController controller =
@@ -319,17 +344,21 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       if (currentMove == null) {
         return;
       }
-      if (currentMove.type == MoveType.reps &&
-          currentSet != null &&
-          workout != null) {
+      final int? metronomeReps = metronomeRepsForElapsedTime(
+        move: currentMove,
+        elapsedSeconds: _elapsedSecondsForMove(currentMove),
+      );
+      final int? repsToSave =
+          currentMove.type == MoveType.reps ? _currentReps : metronomeReps;
+      if (repsToSave != null && currentSet != null && workout != null) {
         await ref.read(repHistoryServiceProvider).saveReps(
               workoutId: workout.workoutId,
               setId: currentSet.setId,
               loopIndex: state.loopIndex,
               exerciseId: currentMove.exerciseId,
-              reps: _currentReps,
+              reps: repsToSave,
             );
-        _lastRepsForCurrentMove = _currentReps;
+        _lastRepsForCurrentMove = repsToSave;
       }
       controller.completeMove();
     });
@@ -389,6 +418,8 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     if (shouldResetTimer) {
       nextTimer = _phaseStartSeconds(phase: next.phase, move: move, set: set);
     }
+
+    _syncMetronomeWithState(next, move: move);
 
     if (!moveChanged && nextTimer == null) {
       return;
@@ -462,6 +493,69 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       return set.restBetweenLoopsSeconds;
     }
     return _timerSeconds;
+  }
+
+  int _elapsedSecondsForMove(Move move) {
+    final int durationSeconds = move.durationSeconds ?? 0;
+    if (move.type != MoveType.duration || durationSeconds <= 0) {
+      return 0;
+    }
+    return (durationSeconds - _timerSeconds).clamp(0, durationSeconds);
+  }
+
+  void _syncMetronomeWithState(WorkoutState state, {required Move move}) {
+    final WorkoutPhase displayPhase = _displayPhase(state);
+    final int? bpm = move.metronomeSpeed;
+    final bool shouldPlay = state.phase != WorkoutPhase.paused &&
+        displayPhase == WorkoutPhase.move &&
+        move.type == MoveType.duration &&
+        bpm != null &&
+        bpm > 0;
+
+    if (!shouldPlay) {
+      _stopMetronome();
+      return;
+    }
+
+    final String metronomeKey =
+        '${state.setIndex}:${state.loopIndex}:${state.moveIndex}:${move.moveId}:$bpm';
+    if (_activeMetronomeKey == metronomeKey && _metronomeTimer != null) {
+      return;
+    }
+
+    _stopMetronome();
+    _activeMetronomeKey = metronomeKey;
+    unawaited(_playMetronomeTick());
+    _metronomeTimer = Timer.periodic(
+      Duration(milliseconds: (60000 / bpm).round()),
+      (_) {
+        if (!mounted) {
+          _stopMetronome();
+          return;
+        }
+
+        final WorkoutState currentState =
+            ref.read(activeWorkoutControllerProvider);
+        final Move? currentMove =
+            ref.read(activeWorkoutControllerProvider.notifier).currentMove;
+        if (currentMove == null ||
+            currentState.phase == WorkoutPhase.paused ||
+            _displayPhase(currentState) != WorkoutPhase.move ||
+            currentMove.moveId != move.moveId ||
+            currentMove.metronomeSpeed != bpm) {
+          _stopMetronome();
+          return;
+        }
+
+        unawaited(_playMetronomeTick());
+      },
+    );
+  }
+
+  void _stopMetronome() {
+    _metronomeTimer?.cancel();
+    _metronomeTimer = null;
+    _activeMetronomeKey = null;
   }
 
   WorkoutPhase _displayPhase(WorkoutState state) {
@@ -551,6 +645,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       return;
     }
     _isExiting = true;
+    _stopMetronome();
 
     final ActiveWorkoutController controller =
         ref.read(activeWorkoutControllerProvider.notifier);
@@ -679,6 +774,25 @@ class _AdjustableRepDisplay extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+class _MetronomeSummary extends StatelessWidget {
+  const _MetronomeSummary({
+    required this.bpm,
+    required this.estimatedReps,
+  });
+
+  final int bpm;
+  final int estimatedReps;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      '$bpm BPM - $estimatedReps reps',
+      style: const TextStyle(color: Colors.grey, fontSize: 16),
+      textAlign: TextAlign.center,
     );
   }
 }

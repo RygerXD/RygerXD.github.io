@@ -367,7 +367,7 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
                                 subtitle: Text(
                                   move.type == MoveType.reps
                                       ? '${move.repCount ?? 0} reps'
-                                      : '${move.durationSeconds ?? 0} seconds',
+                                      : _durationMoveSummary(move),
                                 ),
                                 trailing: IconButton(
                                   icon: const Icon(Icons.close),
@@ -407,5 +407,13 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
         ),
       ),
     );
+  }
+
+  String _durationMoveSummary(Move move) {
+    final int? bpm = move.metronomeSpeed;
+    if (bpm == null) {
+      return '${move.durationSeconds ?? 0} seconds';
+    }
+    return '${move.durationSeconds ?? 0} seconds - $bpm BPM';
   }
 }

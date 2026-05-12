@@ -98,7 +98,8 @@ class WorkoutPlanParser {
       throw const WorkoutPlanParseException(
         message: 'Plan JSON has invalid data types.',
         issues: <PlanValidationIssue>[
-          PlanValidationIssue(path: r'$', message: 'Unexpected JSON type mismatch.'),
+          PlanValidationIssue(
+              path: r'$', message: 'Unexpected JSON type mismatch.'),
         ],
       );
     }
@@ -136,7 +137,8 @@ class WorkoutPlanParser {
 
   void _validateDomain(WorkoutPlan plan) {
     final List<PlanValidationIssue> issues = <PlanValidationIssue>[];
-    final Set<String> exerciseIds = plan.exercises.map((Exercise e) => e.exerciseId).toSet();
+    final Set<String> exerciseIds =
+        plan.exercises.map((Exercise e) => e.exerciseId).toSet();
 
     if (plan.workouts.isEmpty) {
       issues.add(const PlanValidationIssue(
@@ -151,7 +153,9 @@ class WorkoutPlanParser {
       ));
     }
 
-    for (int workoutIndex = 0; workoutIndex < plan.workouts.length; workoutIndex++) {
+    for (int workoutIndex = 0;
+        workoutIndex < plan.workouts.length;
+        workoutIndex++) {
       final Workout workout = plan.workouts[workoutIndex];
       if (workout.sets.isEmpty) {
         issues.add(PlanValidationIssue(
@@ -177,22 +181,43 @@ class WorkoutPlanParser {
           final Move move = set.moves[moveIndex];
           if (!exerciseIds.contains(move.exerciseId)) {
             issues.add(PlanValidationIssue(
-              path: '\$.workouts[$workoutIndex].sets[$setIndex].moves[$moveIndex].exerciseId',
+              path:
+                  '\$.workouts[$workoutIndex].sets[$setIndex].moves[$moveIndex].exerciseId',
               message: 'exerciseId does not exist in plan.exercises.',
             ));
           }
-          if (move.type == MoveType.reps && (move.repCount == null || move.repCount! < 1)) {
+          if (move.type == MoveType.reps &&
+              (move.repCount == null || move.repCount! < 1)) {
             issues.add(PlanValidationIssue(
-              path: '\$.workouts[$workoutIndex].sets[$setIndex].moves[$moveIndex].repCount',
+              path:
+                  '\$.workouts[$workoutIndex].sets[$setIndex].moves[$moveIndex].repCount',
               message: 'rep-based move requires repCount >= 1.',
             ));
           }
           if (move.type == MoveType.duration &&
               (move.durationSeconds == null || move.durationSeconds! < 1)) {
             issues.add(PlanValidationIssue(
-              path: '\$.workouts[$workoutIndex].sets[$setIndex].moves[$moveIndex].durationSeconds',
+              path:
+                  '\$.workouts[$workoutIndex].sets[$setIndex].moves[$moveIndex].durationSeconds',
               message: 'time-based move requires durationSeconds >= 1.',
             ));
+          }
+          if (move.metronomeSpeed != null) {
+            if (move.type != MoveType.duration) {
+              issues.add(PlanValidationIssue(
+                path:
+                    '\$.workouts[$workoutIndex].sets[$setIndex].moves[$moveIndex].metronomeSpeed',
+                message:
+                    'metronomeSpeed is only supported for time-based moves.',
+              ));
+            } else if (move.metronomeSpeed! < 20 ||
+                move.metronomeSpeed! > 300) {
+              issues.add(PlanValidationIssue(
+                path:
+                    '\$.workouts[$workoutIndex].sets[$setIndex].moves[$moveIndex].metronomeSpeed',
+                message: 'metronomeSpeed must be between 20 and 300 BPM.',
+              ));
+            }
           }
         }
       }

@@ -28,7 +28,8 @@
                             "moveId": "demo-move-2",
                             "exerciseId": "demo-ex-2",
                             "type": "duration",
-                            "durationSeconds": 45
+                            "durationSeconds": 45,
+                            "metronomeSpeed": 60
                         }
                     ]
                 }
