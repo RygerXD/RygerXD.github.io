@@ -24,6 +24,8 @@ void main() {
       expect(settings.themePreference, AppThemePreference.system);
       expect(settings.unitSystem, AppUnitSystem.metric);
       expect(settings.audioCuesEnabled, isTrue);
+      expect(settings.metronomeClickSound, MetronomeClickSound.classic);
+      expect(settings.metronomeVolume, 0.8);
       expect(container.read(appThemeModeProvider), ThemeMode.system);
     });
 
@@ -37,10 +39,13 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      final AppSettingsController controller = container.read(appSettingsProvider.notifier);
+      final AppSettingsController controller =
+          container.read(appSettingsProvider.notifier);
       await controller.setThemePreference(AppThemePreference.dark);
       await controller.setUnitSystem(AppUnitSystem.imperial);
       await controller.setAudioCuesEnabled(false);
+      await controller.setMetronomeClickSound(MetronomeClickSound.bell);
+      await controller.setMetronomeVolume(0.35);
 
       final ProviderContainer reloadedContainer = ProviderContainer(
         overrides: <Override>[
@@ -49,11 +54,31 @@ void main() {
       );
       addTearDown(reloadedContainer.dispose);
 
-      final AppSettings reloadedSettings = reloadedContainer.read(appSettingsProvider);
+      final AppSettings reloadedSettings =
+          reloadedContainer.read(appSettingsProvider);
       expect(reloadedSettings.themePreference, AppThemePreference.dark);
       expect(reloadedSettings.unitSystem, AppUnitSystem.imperial);
       expect(reloadedSettings.audioCuesEnabled, isFalse);
+      expect(reloadedSettings.metronomeClickSound, MetronomeClickSound.bell);
+      expect(reloadedSettings.metronomeVolume, 0.35);
       expect(reloadedContainer.read(appThemeModeProvider), ThemeMode.dark);
+    });
+
+    test('clamps saved metronome volume', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final ProviderContainer container = ProviderContainer(
+        overrides: <Override>[
+          sharedPreferencesProvider.overrideWithValue(prefs),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final AppSettingsController controller =
+          container.read(appSettingsProvider.notifier);
+      await controller.setMetronomeVolume(1.5);
+
+      expect(container.read(appSettingsProvider).metronomeVolume, 1);
     });
   });
 }

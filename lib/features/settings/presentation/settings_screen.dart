@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
+import 'package:workout_app_rewrite/features/active_workout/application/metronome_audio.dart';
 import 'package:workout_app_rewrite/features/settings/application/app_settings_controller.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -9,7 +12,9 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final AppSettings settings = ref.watch(appSettingsProvider);
-    final AppSettingsController controller = ref.read(appSettingsProvider.notifier);
+    final AppSettingsController controller =
+        ref.read(appSettingsProvider.notifier);
+    final int metronomeVolumePercent = (settings.metronomeVolume * 100).round();
 
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -71,6 +76,64 @@ class SettingsScreen extends ConsumerWidget {
           value: settings.audioCuesEnabled,
           onChanged: controller.setAudioCuesEnabled,
         ),
+        const SizedBox(height: AppSpacing.md),
+        ListTile(
+          title: const Text('Metronome click'),
+          subtitle: Text(_metronomeClickLabel(settings.metronomeClickSound)),
+          trailing: FilledButton.icon(
+            onPressed: () {
+              unawaited(
+                MetronomeAudio.playClick(
+                  sound: settings.metronomeClickSound,
+                  volume: settings.metronomeVolume,
+                ),
+              );
+            },
+            icon: const Icon(Icons.volume_up),
+            label: const Text('Test'),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        DropdownButtonFormField<MetronomeClickSound>(
+          initialValue: settings.metronomeClickSound,
+          decoration: const InputDecoration(
+            labelText: 'Click sound',
+            border: OutlineInputBorder(),
+          ),
+          items: MetronomeClickSound.values
+              .map(
+                (MetronomeClickSound sound) =>
+                    DropdownMenuItem<MetronomeClickSound>(
+                  value: sound,
+                  child: Text(_metronomeClickLabel(sound)),
+                ),
+              )
+              .toList(growable: false),
+          onChanged: (MetronomeClickSound? value) {
+            if (value != null) {
+              controller.setMetronomeClickSound(value);
+            }
+          },
+        ),
+        const SizedBox(height: AppSpacing.md),
+        ListTile(
+          title: const Text('Metronome volume'),
+          subtitle: Slider(
+            value: settings.metronomeVolume,
+            min: 0,
+            max: 1,
+            divisions: 20,
+            label: '$metronomeVolumePercent%',
+            onChanged: controller.setMetronomeVolume,
+          ),
+          trailing: SizedBox(
+            width: 48,
+            child: Text(
+              '$metronomeVolumePercent%',
+              textAlign: TextAlign.end,
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -92,6 +155,19 @@ class SettingsScreen extends ConsumerWidget {
         return 'Metric (kg)';
       case AppUnitSystem.imperial:
         return 'Imperial (lb)';
+    }
+  }
+
+  static String _metronomeClickLabel(MetronomeClickSound sound) {
+    switch (sound) {
+      case MetronomeClickSound.classic:
+        return 'Classic';
+      case MetronomeClickSound.sharp:
+        return 'Sharp';
+      case MetronomeClickSound.low:
+        return 'Low';
+      case MetronomeClickSound.bell:
+        return 'Bell';
     }
   }
 }

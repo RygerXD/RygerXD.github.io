@@ -327,11 +327,14 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   }
 
   Future<void> _playMetronomeTick() async {
-    final bool audioCuesEnabled = ref.read(audioCuesEnabledProvider);
-    if (!audioCuesEnabled) {
+    final AppSettings settings = ref.read(appSettingsProvider);
+    if (!settings.audioCuesEnabled) {
       return;
     }
-    await MetronomeAudio.playClick();
+    await MetronomeAudio.playClick(
+      sound: settings.metronomeClickSound,
+      volume: settings.metronomeVolume,
+    );
   }
 
   Future<void> _completeCurrentMove() {
