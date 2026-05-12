@@ -104,9 +104,11 @@ class WorkoutSet {
     required this.loopCount,
     required this.restBetweenLoopsSeconds,
     required this.moves,
+    this.name,
   });
 
   final String setId;
+  final String? name;
   final int loopCount;
   final int restBetweenLoopsSeconds;
   final List<Move> moves;
@@ -114,6 +116,7 @@ class WorkoutSet {
   factory WorkoutSet.fromJson(Map<String, dynamic> json) {
     return WorkoutSet(
       setId: json['setId'] as String,
+      name: json['name'] as String?,
       loopCount: json['loopCount'] as int,
       restBetweenLoopsSeconds: json['restBetweenLoopsSeconds'] as int,
       moves: (json['moves'] as List<dynamic>)
@@ -126,6 +129,7 @@ class WorkoutSet {
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'setId': setId,
+      'name': name,
       'loopCount': loopCount,
       'restBetweenLoopsSeconds': restBetweenLoopsSeconds,
       'moves': moves.map((Move move) => move.toJson()).toList(growable: false),
@@ -159,7 +163,8 @@ class Workout {
     return <String, dynamic>{
       'workoutId': workoutId,
       'title': title,
-      'sets': sets.map((WorkoutSet set) => set.toJson()).toList(growable: false),
+      'sets':
+          sets.map((WorkoutSet set) => set.toJson()).toList(growable: false),
     };
   }
 }
@@ -218,8 +223,12 @@ class WorkoutPlan {
       'author': author,
       'imageUrl': imageUrl,
       'tags': tags,
-      'workouts': workouts.map((Workout workout) => workout.toJson()).toList(growable: false),
-      'exercises': exercises.map((Exercise exercise) => exercise.toJson()).toList(growable: false),
+      'workouts': workouts
+          .map((Workout workout) => workout.toJson())
+          .toList(growable: false),
+      'exercises': exercises
+          .map((Exercise exercise) => exercise.toJson())
+          .toList(growable: false),
     };
   }
 }

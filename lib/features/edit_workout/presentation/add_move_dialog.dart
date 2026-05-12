@@ -7,11 +7,15 @@ class AddMoveDialog extends StatefulWidget {
   const AddMoveDialog({
     super.key,
     required this.onAdd,
+    this.initialMove,
+    this.initialExercise,
   });
 
-  /// Called when a user adds a move. Passes back the new Move, and
-  /// optionally a new Exercise if one was created (which needs to be saved to the Plan).
+  /// Called when a user adds or edits a move. Passes back the Move and its
+  /// Exercise, which needs to be saved to the plan.
   final void Function(Move move, Exercise newExercise) onAdd;
+  final Move? initialMove;
+  final Exercise? initialExercise;
 
   @override
   State<AddMoveDialog> createState() => _AddMoveDialogState();
@@ -30,6 +34,26 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
       TextEditingController(text: '60');
   bool _isRepBased = true;
   bool _useMetronome = false;
+  bool get _isEditing => widget.initialMove != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final Move? initialMove = widget.initialMove;
+    final Exercise? initialExercise = widget.initialExercise;
+    if (initialExercise != null) {
+      _nameController.text = initialExercise.name;
+      _mediaUrlController.text = initialExercise.imageUrl ?? '';
+    }
+    if (initialMove != null) {
+      _isRepBased = initialMove.type == MoveType.reps;
+      _useMetronome = initialMove.metronomeSpeed != null;
+      _prepController.text = initialMove.prepTimeSeconds.toString();
+      _repsController.text = (initialMove.repCount ?? 10).toString();
+      _durationController.text = (initialMove.durationSeconds ?? 30).toString();
+      _metronomeController.text = (initialMove.metronomeSpeed ?? 60).toString();
+    }
+  }
 
   @override
   void dispose() {
@@ -53,22 +77,26 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
       return;
     }
 
-    final String exerciseId = const Uuid().v4();
+    final String exerciseId =
+        widget.initialExercise?.exerciseId ?? const Uuid().v4();
     final Exercise exercise = Exercise(
       exerciseId: exerciseId,
       name: name,
       imageUrl: _optionalText(_mediaUrlController.text),
+      description: widget.initialExercise?.description,
     );
 
     final Move move = Move(
-      moveId: const Uuid().v4(),
+      moveId: widget.initialMove?.moveId ?? const Uuid().v4(),
       exerciseId: exerciseId,
       type: _isRepBased ? MoveType.reps : MoveType.duration,
       prepTimeSeconds: int.tryParse(_prepController.text) ?? 5,
       repCount: _isRepBased ? (int.tryParse(_repsController.text) ?? 10) : null,
       durationSeconds:
           _isRepBased ? null : (int.tryParse(_durationController.text) ?? 30),
-      finishTimeSeconds: 0,
+      finishTimeSeconds: widget.initialMove?.finishTimeSeconds ?? 0,
+      targetWeight: widget.initialMove?.targetWeight,
+      targetWeightUnit: widget.initialMove?.targetWeightUnit,
       metronomeSpeed: metronomeSpeed,
     );
 
@@ -104,7 +132,7 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
         horizontal: screenSize.width * 0.05,
         vertical: AppSpacing.xl,
       ),
-      title: const Text('Add New Move'),
+      title: Text(_isEditing ? 'Edit Move' : 'Add New Move'),
       content: SizedBox(
         width: contentWidth,
         child: SingleChildScrollView(
@@ -217,7 +245,7 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
         ),
         FilledButton(
           onPressed: _submit,
-          child: const Text('Add'),
+          child: Text(_isEditing ? 'Save' : 'Add'),
         ),
       ],
     );

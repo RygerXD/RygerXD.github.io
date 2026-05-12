@@ -78,6 +78,8 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     final WorkoutPhase displayPhase = _displayPhase(state);
     final Exercise? currentExercise = _resolveMoveExercise(currentMove, plan);
     final String moveLabel = currentExercise?.name ?? currentMove.exerciseId;
+    final String setLabel =
+        _optionalText(currentSet.name) ?? 'Set ${state.setIndex + 1}';
     final String? moveMediaUrl = _optionalText(currentExercise?.imageUrl);
     final Color statusColor = _statusColor(displayPhase);
     final String statusLabel = _statusLabel(displayPhase);
@@ -120,6 +122,10 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                         Text(
                           workout.title,
                           style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          setLabel,
+                          style: Theme.of(context).textTheme.bodySmall,
                         ),
                         Text(
                           '${state.moveIndex + 1} / ${currentSet.moves.length} - Loop ${state.loopIndex + 1}/${currentSet.loopCount}',

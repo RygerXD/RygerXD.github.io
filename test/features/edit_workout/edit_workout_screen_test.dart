@@ -170,4 +170,111 @@ void main() {
     expect(updatedPlan?.exercises.single.imageUrl,
         'https://example.com/plank.gif');
   });
+
+  testWidgets('edits added moves', (WidgetTester tester) async {
+    final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
+    await repository.savePlan(
+      const WorkoutPlan(
+        schemaVersion: 1,
+        planId: 'plan-1',
+        name: 'Plan 1',
+        workouts: <Workout>[],
+        exercises: <Exercise>[],
+      ),
+    );
+
+    final ProviderContainer container = ProviderContainer(
+      overrides: <Override>[
+        workoutRepositoryProvider.overrideWithValue(repository),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container.read(loadedWorkoutPlansNotifierProvider.future);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(
+          home: EditWorkoutScreen(planId: 'plan-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField).at(0), 'Workout A');
+    await tester.tap(find.text('New Move'));
+    await tester.pumpAndSettle();
+
+    Finder dialogFields = find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.byType(TextField),
+    );
+    await tester.enterText(dialogFields.at(0), 'Push Up');
+    await tester.tap(find.widgetWithText(FilledButton, 'Add'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.edit_outlined));
+    await tester.pumpAndSettle();
+
+    dialogFields = find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.byType(TextField),
+    );
+    await tester.enterText(dialogFields.at(0), 'Incline Push Up');
+    await tester.enterText(dialogFields.last, '15');
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Incline Push Up'), findsOneWidget);
+    expect(find.text('15 reps'), findsOneWidget);
+
+    await tester.tap(find.text('SAVE'));
+    await tester.pumpAndSettle();
+
+    final WorkoutPlan? updatedPlan = await repository.getPlanById('plan-1');
+    expect(updatedPlan?.exercises.single.name, 'Incline Push Up');
+    expect(updatedPlan?.workouts.single.sets.single.moves.single.repCount, 15);
+  });
+
+  testWidgets('saves set names and loop counts', (WidgetTester tester) async {
+    final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
+    await repository.savePlan(
+      const WorkoutPlan(
+        schemaVersion: 1,
+        planId: 'plan-1',
+        name: 'Plan 1',
+        workouts: <Workout>[],
+        exercises: <Exercise>[],
+      ),
+    );
+
+    final ProviderContainer container = ProviderContainer(
+      overrides: <Override>[
+        workoutRepositoryProvider.overrideWithValue(repository),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container.read(loadedWorkoutPlansNotifierProvider.future);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(
+          home: EditWorkoutScreen(planId: 'plan-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField).at(0), 'Workout A');
+    await tester.enterText(find.byType(TextField).at(1), 'Warmup');
+    await tester.enterText(find.byType(TextField).at(2), '3');
+    await tester.tap(find.text('SAVE'));
+    await tester.pumpAndSettle();
+
+    final WorkoutPlan? updatedPlan = await repository.getPlanById('plan-1');
+    final WorkoutSet savedSet = updatedPlan!.workouts.single.sets.single;
+    expect(savedSet.name, 'Warmup');
+    expect(savedSet.loopCount, 3);
+  });
 }

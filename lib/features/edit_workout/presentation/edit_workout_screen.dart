@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
 import 'package:workout_app_rewrite/features/edit_workout/presentation/add_move_dialog.dart';
@@ -77,6 +76,7 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
       _sets.add(
         WorkoutSet(
           setId: const Uuid().v4(),
+          name: 'Set ${_sets.length + 1}',
           loopCount: 1,
           restBetweenLoopsSeconds: 60,
           moves: <Move>[],
@@ -98,6 +98,7 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
         ..removeAt(moveIndex);
       _sets[setIndex] = WorkoutSet(
         setId: originalSet.setId,
+        name: originalSet.name,
         loopCount: originalSet.loopCount,
         restBetweenLoopsSeconds: originalSet.restBetweenLoopsSeconds,
         moves: updatedMoves,
@@ -110,13 +111,43 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
       context: context,
       builder: (BuildContext context) => AddMoveDialog(
         onAdd: (Move move, Exercise newExercise) {
-          _addNewExerciseToPlan(newExercise);
+          _upsertExerciseInPlan(newExercise);
           setState(() {
             final WorkoutSet originalSet = _sets[setIndex];
             final List<Move> updatedMoves = List<Move>.from(originalSet.moves)
               ..add(move);
             _sets[setIndex] = WorkoutSet(
               setId: originalSet.setId,
+              name: originalSet.name,
+              loopCount: originalSet.loopCount,
+              restBetweenLoopsSeconds: originalSet.restBetweenLoopsSeconds,
+              moves: updatedMoves,
+            );
+          });
+        },
+      ),
+    );
+  }
+
+  void _showEditMoveDialog(int setIndex, int moveIndex) {
+    final Move move = _sets[setIndex].moves[moveIndex];
+    final Exercise initialExercise = _getExercise(move.exerciseId) ??
+        Exercise(exerciseId: move.exerciseId, name: 'Unknown Exercise');
+
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext context) => AddMoveDialog(
+        initialMove: move,
+        initialExercise: initialExercise,
+        onAdd: (Move updatedMove, Exercise updatedExercise) {
+          _upsertExerciseInPlan(updatedExercise);
+          setState(() {
+            final WorkoutSet originalSet = _sets[setIndex];
+            final List<Move> updatedMoves = List<Move>.from(originalSet.moves);
+            updatedMoves[moveIndex] = updatedMove;
+            _sets[setIndex] = WorkoutSet(
+              setId: originalSet.setId,
+              name: originalSet.name,
               loopCount: originalSet.loopCount,
               restBetweenLoopsSeconds: originalSet.restBetweenLoopsSeconds,
               moves: updatedMoves,
@@ -137,13 +168,14 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
     );
 
     if (selectedMove != null) {
-      _addNewExerciseToPlan(selectedMove.exercise);
+      _upsertExerciseInPlan(selectedMove.exercise);
       setState(() {
         final WorkoutSet originalSet = _sets[setIndex];
         final List<Move> updatedMoves = List<Move>.from(originalSet.moves)
           ..add(selectedMove.move);
         _sets[setIndex] = WorkoutSet(
           setId: originalSet.setId,
+          name: originalSet.name,
           loopCount: originalSet.loopCount,
           restBetweenLoopsSeconds: originalSet.restBetweenLoopsSeconds,
           moves: updatedMoves,
@@ -152,7 +184,7 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
     }
   }
 
-  void _addNewExerciseToPlan(Exercise exercise) {
+  void _upsertExerciseInPlan(Exercise exercise) {
     _exercisesById[exercise.exerciseId] = exercise;
 
     final List<WorkoutPlan> plans =
@@ -160,27 +192,31 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
     final WorkoutPlan? plan =
         plans.where((WorkoutPlan p) => p.planId == widget.planId).firstOrNull;
     if (plan != null) {
-      final bool exists = plan.exercises
-          .any((Exercise e) => e.exerciseId == exercise.exerciseId);
-      if (!exists) {
-        final List<Exercise> updatedExercises =
-            List<Exercise>.from(plan.exercises)..add(exercise);
-        final WorkoutPlan updatedPlan = WorkoutPlan(
-          schemaVersion: plan.schemaVersion,
-          planId: plan.planId,
-          name: plan.name,
-          description: plan.description,
-          author: plan.author,
-          imageUrl: plan.imageUrl,
-          tags: plan.tags,
-          exercises: updatedExercises,
-          workouts: plan.workouts,
-        );
-        // We load it silently into memory so the UI can instantly find it
-        ref
-            .read(loadedWorkoutPlansNotifierProvider.notifier)
-            .loadPlan(updatedPlan);
+      final List<Exercise> updatedExercises =
+          List<Exercise>.from(plan.exercises);
+      final int existingIndex = updatedExercises.indexWhere(
+        (Exercise e) => e.exerciseId == exercise.exerciseId,
+      );
+      if (existingIndex >= 0) {
+        updatedExercises[existingIndex] = exercise;
+      } else {
+        updatedExercises.add(exercise);
       }
+      final WorkoutPlan updatedPlan = WorkoutPlan(
+        schemaVersion: plan.schemaVersion,
+        planId: plan.planId,
+        name: plan.name,
+        description: plan.description,
+        author: plan.author,
+        imageUrl: plan.imageUrl,
+        tags: plan.tags,
+        exercises: updatedExercises,
+        workouts: plan.workouts,
+      );
+      // We load it silently into memory so the UI can instantly find it.
+      ref
+          .read(loadedWorkoutPlansNotifierProvider.notifier)
+          .loadPlan(updatedPlan);
     }
   }
 
@@ -191,10 +227,46 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
     );
   }
 
+  void _updateSetName(int setIndex, String value) {
+    final WorkoutSet originalSet = _sets[setIndex];
+    final String trimmed = value.trim();
+    setState(() {
+      _sets[setIndex] = WorkoutSet(
+        setId: originalSet.setId,
+        name: trimmed.isEmpty ? null : trimmed,
+        loopCount: originalSet.loopCount,
+        restBetweenLoopsSeconds: originalSet.restBetweenLoopsSeconds,
+        moves: originalSet.moves,
+      );
+    });
+  }
+
+  void _updateSetLoopCount(int setIndex, String value) {
+    final int? loopCount = int.tryParse(value);
+    if (loopCount == null || loopCount < 1) {
+      return;
+    }
+
+    final WorkoutSet originalSet = _sets[setIndex];
+    setState(() {
+      _sets[setIndex] = WorkoutSet(
+        setId: originalSet.setId,
+        name: originalSet.name,
+        loopCount: loopCount,
+        restBetweenLoopsSeconds: originalSet.restBetweenLoopsSeconds,
+        moves: originalSet.moves,
+      );
+    });
+  }
+
   String _getExerciseName(String exerciseId) {
+    return _getExercise(exerciseId)?.name ?? 'Unknown Exercise';
+  }
+
+  Exercise? _getExercise(String exerciseId) {
     final Exercise? cachedExercise = _exercisesById[exerciseId];
     if (cachedExercise != null) {
-      return cachedExercise.name;
+      return cachedExercise;
     }
 
     final List<WorkoutPlan> plans =
@@ -207,10 +279,10 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
           .where((Exercise e) => e.exerciseId == exerciseId)
           .firstOrNull;
       if (exercise != null) {
-        return exercise.name;
+        return exercise;
       }
     }
-    return 'Unknown Exercise';
+    return null;
   }
 
   Future<void> _saveWorkout() async {
@@ -259,7 +331,7 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
       author: plan.author,
       imageUrl: plan.imageUrl,
       tags: plan.tags,
-      exercises: _exercisesById.values.toList(growable: false),
+      exercises: _mergedExercises(plan),
       workouts: updatedWorkouts,
     );
 
@@ -268,8 +340,17 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
         .loadPlan(updatedPlan);
 
     if (mounted) {
-      context.pop();
+      await Navigator.of(context).maybePop();
     }
+  }
+
+  List<Exercise> _mergedExercises(WorkoutPlan plan) {
+    final Map<String, Exercise> exercisesById = <String, Exercise>{
+      for (final Exercise exercise in plan.exercises)
+        exercise.exerciseId: exercise,
+      ..._exercisesById,
+    };
+    return exercisesById.values.toList(growable: false);
   }
 
   @override
@@ -334,10 +415,37 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: <Widget>[
-                            Text('Set ${setIndex + 1}',
-                                style: Theme.of(context).textTheme.titleMedium),
+                            Expanded(
+                              flex: 3,
+                              child: TextFormField(
+                                key: ValueKey<String>('set-name-${set.setId}'),
+                                initialValue: set.name ?? '',
+                                decoration: InputDecoration(
+                                  labelText: 'Set Name',
+                                  hintText: 'Set ${setIndex + 1}',
+                                  border: const OutlineInputBorder(),
+                                ),
+                                textCapitalization: TextCapitalization.words,
+                                onChanged: (String value) =>
+                                    _updateSetName(setIndex, value),
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.sm),
+                            Expanded(
+                              child: TextFormField(
+                                key: ValueKey<String>('set-loops-${set.setId}'),
+                                initialValue: set.loopCount.toString(),
+                                decoration: const InputDecoration(
+                                  labelText: 'Loops',
+                                  border: OutlineInputBorder(),
+                                ),
+                                keyboardType: TextInputType.number,
+                                onChanged: (String value) =>
+                                    _updateSetLoopCount(setIndex, value),
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.sm),
                             IconButton(
                               icon: const Icon(Icons.delete_outline),
                               onPressed: () => _removeSet(setIndex),
@@ -369,10 +477,24 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
                                       ? '${move.repCount ?? 0} reps'
                                       : _durationMoveSummary(move),
                                 ),
-                                trailing: IconButton(
-                                  icon: const Icon(Icons.close),
-                                  onPressed: () =>
-                                      _removeMove(setIndex, moveIndex),
+                                onTap: () =>
+                                    _showEditMoveDialog(setIndex, moveIndex),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: <Widget>[
+                                    IconButton(
+                                      tooltip: 'Edit move',
+                                      icon: const Icon(Icons.edit_outlined),
+                                      onPressed: () => _showEditMoveDialog(
+                                          setIndex, moveIndex),
+                                    ),
+                                    IconButton(
+                                      tooltip: 'Remove move',
+                                      icon: const Icon(Icons.close),
+                                      onPressed: () =>
+                                          _removeMove(setIndex, moveIndex),
+                                    ),
+                                  ],
                                 ),
                               );
                             },

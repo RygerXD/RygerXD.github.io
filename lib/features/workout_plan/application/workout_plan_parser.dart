@@ -165,6 +165,12 @@ class WorkoutPlanParser {
       }
       for (int setIndex = 0; setIndex < workout.sets.length; setIndex++) {
         final WorkoutSet set = workout.sets[setIndex];
+        if (set.name != null && set.name!.trim().isEmpty) {
+          issues.add(PlanValidationIssue(
+            path: '\$.workouts[$workoutIndex].sets[$setIndex].name',
+            message: 'set name must be non-empty when provided.',
+          ));
+        }
         if (set.loopCount < 1) {
           issues.add(PlanValidationIssue(
             path: '\$.workouts[$workoutIndex].sets[$setIndex].loopCount',
