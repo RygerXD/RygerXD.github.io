@@ -16,13 +16,17 @@ class WorkoutDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final AsyncValue<List<WorkoutPlan>> plansState = ref.watch(loadedWorkoutPlansNotifierProvider);
+    final AsyncValue<List<WorkoutPlan>> plansState =
+        ref.watch(loadedWorkoutPlansNotifierProvider);
 
     return plansState.when(
-      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (Object error, StackTrace stack) => Scaffold(body: Center(child: Text('Error loading plan: $error'))),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (Object error, StackTrace stack) =>
+          Scaffold(body: Center(child: Text('Error loading plan: $error'))),
       data: (List<WorkoutPlan> plans) {
-        final WorkoutPlan? plan = plans.where((p) => p.planId == planId).firstOrNull;
+        final WorkoutPlan? plan =
+            plans.where((p) => p.planId == planId).firstOrNull;
 
         if (plan == null) {
           return const Scaffold(
@@ -46,9 +50,18 @@ class WorkoutDetailScreen extends ConsumerWidget {
             actions: <Widget>[
               IconButton(
                 icon: const Icon(Icons.delete_outline),
-                onPressed: () {
-                  ref.read(loadedWorkoutPlansNotifierProvider.notifier).removePlan(planId);
-                  context.go('/library');
+                onPressed: () async {
+                  final bool shouldDelete =
+                      await _confirmDeleteWorkout(context, plan.name);
+                  if (!shouldDelete || !context.mounted) {
+                    return;
+                  }
+                  await ref
+                      .read(loadedWorkoutPlansNotifierProvider.notifier)
+                      .removePlan(planId);
+                  if (context.mounted) {
+                    context.go('/library');
+                  }
                 },
               ),
             ],
@@ -92,7 +105,8 @@ class WorkoutDetailScreen extends ConsumerWidget {
                             ),
                             IconButton(
                               icon: const Icon(Icons.edit_outlined),
-                              onPressed: () => context.go('/library/detail/$planId/edit-workout?workoutId=${workout.workoutId}'),
+                              onPressed: () => context.go(
+                                  '/library/detail/$planId/edit-workout?workoutId=${workout.workoutId}'),
                             ),
                           ],
                         ),
@@ -101,7 +115,9 @@ class WorkoutDetailScreen extends ConsumerWidget {
                         const SizedBox(height: AppSpacing.lg),
                         FilledButton(
                           onPressed: () {
-                            ref.read(activeWorkoutControllerProvider.notifier).startWithWorkout(workout, planId);
+                            ref
+                                .read(activeWorkoutControllerProvider.notifier)
+                                .startWithWorkout(workout, planId);
                             context.go('/active');
                           },
                           child: const Text('Start Workout'),
@@ -117,4 +133,32 @@ class WorkoutDetailScreen extends ConsumerWidget {
       },
     );
   }
+}
+
+Future<bool> _confirmDeleteWorkout(
+    BuildContext context, String workoutName) async {
+  final bool? shouldDelete = await showDialog<bool>(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Delete Workout?'),
+        content: Text('Are you sure you want to delete "$workoutName"?'),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      );
+    },
+  );
+  return shouldDelete ?? false;
 }
