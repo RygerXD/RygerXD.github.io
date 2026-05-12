@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
+import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
 import 'package:workout_app_rewrite/features/history/presentation/components/analysis_session_item.dart';
 
 class SessionDetailSheet extends StatelessWidget {
@@ -40,12 +41,14 @@ class SessionDetailSheet extends StatelessWidget {
             const SizedBox(height: AppSpacing.xl),
             Text(
               item.workoutName,
-              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+              style: theme.textTheme.titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
               item.planName,
-              style: theme.textTheme.bodyMedium?.copyWith(color: colors.onSurfaceVariant),
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(color: colors.onSurfaceVariant),
             ),
             const SizedBox(height: AppSpacing.lg),
             _DetailRow(
@@ -56,23 +59,26 @@ class SessionDetailSheet extends StatelessWidget {
             _DetailRow(
               icon: Icons.calendar_today_outlined,
               label: 'Date',
-              value: _formatDate(item.startedAt),
+              value: formatDate(
+                item.startedAt,
+                monthStyle: MonthNameStyle.long,
+              ),
             ),
             _DetailRow(
               icon: Icons.access_time_outlined,
               label: 'Started',
-              value: _formatTime(item.startedAt),
+              value: formatTime(item.startedAt),
             ),
             if (item.endedAt != null)
               _DetailRow(
                 icon: Icons.stop_circle_outlined,
                 label: 'Ended',
-                value: _formatTime(item.endedAt!),
+                value: formatTime(item.endedAt!),
               ),
             _DetailRow(
               icon: Icons.timer_outlined,
               label: 'Duration',
-              value: _formatDuration(item.session.durationSeconds),
+              value: formatDuration(item.session.durationSeconds),
             ),
             const SizedBox(height: AppSpacing.lg),
             SizedBox(
@@ -95,48 +101,6 @@ class SessionDetailSheet extends StatelessWidget {
       'abandoned' => 'Abandoned',
       _ => 'In Progress',
     };
-  }
-
-  static String _formatDate(DateTime date) {
-    return '${_monthName(date.month)} ${date.day}, ${date.year}';
-  }
-
-  static String _formatTime(DateTime date) {
-    final int hour = date.hour;
-    final String minute = date.minute.toString().padLeft(2, '0');
-    final String period = hour >= 12 ? 'PM' : 'AM';
-    final int displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
-    return '$displayHour:$minute $period';
-  }
-
-  static String _formatDuration(int seconds) {
-    if (seconds <= 0) {
-      return '-';
-    }
-    final Duration duration = Duration(seconds: seconds);
-    if (duration.inHours == 0) {
-      return '${duration.inMinutes}m ${duration.inSeconds % 60}s';
-    }
-    final int minutesRemainder = duration.inMinutes.remainder(60);
-    return '${duration.inHours}h ${minutesRemainder}m';
-  }
-
-  static String _monthName(int month) {
-    const List<String> names = <String>[
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ];
-    return names[month - 1];
   }
 }
 
@@ -164,14 +128,16 @@ class _DetailRow extends StatelessWidget {
           const SizedBox(width: AppSpacing.sm),
           Text(
             label,
-            style: theme.textTheme.bodyMedium?.copyWith(color: colors.onSurfaceVariant),
+            style: theme.textTheme.bodyMedium
+                ?.copyWith(color: colors.onSurfaceVariant),
           ),
           const Spacer(),
           Flexible(
             child: Text(
               value,
               textAlign: TextAlign.right,
-              style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(fontWeight: FontWeight.w700),
             ),
           ),
         ],

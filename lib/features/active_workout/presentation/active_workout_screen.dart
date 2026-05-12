@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/active_workout_controller.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/metronome_audio.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/metronome_rep_counter.dart';
@@ -28,11 +29,13 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   Timer? _metronomeTimer;
   int _timerSeconds = 0;
   int _currentReps = 0;
+  double _currentWeight = 0;
   bool _isProcessing = false;
   bool _isExiting = false;
   String? _lastMoveKey;
   String? _activeMetronomeKey;
   int? _lastRepsForCurrentMove;
+  double? _lastWeightForCurrentMove;
   final Stopwatch _moveStopwatch = Stopwatch();
 
   @override
@@ -82,8 +85,8 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     final Exercise? currentExercise = _resolveMoveExercise(currentMove, plan);
     final String moveLabel = currentExercise?.name ?? currentMove.exerciseId;
     final String setLabel =
-        _optionalText(currentSet.name) ?? 'Set ${state.setIndex + 1}';
-    final String? moveMediaUrl = _optionalText(currentExercise?.imageUrl);
+        optionalText(currentSet.name) ?? 'Set ${state.setIndex + 1}';
+    final String? moveMediaUrl = optionalText(currentExercise?.imageUrl);
     final Color statusColor = _statusColor(displayPhase);
     final String statusLabel = _statusLabel(displayPhase);
     final bool isPaused = state.phase == WorkoutPhase.paused;
@@ -91,6 +94,8 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     final bool isRest = displayPhase == WorkoutPhase.restBetweenLoops ||
         displayPhase == WorkoutPhase.rest;
     final bool isMove = displayPhase == WorkoutPhase.move;
+    final bool hasTrackedWeight = currentMove.targetWeight != null &&
+        currentMove.targetWeightUnit != null;
 
     return PopScope<Object?>(
       canPop: false,
@@ -201,13 +206,39 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                                   0,
                             ),
                           ],
+                          if (hasTrackedWeight) ...<Widget>[
+                            const SizedBox(height: 16),
+                            _AdjustableWeightDisplay(
+                              move: currentMove,
+                              currentWeight: _currentWeight,
+                              onWeightChanged: (double value) => setState(() =>
+                                  _currentWeight =
+                                      value.clamp(0, 9999).toDouble()),
+                              lastWeight: _lastWeightForCurrentMove,
+                            ),
+                          ],
                         ] else
-                          _AdjustableRepDisplay(
-                            move: currentMove,
-                            currentReps: _currentReps,
-                            onRepsChanged: (int value) =>
-                                setState(() => _currentReps = value),
-                            lastReps: _lastRepsForCurrentMove,
+                          Column(
+                            children: <Widget>[
+                              _AdjustableRepDisplay(
+                                move: currentMove,
+                                currentReps: _currentReps,
+                                onRepsChanged: (int value) =>
+                                    setState(() => _currentReps = value),
+                                lastReps: _lastRepsForCurrentMove,
+                              ),
+                              if (hasTrackedWeight) ...<Widget>[
+                                const SizedBox(height: 18),
+                                _AdjustableWeightDisplay(
+                                  move: currentMove,
+                                  currentWeight: _currentWeight,
+                                  onWeightChanged: (double value) => setState(
+                                      () => _currentWeight =
+                                          value.clamp(0, 9999).toDouble()),
+                                  lastWeight: _lastWeightForCurrentMove,
+                                ),
+                              ],
+                            ],
                           ),
                       ],
                     ],
@@ -374,6 +405,9 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       );
       final int? repsToSave =
           currentMove.type == MoveType.reps ? _currentReps : metronomeReps;
+      final WeightUnit? weightUnit = currentMove.targetWeightUnit;
+      final bool hasTrackedWeight =
+          currentMove.targetWeight != null && weightUnit != null;
       if (repsToSave != null && currentSet != null && workout != null) {
         final int elapsedSeconds = _elapsedSecondsForMove(currentMove);
         await ref.read(repHistoryServiceProvider).saveReps(
@@ -383,6 +417,17 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
               exerciseId: currentMove.exerciseId,
               reps: repsToSave,
             );
+        if (hasTrackedWeight) {
+          await ref.read(repHistoryServiceProvider).saveWeight(
+                workoutId: workout.workoutId,
+                setId: currentSet.setId,
+                loopIndex: state.loopIndex,
+                exerciseId: currentMove.exerciseId,
+                weightUnit: weightUnit.name,
+                weight: _currentWeight,
+              );
+          _lastWeightForCurrentMove = _currentWeight;
+        }
         if (sessionId != null) {
           await ref.read(historyServiceProvider).saveMovePerformance(
                 sessionId: sessionId,
@@ -392,6 +437,8 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                 moveId: currentMove.moveId,
                 exerciseId: currentMove.exerciseId,
                 repCount: repsToSave,
+                actualWeight: hasTrackedWeight ? _currentWeight : null,
+                actualWeightUnit: hasTrackedWeight ? weightUnit.name : null,
                 elapsedSeconds: elapsedSeconds,
                 completedAt: DateTime.now(),
               );
@@ -468,7 +515,9 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       if (moveChanged) {
         _lastMoveKey = moveKey;
         _currentReps = move.repCount ?? 0;
+        _currentWeight = move.targetWeight ?? 0;
         _lastRepsForCurrentMove = null;
+        _lastWeightForCurrentMove = null;
       }
       if (nextTimer != null) {
         _timerSeconds = nextTimer;
@@ -477,6 +526,16 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
 
     if (moveChanged && move.type == MoveType.reps) {
       _loadLastRepsForMove(
+        moveKey: moveKey,
+        state: next,
+        move: move,
+        set: set,
+      );
+    }
+    if (moveChanged &&
+        move.targetWeight != null &&
+        move.targetWeightUnit != null) {
+      _loadLastWeightForMove(
         moveKey: moveKey,
         state: next,
         move: move,
@@ -511,6 +570,38 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     setState(() {
       _lastRepsForCurrentMove = lastReps;
       _currentReps = lastReps ?? (move.repCount ?? 0);
+    });
+  }
+
+  Future<void> _loadLastWeightForMove({
+    required String moveKey,
+    required WorkoutState state,
+    required Move move,
+    required WorkoutSet set,
+  }) async {
+    final Workout? workout =
+        ref.read(activeWorkoutControllerProvider.notifier).workout;
+    final WeightUnit? unit = move.targetWeightUnit;
+    if (workout == null || unit == null) {
+      return;
+    }
+
+    final double? lastWeight =
+        await ref.read(repHistoryServiceProvider).getLastWeight(
+              workoutId: workout.workoutId,
+              setId: set.setId,
+              loopIndex: state.loopIndex,
+              exerciseId: move.exerciseId,
+              weightUnit: unit.name,
+            );
+
+    if (!mounted || _lastMoveKey != moveKey) {
+      return;
+    }
+
+    setState(() {
+      _lastWeightForCurrentMove = lastWeight;
+      _currentWeight = lastWeight ?? (move.targetWeight ?? 0);
     });
   }
 
@@ -647,14 +738,6 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       }
     }
     return null;
-  }
-
-  String? _optionalText(String? value) {
-    final String? trimmed = value?.trim();
-    if (trimmed == null || trimmed.isEmpty) {
-      return null;
-    }
-    return trimmed;
   }
 
   Color _statusColor(WorkoutPhase phase) {
@@ -888,6 +971,90 @@ class _AdjustableRepDisplay extends StatelessWidget {
               icon: Icons.keyboard_double_arrow_right,
               onPressed: () => onRepsChanged(currentReps + 10),
               color: Colors.blue,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _AdjustableWeightDisplay extends StatelessWidget {
+  const _AdjustableWeightDisplay({
+    required this.move,
+    required this.currentWeight,
+    required this.onWeightChanged,
+    this.lastWeight,
+  });
+
+  final Move move;
+  final double currentWeight;
+  final ValueChanged<double> onWeightChanged;
+  final double? lastWeight;
+
+  @override
+  Widget build(BuildContext context) {
+    final String unit = move.targetWeightUnit?.name ?? '';
+
+    return Column(
+      children: <Widget>[
+        const Text(
+          'ACTUAL WEIGHT',
+          style: TextStyle(
+              color: Colors.grey,
+              letterSpacing: 1.2,
+              fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          '${formatWeight(currentWeight)} $unit',
+          style: const TextStyle(
+              fontSize: 42, fontWeight: FontWeight.bold, color: Colors.teal),
+        ),
+        Text(
+          'Recommended: ${formatWeight(move.targetWeight ?? 0)} $unit',
+          style: const TextStyle(color: Colors.grey, fontSize: 16),
+          textAlign: TextAlign.center,
+        ),
+        if (lastWeight != null)
+          Text(
+            'Last: ${formatWeight(lastWeight!)} $unit',
+            style: const TextStyle(color: Colors.orange, fontSize: 16),
+            textAlign: TextAlign.center,
+          ),
+        const SizedBox(height: 12),
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 12,
+          runSpacing: 12,
+          children: <Widget>[
+            _RepButton(
+              label: '-10',
+              icon: Icons.keyboard_double_arrow_left,
+              onPressed: currentWeight >= 10
+                  ? () => onWeightChanged(currentWeight - 10)
+                  : null,
+              color: Colors.teal,
+            ),
+            _RepButton(
+              label: '-5',
+              icon: Icons.remove,
+              onPressed: currentWeight >= 5
+                  ? () => onWeightChanged(currentWeight - 5)
+                  : null,
+              color: Colors.teal,
+            ),
+            _RepButton(
+              label: '+5',
+              icon: Icons.add,
+              onPressed: () => onWeightChanged(currentWeight + 5),
+              color: Colors.teal,
+            ),
+            _RepButton(
+              label: '+10',
+              icon: Icons.keyboard_double_arrow_right,
+              onPressed: () => onWeightChanged(currentWeight + 10),
+              color: Colors.teal,
             ),
           ],
         ),

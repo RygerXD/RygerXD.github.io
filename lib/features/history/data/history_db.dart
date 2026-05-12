@@ -35,6 +35,8 @@ class WorkoutMovePerformances extends Table {
   TextColumn get moveId => text()();
   TextColumn get exerciseId => text()();
   IntColumn get repCount => integer()();
+  RealColumn get actualWeight => real().nullable()();
+  TextColumn get actualWeightUnit => text().nullable()();
   IntColumn get elapsedSeconds => integer()();
   IntColumn get completedAt => integer()();
 
@@ -48,7 +50,7 @@ class HistoryDatabase extends _$HistoryDatabase {
   HistoryDatabase(super.e);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration {
@@ -62,6 +64,12 @@ class HistoryDatabase extends _$HistoryDatabase {
         }
         if (from < 3) {
           await m.createTable(workoutMovePerformances);
+        }
+        if (from < 4) {
+          await m.addColumn(
+              workoutMovePerformances, workoutMovePerformances.actualWeight);
+          await m.addColumn(workoutMovePerformances,
+              workoutMovePerformances.actualWeightUnit);
         }
       },
     );

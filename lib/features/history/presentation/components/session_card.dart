@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
+import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
 import 'package:workout_app_rewrite/features/history/presentation/components/analysis_session_item.dart';
 
 class SessionCard extends StatelessWidget {
@@ -75,7 +76,7 @@ class SessionCard extends StatelessWidget {
                             size: 14, color: colors.onSurfaceVariant),
                         const SizedBox(width: AppSpacing.xs),
                         Text(
-                          _formatTime(item.startedAt),
+                          formatTime(item.startedAt),
                           style: theme.textTheme.bodySmall
                               ?.copyWith(color: colors.onSurfaceVariant),
                         ),
@@ -105,7 +106,7 @@ class SessionCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: <Widget>[
                   Text(
-                    _formatDuration(item.session.durationSeconds),
+                    formatDuration(item.session.durationSeconds),
                     style: theme.textTheme.titleMedium
                         ?.copyWith(fontWeight: FontWeight.w800),
                   ),
@@ -121,26 +122,6 @@ class SessionCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  static String _formatTime(DateTime date) {
-    final int hour = date.hour;
-    final String minute = date.minute.toString().padLeft(2, '0');
-    final String period = hour >= 12 ? 'PM' : 'AM';
-    final int displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
-    return '$displayHour:$minute $period';
-  }
-
-  static String _formatDuration(int seconds) {
-    if (seconds <= 0) {
-      return '-';
-    }
-    final Duration duration = Duration(seconds: seconds);
-    if (duration.inHours == 0) {
-      return '${duration.inMinutes}m ${duration.inSeconds.remainder(60)}s';
-    }
-    final int minutesRemainder = duration.inMinutes.remainder(60);
-    return '${duration.inHours}h ${minutesRemainder}m';
   }
 }
 

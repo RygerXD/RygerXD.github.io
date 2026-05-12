@@ -71,6 +71,8 @@ class HistoryService {
     required String moveId,
     required String exerciseId,
     required int repCount,
+    double? actualWeight,
+    String? actualWeightUnit,
     required int elapsedSeconds,
     required DateTime completedAt,
   }) async {
@@ -84,6 +86,8 @@ class HistoryService {
         moveId: moveId,
         exerciseId: exerciseId,
         repCount: repCount,
+        actualWeight: actualWeight,
+        actualWeightUnit: actualWeightUnit,
         elapsedSeconds: elapsedSeconds,
         completedAt: completedAt.millisecondsSinceEpoch,
       ),

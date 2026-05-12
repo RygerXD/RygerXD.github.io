@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
+import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
 import 'package:workout_app_rewrite/features/history/application/history_providers.dart';
 import 'package:workout_app_rewrite/features/history/data/history_db.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
@@ -99,7 +100,7 @@ class WorkoutProgressScreen extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            '${_formatDate(_dateFromMs(selectedSession.startedAt))} - ${comparableSessions.length} tracked ${comparableSessions.length == 1 ? 'session' : 'sessions'}',
+            '${formatDate(_dateFromMs(selectedSession.startedAt))} - ${comparableSessions.length} tracked ${comparableSessions.length == 1 ? 'session' : 'sessions'}',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -198,6 +199,8 @@ List<_MoveSeries> _buildMoveSeries({
           _MovePoint(
             reps: performance.repCount,
             elapsedSeconds: performance.elapsedSeconds,
+            actualWeight: performance.actualWeight,
+            actualWeightUnit: performance.actualWeightUnit,
             sessionStartedAt: _dateFromMs(session.startedAt),
             isSelected: performance.sessionId == selectedSessionId,
           ),
@@ -277,32 +280,6 @@ DateTime _dateFromMs(int millisecondsSinceEpoch) {
   return DateTime.fromMillisecondsSinceEpoch(millisecondsSinceEpoch);
 }
 
-String _formatDate(DateTime date) {
-  const List<String> months = <String>[
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-  return '${months[date.month - 1]} ${date.day}, ${date.year}';
-}
-
-String _formatDuration(int seconds) {
-  if (seconds < 60) {
-    return '${seconds}s';
-  }
-  final Duration duration = Duration(seconds: seconds);
-  return '${duration.inMinutes}m ${duration.inSeconds.remainder(60)}s';
-}
-
 class _WorkoutContext {
   const _WorkoutContext({
     required this.plan,
@@ -323,6 +300,9 @@ class _MoveSeries {
 
   final String label;
   final List<_MovePoint> points;
+
+  bool get hasWeight =>
+      points.any((_MovePoint point) => point.actualWeight != null);
 
   _MovePoint? get selectedPoint {
     for (final _MovePoint point in points.reversed) {
@@ -350,12 +330,16 @@ class _MovePoint {
   const _MovePoint({
     required this.reps,
     required this.elapsedSeconds,
+    this.actualWeight,
+    this.actualWeightUnit,
     required this.sessionStartedAt,
     required this.isSelected,
   });
 
   final int reps;
   final int elapsedSeconds;
+  final double? actualWeight;
+  final String? actualWeightUnit;
   final DateTime sessionStartedAt;
   final bool isSelected;
 }
@@ -412,15 +396,14 @@ class _MoveProgressCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          Row(
+          Wrap(
+            spacing: AppSpacing.md,
+            runSpacing: AppSpacing.xs,
             children: <Widget>[
-              Icon(Icons.circle, size: 10, color: colors.primary),
-              const SizedBox(width: AppSpacing.xs),
-              Text('Selected workout', style: theme.textTheme.bodySmall),
-              const SizedBox(width: AppSpacing.md),
-              Icon(Icons.circle, size: 10, color: colors.tertiary),
-              const SizedBox(width: AppSpacing.xs),
-              Text('Past workout', style: theme.textTheme.bodySmall),
+              _LegendItem(color: colors.primary, label: 'Time'),
+              _LegendItem(color: colors.tertiary, label: 'Reps'),
+              if (series.hasWeight)
+                _LegendItem(color: colors.secondary, label: 'Weight'),
             ],
           ),
         ],
@@ -447,6 +430,11 @@ class _ProgressSummary extends StatelessWidget {
     final int? secondsDelta = previous == null
         ? null
         : selected.elapsedSeconds - previous!.elapsedSeconds;
+    final double? weightDelta =
+        previous?.actualWeight == null || selected.actualWeight == null
+            ? null
+            : selected.actualWeight! - previous!.actualWeight!;
+    final String? weightUnit = selected.actualWeightUnit;
 
     return Wrap(
       spacing: AppSpacing.md,
@@ -461,13 +449,22 @@ class _ProgressSummary extends StatelessWidget {
         ),
         _MetricPill(
           icon: Icons.timer_outlined,
-          label: _formatDuration(selected.elapsedSeconds),
+          label: formatShortDuration(selected.elapsedSeconds),
           detail: secondsDelta == null
               ? 'No earlier entry'
               : _formatSigned(secondsDelta, suffix: 's'),
         ),
+        if (selected.actualWeight != null)
+          _MetricPill(
+            icon: Icons.fitness_center,
+            label:
+                '${formatWeight(selected.actualWeight!)} ${weightUnit ?? ''}',
+            detail: weightDelta == null
+                ? 'No earlier entry'
+                : _formatSignedWeight(weightDelta, suffix: weightUnit ?? ''),
+          ),
         Text(
-          _formatDate(selected.sessionStartedAt),
+          formatDate(selected.sessionStartedAt),
           style: theme.textTheme.bodySmall
               ?.copyWith(color: colors.onSurfaceVariant),
         ),
@@ -480,6 +477,17 @@ class _ProgressSummary extends StatelessWidget {
       return '+$value$suffix';
     }
     return '$value$suffix';
+  }
+
+  String _formatSignedWeight(double value, {required String suffix}) {
+    final String formatted = formatWeight(value.abs());
+    final String sign = value > 0
+        ? '+'
+        : value < 0
+            ? '-'
+            : '';
+    final String unit = suffix.isEmpty ? '' : ' $suffix';
+    return '$sign$formatted$unit';
   }
 }
 
@@ -526,6 +534,38 @@ class _MetricPill extends StatelessWidget {
   }
 }
 
+class _LegendItem extends StatelessWidget {
+  const _LegendItem({
+    required this.color,
+    required this.label,
+  });
+
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Icon(Icons.circle, size: 10, color: color),
+        const SizedBox(width: AppSpacing.xs),
+        Text(label, style: Theme.of(context).textTheme.bodySmall),
+      ],
+    );
+  }
+}
+
+class _ChartSeries {
+  const _ChartSeries({
+    required this.color,
+    required this.values,
+  });
+
+  final Color color;
+  final List<double?> values;
+}
+
 class _MoveProgressChartPainter extends CustomPainter {
   const _MoveProgressChartPainter({
     required this.points,
@@ -537,7 +577,7 @@ class _MoveProgressChartPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final Rect plot = Rect.fromLTWH(38, 12, size.width - 48, size.height - 42);
+    final Rect plot = Rect.fromLTWH(42, 12, size.width - 52, size.height - 44);
     final Paint axisPaint = Paint()
       ..color = colorScheme.outlineVariant
       ..strokeWidth = 1;
@@ -560,67 +600,113 @@ class _MoveProgressChartPainter extends CustomPainter {
       return;
     }
 
-    final int minReps =
-        points.map((_MovePoint point) => point.reps).reduce(math.min);
-    final int maxReps =
-        points.map((_MovePoint point) => point.reps).reduce(math.max);
-    final int minSeconds =
-        points.map((_MovePoint point) => point.elapsedSeconds).reduce(math.min);
-    final int maxSeconds =
-        points.map((_MovePoint point) => point.elapsedSeconds).reduce(math.max);
-    final int repSpan = maxReps - minReps;
-    final int secondsSpan = maxSeconds - minSeconds;
+    final List<_ChartSeries> series = <_ChartSeries>[
+      _ChartSeries(
+        color: colorScheme.primary,
+        values: points
+            .map((_MovePoint point) => point.elapsedSeconds.toDouble())
+            .toList(growable: false),
+      ),
+      _ChartSeries(
+        color: colorScheme.tertiary,
+        values: points
+            .map((_MovePoint point) => point.reps.toDouble())
+            .toList(growable: false),
+      ),
+      if (points.any((_MovePoint point) => point.actualWeight != null))
+        _ChartSeries(
+          color: colorScheme.secondary,
+          values: points
+              .map((_MovePoint point) => point.actualWeight)
+              .toList(growable: false),
+        ),
+    ];
 
-    Offset pointOffset(_MovePoint point) {
-      final double x = repSpan == 0
+    final Iterable<double> allValues = series
+        .expand((_ChartSeries chartSeries) => chartSeries.values)
+        .whereType<double>();
+    final double maxValue = math.max(1, allValues.fold<double>(0, math.max));
+
+    Offset pointOffset(int index, double value) {
+      final double x = points.length == 1
           ? plot.center.dx
-          : plot.left + ((point.reps - minReps) / repSpan) * plot.width;
-      final double y = secondsSpan == 0
-          ? plot.center.dy
-          : plot.bottom -
-              ((point.elapsedSeconds - minSeconds) / secondsSpan) * plot.height;
+          : plot.left + (index / (points.length - 1)) * plot.width;
+      final double y = plot.bottom - (value / maxValue) * plot.height;
       return Offset(x, y);
     }
 
-    if (points.length > 1) {
-      final Paint linePaint = Paint()
-        ..color = colorScheme.primary.withValues(alpha: 0.55)
-        ..strokeWidth = 2
-        ..style = PaintingStyle.stroke;
-      final Path path = Path()
-        ..moveTo(pointOffset(points.first).dx, pointOffset(points.first).dy);
-      for (final _MovePoint point in points.skip(1)) {
-        final Offset offset = pointOffset(point);
+    for (final _ChartSeries chartSeries in series) {
+      _drawSeries(canvas, chartSeries, pointOffset);
+    }
+
+    for (int index = 0; index < points.length; index += 1) {
+      if (!points[index].isSelected) {
+        continue;
+      }
+      final double x = points.length == 1
+          ? plot.center.dx
+          : plot.left + (index / (points.length - 1)) * plot.width;
+      final Paint selectedPaint = Paint()
+        ..color = colorScheme.primary.withValues(alpha: 0.18)
+        ..strokeWidth = 2;
+      canvas.drawLine(
+          Offset(x, plot.top), Offset(x, plot.bottom), selectedPaint);
+    }
+
+    _drawLabel(canvas, '1', Offset(plot.left, plot.bottom + 16),
+        colorScheme.onSurfaceVariant);
+    _drawLabel(
+        canvas,
+        '${points.length} ${points.length == 1 ? 'time' : 'times'}',
+        Offset(plot.right, plot.bottom + 16),
+        colorScheme.onSurfaceVariant,
+        align: TextAlign.right);
+    _drawLabel(canvas, _formatAxisValue(maxValue),
+        Offset(plot.left - 8, plot.top), colorScheme.onSurfaceVariant,
+        align: TextAlign.right);
+    _drawLabel(canvas, '0', Offset(plot.left - 8, plot.bottom - 10),
+        colorScheme.onSurfaceVariant,
+        align: TextAlign.right);
+  }
+
+  void _drawSeries(
+    Canvas canvas,
+    _ChartSeries series,
+    Offset Function(int index, double value) pointOffset,
+  ) {
+    final Paint linePaint = Paint()
+      ..color = series.color.withValues(alpha: 0.78)
+      ..strokeWidth = 2.5
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    final Paint pointPaint = Paint()..color = series.color;
+    final Path path = Path();
+    bool hasStarted = false;
+
+    for (int index = 0; index < series.values.length; index += 1) {
+      final double? value = series.values[index];
+      if (value == null) {
+        hasStarted = false;
+        continue;
+      }
+      final Offset offset = pointOffset(index, value);
+      if (!hasStarted) {
+        path.moveTo(offset.dx, offset.dy);
+        hasStarted = true;
+      } else {
         path.lineTo(offset.dx, offset.dy);
       }
-      canvas.drawPath(path, linePaint);
+      canvas.drawCircle(offset, points[index].isSelected ? 5 : 3.5, pointPaint);
     }
 
-    for (final _MovePoint point in points) {
-      final Offset offset = pointOffset(point);
-      final Paint fill = Paint()
-        ..color = point.isSelected ? colorScheme.primary : colorScheme.tertiary;
-      canvas.drawCircle(offset, point.isSelected ? 6 : 4, fill);
-      if (point.isSelected) {
-        final Paint ring = Paint()
-          ..color = colorScheme.primary.withValues(alpha: 0.25)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 3;
-        canvas.drawCircle(offset, 10, ring);
-      }
-    }
+    canvas.drawPath(path, linePaint);
+  }
 
-    _drawLabel(canvas, '$minReps', Offset(plot.left, plot.bottom + 16),
-        colorScheme.onSurfaceVariant);
-    _drawLabel(canvas, '$maxReps reps', Offset(plot.right, plot.bottom + 16),
-        colorScheme.onSurfaceVariant,
-        align: TextAlign.right);
-    _drawLabel(canvas, '${maxSeconds}s', Offset(plot.left - 8, plot.top),
-        colorScheme.onSurfaceVariant,
-        align: TextAlign.right);
-    _drawLabel(canvas, '${minSeconds}s',
-        Offset(plot.left - 8, plot.bottom - 10), colorScheme.onSurfaceVariant,
-        align: TextAlign.right);
+  String _formatAxisValue(double value) {
+    if (value == value.roundToDouble()) {
+      return value.toInt().toString();
+    }
+    return value.toStringAsFixed(1);
   }
 
   void _drawLabel(

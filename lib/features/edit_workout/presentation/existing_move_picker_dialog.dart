@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
 
 class ExistingMovePickerDialog extends StatefulWidget {
@@ -63,7 +64,7 @@ class _ExistingMovePickerDialogState extends State<ExistingMovePickerDialog> {
                             final Exercise exercise = filteredExercises[index];
                             return ListTile(
                               leading: _ExerciseThumbnail(
-                                imageUrl: _optionalText(exercise.imageUrl),
+                                imageUrl: optionalText(exercise.imageUrl),
                               ),
                               title: Text(exercise.name),
                               onTap: () => Navigator.of(context).pop(exercise),
@@ -154,14 +155,6 @@ class _ExistingMovePickerDialogState extends State<ExistingMovePickerDialog> {
       candidateIndex = matchIndex + 1;
     }
     return score + candidate.length;
-  }
-
-  String? _optionalText(String? value) {
-    final String? trimmed = value?.trim();
-    if (trimmed == null || trimmed.isEmpty) {
-      return null;
-    }
-    return trimmed;
   }
 }
 

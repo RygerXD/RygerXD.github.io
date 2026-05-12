@@ -8,6 +8,8 @@ enum WeightUnit {
   lb,
 }
 
+const Object _copyWithUnset = Object();
+
 class Exercise {
   const Exercise({
     required this.exerciseId,
@@ -20,6 +22,24 @@ class Exercise {
   final String name;
   final String? imageUrl;
   final String? description;
+
+  Exercise copyWith({
+    String? exerciseId,
+    String? name,
+    Object? imageUrl = _copyWithUnset,
+    Object? description = _copyWithUnset,
+  }) {
+    return Exercise(
+      exerciseId: exerciseId ?? this.exerciseId,
+      name: name ?? this.name,
+      imageUrl: identical(imageUrl, _copyWithUnset)
+          ? this.imageUrl
+          : imageUrl as String?,
+      description: identical(description, _copyWithUnset)
+          ? this.description
+          : description as String?,
+    );
+  }
 
   factory Exercise.fromJson(Map<String, dynamic> json) {
     return Exercise(
@@ -64,6 +84,42 @@ class Move {
   final double? targetWeight;
   final WeightUnit? targetWeightUnit;
   final int? metronomeSpeed;
+
+  Move copyWith({
+    String? moveId,
+    String? exerciseId,
+    MoveType? type,
+    Object? repCount = _copyWithUnset,
+    Object? durationSeconds = _copyWithUnset,
+    int? prepTimeSeconds,
+    int? finishTimeSeconds,
+    Object? targetWeight = _copyWithUnset,
+    Object? targetWeightUnit = _copyWithUnset,
+    Object? metronomeSpeed = _copyWithUnset,
+  }) {
+    return Move(
+      moveId: moveId ?? this.moveId,
+      exerciseId: exerciseId ?? this.exerciseId,
+      type: type ?? this.type,
+      repCount: identical(repCount, _copyWithUnset)
+          ? this.repCount
+          : repCount as int?,
+      durationSeconds: identical(durationSeconds, _copyWithUnset)
+          ? this.durationSeconds
+          : durationSeconds as int?,
+      prepTimeSeconds: prepTimeSeconds ?? this.prepTimeSeconds,
+      finishTimeSeconds: finishTimeSeconds ?? this.finishTimeSeconds,
+      targetWeight: identical(targetWeight, _copyWithUnset)
+          ? this.targetWeight
+          : targetWeight as double?,
+      targetWeightUnit: identical(targetWeightUnit, _copyWithUnset)
+          ? this.targetWeightUnit
+          : targetWeightUnit as WeightUnit?,
+      metronomeSpeed: identical(metronomeSpeed, _copyWithUnset)
+          ? this.metronomeSpeed
+          : metronomeSpeed as int?,
+    );
+  }
 
   factory Move.fromJson(Map<String, dynamic> json) {
     return Move(
@@ -113,6 +169,23 @@ class WorkoutSet {
   final int restBetweenLoopsSeconds;
   final List<Move> moves;
 
+  WorkoutSet copyWith({
+    String? setId,
+    Object? name = _copyWithUnset,
+    int? loopCount,
+    int? restBetweenLoopsSeconds,
+    List<Move>? moves,
+  }) {
+    return WorkoutSet(
+      setId: setId ?? this.setId,
+      name: identical(name, _copyWithUnset) ? this.name : name as String?,
+      loopCount: loopCount ?? this.loopCount,
+      restBetweenLoopsSeconds:
+          restBetweenLoopsSeconds ?? this.restBetweenLoopsSeconds,
+      moves: moves ?? this.moves,
+    );
+  }
+
   factory WorkoutSet.fromJson(Map<String, dynamic> json) {
     return WorkoutSet(
       setId: json['setId'] as String,
@@ -147,6 +220,18 @@ class Workout {
   final String workoutId;
   final String title;
   final List<WorkoutSet> sets;
+
+  Workout copyWith({
+    String? workoutId,
+    String? title,
+    List<WorkoutSet>? sets,
+  }) {
+    return Workout(
+      workoutId: workoutId ?? this.workoutId,
+      title: title ?? this.title,
+      sets: sets ?? this.sets,
+    );
+  }
 
   factory Workout.fromJson(Map<String, dynamic> json) {
     return Workout(
@@ -191,6 +276,35 @@ class WorkoutPlan {
   final List<String> tags;
   final List<Workout> workouts;
   final List<Exercise> exercises;
+
+  WorkoutPlan copyWith({
+    int? schemaVersion,
+    String? planId,
+    String? name,
+    Object? description = _copyWithUnset,
+    Object? author = _copyWithUnset,
+    Object? imageUrl = _copyWithUnset,
+    List<String>? tags,
+    List<Workout>? workouts,
+    List<Exercise>? exercises,
+  }) {
+    return WorkoutPlan(
+      schemaVersion: schemaVersion ?? this.schemaVersion,
+      planId: planId ?? this.planId,
+      name: name ?? this.name,
+      description: identical(description, _copyWithUnset)
+          ? this.description
+          : description as String?,
+      author:
+          identical(author, _copyWithUnset) ? this.author : author as String?,
+      imageUrl: identical(imageUrl, _copyWithUnset)
+          ? this.imageUrl
+          : imageUrl as String?,
+      tags: tags ?? this.tags,
+      workouts: workouts ?? this.workouts,
+      exercises: exercises ?? this.exercises,
+    );
+  }
 
   factory WorkoutPlan.fromJson(Map<String, dynamic> json) {
     return WorkoutPlan(

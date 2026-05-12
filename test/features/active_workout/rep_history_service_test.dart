@@ -80,5 +80,72 @@ void main() {
 
       expect(stored, isNull);
     });
+
+    test('saves and retrieves weight by workout/set/loop/exercise/unit key',
+        () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final RepHistoryService service = RepHistoryService(prefs);
+
+      await service.saveWeight(
+        workoutId: 'w1',
+        setId: 's1',
+        loopIndex: 0,
+        exerciseId: 'e1',
+        weightUnit: 'lb',
+        weight: 45.5,
+      );
+
+      final double? stored = await service.getLastWeight(
+        workoutId: 'w1',
+        setId: 's1',
+        loopIndex: 0,
+        exerciseId: 'e1',
+        weightUnit: 'lb',
+      );
+
+      expect(stored, 45.5);
+    });
+
+    test('stores separate weight values per unit', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final RepHistoryService service = RepHistoryService(prefs);
+
+      await service.saveWeight(
+        workoutId: 'w1',
+        setId: 's1',
+        loopIndex: 0,
+        exerciseId: 'e1',
+        weightUnit: 'lb',
+        weight: 100,
+      );
+      await service.saveWeight(
+        workoutId: 'w1',
+        setId: 's1',
+        loopIndex: 0,
+        exerciseId: 'e1',
+        weightUnit: 'kg',
+        weight: 45,
+      );
+
+      final double? pounds = await service.getLastWeight(
+        workoutId: 'w1',
+        setId: 's1',
+        loopIndex: 0,
+        exerciseId: 'e1',
+        weightUnit: 'lb',
+      );
+      final double? kilos = await service.getLastWeight(
+        workoutId: 'w1',
+        setId: 's1',
+        loopIndex: 0,
+        exerciseId: 'e1',
+        weightUnit: 'kg',
+      );
+
+      expect(pounds, 100);
+      expect(kilos, 45);
+    });
   });
 }

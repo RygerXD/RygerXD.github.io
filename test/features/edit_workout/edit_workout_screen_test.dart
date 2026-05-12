@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:workout_app_rewrite/features/edit_workout/presentation/add_move_dialog.dart';
 import 'package:workout_app_rewrite/features/edit_workout/presentation/edit_workout_screen.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
 import 'package:workout_app_rewrite/features/workout_plan/data/in_memory_workout_repository.dart';
@@ -38,6 +39,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await tester.enterText(find.byType(TextField).at(0), 'Arms');
     await tester.tap(find.text('New Move'));
     await tester.pumpAndSettle();
 
@@ -165,10 +167,68 @@ void main() {
     );
     await tester.tap(find.widgetWithText(FilledButton, 'Add'));
     await tester.pumpAndSettle();
+    await tester.tap(find.text('SAVE'));
+    await tester.pumpAndSettle();
 
     final WorkoutPlan? updatedPlan = await repository.getPlanById('plan-1');
     expect(updatedPlan?.exercises.single.imageUrl,
         'https://example.com/plank.gif');
+  });
+
+  testWidgets('add move dialog saves target weight',
+      (WidgetTester tester) async {
+    Move? capturedMove;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (BuildContext context) {
+              return TextButton(
+                onPressed: () {
+                  showDialog<void>(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AddMoveDialog(
+                        onAdd: (Move move, Exercise exercise) {
+                          capturedMove = move;
+                        },
+                      );
+                    },
+                  );
+                },
+                child: const Text('Open'),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+
+    Finder dialogFields = find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.byType(TextField),
+    );
+    await tester.enterText(dialogFields.at(0), 'Dumbbell Curl');
+
+    await tester.ensureVisible(find.text('Track weight'));
+    await tester.tap(find.text('Track weight'));
+    await tester.pumpAndSettle();
+
+    dialogFields = find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.byType(TextField),
+    );
+    await tester.enterText(dialogFields.last, '35');
+    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Add'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Add'));
+    await tester.pumpAndSettle();
+
+    expect(capturedMove?.targetWeight, 35);
+    expect(capturedMove?.targetWeightUnit, WeightUnit.lb);
   });
 
   testWidgets('edits added moves', (WidgetTester tester) async {

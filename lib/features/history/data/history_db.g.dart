@@ -650,6 +650,18 @@ class $WorkoutMovePerformancesTable extends WorkoutMovePerformances
   late final GeneratedColumn<int> repCount = GeneratedColumn<int>(
       'rep_count', aliasedName, false,
       type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _actualWeightMeta =
+      const VerificationMeta('actualWeight');
+  @override
+  late final GeneratedColumn<double> actualWeight = GeneratedColumn<double>(
+      'actual_weight', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _actualWeightUnitMeta =
+      const VerificationMeta('actualWeightUnit');
+  @override
+  late final GeneratedColumn<String> actualWeightUnit = GeneratedColumn<String>(
+      'actual_weight_unit', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _elapsedSecondsMeta =
       const VerificationMeta('elapsedSeconds');
   @override
@@ -672,6 +684,8 @@ class $WorkoutMovePerformancesTable extends WorkoutMovePerformances
         moveId,
         exerciseId,
         repCount,
+        actualWeight,
+        actualWeightUnit,
         elapsedSeconds,
         completedAt
       ];
@@ -738,6 +752,18 @@ class $WorkoutMovePerformancesTable extends WorkoutMovePerformances
     } else if (isInserting) {
       context.missing(_repCountMeta);
     }
+    if (data.containsKey('actual_weight')) {
+      context.handle(
+          _actualWeightMeta,
+          actualWeight.isAcceptableOrUnknown(
+              data['actual_weight']!, _actualWeightMeta));
+    }
+    if (data.containsKey('actual_weight_unit')) {
+      context.handle(
+          _actualWeightUnitMeta,
+          actualWeightUnit.isAcceptableOrUnknown(
+              data['actual_weight_unit']!, _actualWeightUnitMeta));
+    }
     if (data.containsKey('elapsed_seconds')) {
       context.handle(
           _elapsedSecondsMeta,
@@ -780,6 +806,10 @@ class $WorkoutMovePerformancesTable extends WorkoutMovePerformances
           .read(DriftSqlType.string, data['${effectivePrefix}exercise_id'])!,
       repCount: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}rep_count'])!,
+      actualWeight: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}actual_weight']),
+      actualWeightUnit: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}actual_weight_unit']),
       elapsedSeconds: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}elapsed_seconds'])!,
       completedAt: attachedDatabase.typeMapping
@@ -803,6 +833,8 @@ class WorkoutMovePerformanceEntity extends DataClass
   final String moveId;
   final String exerciseId;
   final int repCount;
+  final double? actualWeight;
+  final String? actualWeightUnit;
   final int elapsedSeconds;
   final int completedAt;
   const WorkoutMovePerformanceEntity(
@@ -814,6 +846,8 @@ class WorkoutMovePerformanceEntity extends DataClass
       required this.moveId,
       required this.exerciseId,
       required this.repCount,
+      this.actualWeight,
+      this.actualWeightUnit,
       required this.elapsedSeconds,
       required this.completedAt});
   @override
@@ -827,6 +861,12 @@ class WorkoutMovePerformanceEntity extends DataClass
     map['move_id'] = Variable<String>(moveId);
     map['exercise_id'] = Variable<String>(exerciseId);
     map['rep_count'] = Variable<int>(repCount);
+    if (!nullToAbsent || actualWeight != null) {
+      map['actual_weight'] = Variable<double>(actualWeight);
+    }
+    if (!nullToAbsent || actualWeightUnit != null) {
+      map['actual_weight_unit'] = Variable<String>(actualWeightUnit);
+    }
     map['elapsed_seconds'] = Variable<int>(elapsedSeconds);
     map['completed_at'] = Variable<int>(completedAt);
     return map;
@@ -842,6 +882,12 @@ class WorkoutMovePerformanceEntity extends DataClass
       moveId: Value(moveId),
       exerciseId: Value(exerciseId),
       repCount: Value(repCount),
+      actualWeight: actualWeight == null && nullToAbsent
+          ? const Value.absent()
+          : Value(actualWeight),
+      actualWeightUnit: actualWeightUnit == null && nullToAbsent
+          ? const Value.absent()
+          : Value(actualWeightUnit),
       elapsedSeconds: Value(elapsedSeconds),
       completedAt: Value(completedAt),
     );
@@ -859,6 +905,8 @@ class WorkoutMovePerformanceEntity extends DataClass
       moveId: serializer.fromJson<String>(json['moveId']),
       exerciseId: serializer.fromJson<String>(json['exerciseId']),
       repCount: serializer.fromJson<int>(json['repCount']),
+      actualWeight: serializer.fromJson<double?>(json['actualWeight']),
+      actualWeightUnit: serializer.fromJson<String?>(json['actualWeightUnit']),
       elapsedSeconds: serializer.fromJson<int>(json['elapsedSeconds']),
       completedAt: serializer.fromJson<int>(json['completedAt']),
     );
@@ -875,6 +923,8 @@ class WorkoutMovePerformanceEntity extends DataClass
       'moveId': serializer.toJson<String>(moveId),
       'exerciseId': serializer.toJson<String>(exerciseId),
       'repCount': serializer.toJson<int>(repCount),
+      'actualWeight': serializer.toJson<double?>(actualWeight),
+      'actualWeightUnit': serializer.toJson<String?>(actualWeightUnit),
       'elapsedSeconds': serializer.toJson<int>(elapsedSeconds),
       'completedAt': serializer.toJson<int>(completedAt),
     };
@@ -889,6 +939,8 @@ class WorkoutMovePerformanceEntity extends DataClass
           String? moveId,
           String? exerciseId,
           int? repCount,
+          Value<double?> actualWeight = const Value.absent(),
+          Value<String?> actualWeightUnit = const Value.absent(),
           int? elapsedSeconds,
           int? completedAt}) =>
       WorkoutMovePerformanceEntity(
@@ -900,6 +952,11 @@ class WorkoutMovePerformanceEntity extends DataClass
         moveId: moveId ?? this.moveId,
         exerciseId: exerciseId ?? this.exerciseId,
         repCount: repCount ?? this.repCount,
+        actualWeight:
+            actualWeight.present ? actualWeight.value : this.actualWeight,
+        actualWeightUnit: actualWeightUnit.present
+            ? actualWeightUnit.value
+            : this.actualWeightUnit,
         elapsedSeconds: elapsedSeconds ?? this.elapsedSeconds,
         completedAt: completedAt ?? this.completedAt,
       );
@@ -917,6 +974,12 @@ class WorkoutMovePerformanceEntity extends DataClass
       exerciseId:
           data.exerciseId.present ? data.exerciseId.value : this.exerciseId,
       repCount: data.repCount.present ? data.repCount.value : this.repCount,
+      actualWeight: data.actualWeight.present
+          ? data.actualWeight.value
+          : this.actualWeight,
+      actualWeightUnit: data.actualWeightUnit.present
+          ? data.actualWeightUnit.value
+          : this.actualWeightUnit,
       elapsedSeconds: data.elapsedSeconds.present
           ? data.elapsedSeconds.value
           : this.elapsedSeconds,
@@ -936,6 +999,8 @@ class WorkoutMovePerformanceEntity extends DataClass
           ..write('moveId: $moveId, ')
           ..write('exerciseId: $exerciseId, ')
           ..write('repCount: $repCount, ')
+          ..write('actualWeight: $actualWeight, ')
+          ..write('actualWeightUnit: $actualWeightUnit, ')
           ..write('elapsedSeconds: $elapsedSeconds, ')
           ..write('completedAt: $completedAt')
           ..write(')'))
@@ -943,8 +1008,19 @@ class WorkoutMovePerformanceEntity extends DataClass
   }
 
   @override
-  int get hashCode => Object.hash(performanceId, sessionId, workoutId, setId,
-      loopIndex, moveId, exerciseId, repCount, elapsedSeconds, completedAt);
+  int get hashCode => Object.hash(
+      performanceId,
+      sessionId,
+      workoutId,
+      setId,
+      loopIndex,
+      moveId,
+      exerciseId,
+      repCount,
+      actualWeight,
+      actualWeightUnit,
+      elapsedSeconds,
+      completedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -957,6 +1033,8 @@ class WorkoutMovePerformanceEntity extends DataClass
           other.moveId == this.moveId &&
           other.exerciseId == this.exerciseId &&
           other.repCount == this.repCount &&
+          other.actualWeight == this.actualWeight &&
+          other.actualWeightUnit == this.actualWeightUnit &&
           other.elapsedSeconds == this.elapsedSeconds &&
           other.completedAt == this.completedAt);
 }
@@ -971,6 +1049,8 @@ class WorkoutMovePerformancesCompanion
   final Value<String> moveId;
   final Value<String> exerciseId;
   final Value<int> repCount;
+  final Value<double?> actualWeight;
+  final Value<String?> actualWeightUnit;
   final Value<int> elapsedSeconds;
   final Value<int> completedAt;
   final Value<int> rowid;
@@ -983,6 +1063,8 @@ class WorkoutMovePerformancesCompanion
     this.moveId = const Value.absent(),
     this.exerciseId = const Value.absent(),
     this.repCount = const Value.absent(),
+    this.actualWeight = const Value.absent(),
+    this.actualWeightUnit = const Value.absent(),
     this.elapsedSeconds = const Value.absent(),
     this.completedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -996,6 +1078,8 @@ class WorkoutMovePerformancesCompanion
     required String moveId,
     required String exerciseId,
     required int repCount,
+    this.actualWeight = const Value.absent(),
+    this.actualWeightUnit = const Value.absent(),
     required int elapsedSeconds,
     required int completedAt,
     this.rowid = const Value.absent(),
@@ -1018,6 +1102,8 @@ class WorkoutMovePerformancesCompanion
     Expression<String>? moveId,
     Expression<String>? exerciseId,
     Expression<int>? repCount,
+    Expression<double>? actualWeight,
+    Expression<String>? actualWeightUnit,
     Expression<int>? elapsedSeconds,
     Expression<int>? completedAt,
     Expression<int>? rowid,
@@ -1031,6 +1117,8 @@ class WorkoutMovePerformancesCompanion
       if (moveId != null) 'move_id': moveId,
       if (exerciseId != null) 'exercise_id': exerciseId,
       if (repCount != null) 'rep_count': repCount,
+      if (actualWeight != null) 'actual_weight': actualWeight,
+      if (actualWeightUnit != null) 'actual_weight_unit': actualWeightUnit,
       if (elapsedSeconds != null) 'elapsed_seconds': elapsedSeconds,
       if (completedAt != null) 'completed_at': completedAt,
       if (rowid != null) 'rowid': rowid,
@@ -1046,6 +1134,8 @@ class WorkoutMovePerformancesCompanion
       Value<String>? moveId,
       Value<String>? exerciseId,
       Value<int>? repCount,
+      Value<double?>? actualWeight,
+      Value<String?>? actualWeightUnit,
       Value<int>? elapsedSeconds,
       Value<int>? completedAt,
       Value<int>? rowid}) {
@@ -1058,6 +1148,8 @@ class WorkoutMovePerformancesCompanion
       moveId: moveId ?? this.moveId,
       exerciseId: exerciseId ?? this.exerciseId,
       repCount: repCount ?? this.repCount,
+      actualWeight: actualWeight ?? this.actualWeight,
+      actualWeightUnit: actualWeightUnit ?? this.actualWeightUnit,
       elapsedSeconds: elapsedSeconds ?? this.elapsedSeconds,
       completedAt: completedAt ?? this.completedAt,
       rowid: rowid ?? this.rowid,
@@ -1091,6 +1183,12 @@ class WorkoutMovePerformancesCompanion
     if (repCount.present) {
       map['rep_count'] = Variable<int>(repCount.value);
     }
+    if (actualWeight.present) {
+      map['actual_weight'] = Variable<double>(actualWeight.value);
+    }
+    if (actualWeightUnit.present) {
+      map['actual_weight_unit'] = Variable<String>(actualWeightUnit.value);
+    }
     if (elapsedSeconds.present) {
       map['elapsed_seconds'] = Variable<int>(elapsedSeconds.value);
     }
@@ -1114,6 +1212,8 @@ class WorkoutMovePerformancesCompanion
           ..write('moveId: $moveId, ')
           ..write('exerciseId: $exerciseId, ')
           ..write('repCount: $repCount, ')
+          ..write('actualWeight: $actualWeight, ')
+          ..write('actualWeightUnit: $actualWeightUnit, ')
           ..write('elapsedSeconds: $elapsedSeconds, ')
           ..write('completedAt: $completedAt, ')
           ..write('rowid: $rowid')
@@ -1489,6 +1589,8 @@ typedef $$WorkoutMovePerformancesTableCreateCompanionBuilder
   required String moveId,
   required String exerciseId,
   required int repCount,
+  Value<double?> actualWeight,
+  Value<String?> actualWeightUnit,
   required int elapsedSeconds,
   required int completedAt,
   Value<int> rowid,
@@ -1503,6 +1605,8 @@ typedef $$WorkoutMovePerformancesTableUpdateCompanionBuilder
   Value<String> moveId,
   Value<String> exerciseId,
   Value<int> repCount,
+  Value<double?> actualWeight,
+  Value<String?> actualWeightUnit,
   Value<int> elapsedSeconds,
   Value<int> completedAt,
   Value<int> rowid,
@@ -1540,6 +1644,13 @@ class $$WorkoutMovePerformancesTableFilterComposer
 
   ColumnFilters<int> get repCount => $composableBuilder(
       column: $table.repCount, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get actualWeight => $composableBuilder(
+      column: $table.actualWeight, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get actualWeightUnit => $composableBuilder(
+      column: $table.actualWeightUnit,
+      builder: (column) => ColumnFilters(column));
 
   ColumnFilters<int> get elapsedSeconds => $composableBuilder(
       column: $table.elapsedSeconds,
@@ -1583,6 +1694,14 @@ class $$WorkoutMovePerformancesTableOrderingComposer
   ColumnOrderings<int> get repCount => $composableBuilder(
       column: $table.repCount, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<double> get actualWeight => $composableBuilder(
+      column: $table.actualWeight,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get actualWeightUnit => $composableBuilder(
+      column: $table.actualWeightUnit,
+      builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<int> get elapsedSeconds => $composableBuilder(
       column: $table.elapsedSeconds,
       builder: (column) => ColumnOrderings(column));
@@ -1623,6 +1742,12 @@ class $$WorkoutMovePerformancesTableAnnotationComposer
 
   GeneratedColumn<int> get repCount =>
       $composableBuilder(column: $table.repCount, builder: (column) => column);
+
+  GeneratedColumn<double> get actualWeight => $composableBuilder(
+      column: $table.actualWeight, builder: (column) => column);
+
+  GeneratedColumn<String> get actualWeightUnit => $composableBuilder(
+      column: $table.actualWeightUnit, builder: (column) => column);
 
   GeneratedColumn<int> get elapsedSeconds => $composableBuilder(
       column: $table.elapsedSeconds, builder: (column) => column);
@@ -1670,6 +1795,8 @@ class $$WorkoutMovePerformancesTableTableManager extends RootTableManager<
             Value<String> moveId = const Value.absent(),
             Value<String> exerciseId = const Value.absent(),
             Value<int> repCount = const Value.absent(),
+            Value<double?> actualWeight = const Value.absent(),
+            Value<String?> actualWeightUnit = const Value.absent(),
             Value<int> elapsedSeconds = const Value.absent(),
             Value<int> completedAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
@@ -1683,6 +1810,8 @@ class $$WorkoutMovePerformancesTableTableManager extends RootTableManager<
             moveId: moveId,
             exerciseId: exerciseId,
             repCount: repCount,
+            actualWeight: actualWeight,
+            actualWeightUnit: actualWeightUnit,
             elapsedSeconds: elapsedSeconds,
             completedAt: completedAt,
             rowid: rowid,
@@ -1696,6 +1825,8 @@ class $$WorkoutMovePerformancesTableTableManager extends RootTableManager<
             required String moveId,
             required String exerciseId,
             required int repCount,
+            Value<double?> actualWeight = const Value.absent(),
+            Value<String?> actualWeightUnit = const Value.absent(),
             required int elapsedSeconds,
             required int completedAt,
             Value<int> rowid = const Value.absent(),
@@ -1709,6 +1840,8 @@ class $$WorkoutMovePerformancesTableTableManager extends RootTableManager<
             moveId: moveId,
             exerciseId: exerciseId,
             repCount: repCount,
+            actualWeight: actualWeight,
+            actualWeightUnit: actualWeightUnit,
             elapsedSeconds: elapsedSeconds,
             completedAt: completedAt,
             rowid: rowid,

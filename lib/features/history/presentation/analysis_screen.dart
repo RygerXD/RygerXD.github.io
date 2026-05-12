@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
+import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
 import 'package:workout_app_rewrite/features/history/application/history_providers.dart';
 import 'package:workout_app_rewrite/features/history/data/history_db.dart';
 import 'package:workout_app_rewrite/features/history/presentation/components/analysis_session_item.dart';
@@ -16,8 +17,10 @@ class AnalysisScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final AsyncValue<List<WorkoutSessionEntity>> sessionsAsync = ref.watch(allSessionsProvider);
-    final AsyncValue<List<WorkoutPlan>> plansAsync = ref.watch(loadedWorkoutPlansNotifierProvider);
+    final AsyncValue<List<WorkoutSessionEntity>> sessionsAsync =
+        ref.watch(allSessionsProvider);
+    final AsyncValue<List<WorkoutPlan>> plansAsync =
+        ref.watch(loadedWorkoutPlansNotifierProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -39,11 +42,13 @@ class AnalysisScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              Icon(Icons.error_outline, size: 64, color: Theme.of(context).colorScheme.error),
+              Icon(Icons.error_outline,
+                  size: 64, color: Theme.of(context).colorScheme.error),
               const SizedBox(height: AppSpacing.md),
               const Text('Error loading history'),
               const SizedBox(height: AppSpacing.sm),
-              Text(error.toString(), style: Theme.of(context).textTheme.bodySmall),
+              Text(error.toString(),
+                  style: Theme.of(context).textTheme.bodySmall),
             ],
           ),
         ),
@@ -57,8 +62,10 @@ class AnalysisScreen extends ConsumerWidget {
           }
 
           final List<WorkoutPlan> plans = plansAsync.value ?? <WorkoutPlan>[];
-          final List<AnalysisSessionItem> sessionItems = _buildSessionItems(sessions, plans);
-          final Map<String, List<AnalysisSessionItem>> groupedSessions = _groupSessionsByDate(sessionItems);
+          final List<AnalysisSessionItem> sessionItems =
+              _buildSessionItems(sessions, plans);
+          final Map<String, List<AnalysisSessionItem>> groupedSessions =
+              _groupSessionsByDate(sessionItems);
           final _AnalysisSummary summary = _buildSummary(sessionItems);
           final List<DateTime> workoutDates = sessionItems
               .where((AnalysisSessionItem s) => s.isCompleted)
@@ -78,16 +85,23 @@ class AnalysisScreen extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.1),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .surfaceContainerHighest
+                      .withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AppRadii.lg),
                   border: Border.fromBorderSide(
                     BorderSide(
-                      color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.3),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .outlineVariant
+                          .withValues(alpha: 0.3),
                       width: 1,
                     ),
                   ),
                 ),
-                child: WorkoutHeatmap(workoutDates: workoutDates, daysToShow: 365),
+                child:
+                    WorkoutHeatmap(workoutDates: workoutDates, daysToShow: 365),
               ),
               if (plansAsync.isLoading) ...<Widget>[
                 const SizedBox(height: AppSpacing.sm),
@@ -98,7 +112,8 @@ class AnalysisScreen extends ConsumerWidget {
                       ),
                 ),
               ],
-              ...groupedSessions.entries.map((MapEntry<String, List<AnalysisSessionItem>> entry) {
+              ...groupedSessions.entries
+                  .map((MapEntry<String, List<AnalysisSessionItem>> entry) {
                 return DateGroup(
                   dateLabel: entry.key,
                   sessions: entry.value,
@@ -140,14 +155,18 @@ class AnalysisScreen extends ConsumerWidget {
     }).toList(growable: false);
   }
 
-  Map<String, List<AnalysisSessionItem>> _groupSessionsByDate(List<AnalysisSessionItem> sessions) {
-    final Map<String, List<AnalysisSessionItem>> grouped = <String, List<AnalysisSessionItem>>{};
-    final List<AnalysisSessionItem> sorted = List<AnalysisSessionItem>.from(sessions)
-      ..sort((AnalysisSessionItem a, AnalysisSessionItem b) => b.session.startedAt.compareTo(a.session.startedAt));
+  Map<String, List<AnalysisSessionItem>> _groupSessionsByDate(
+      List<AnalysisSessionItem> sessions) {
+    final Map<String, List<AnalysisSessionItem>> grouped =
+        <String, List<AnalysisSessionItem>>{};
+    final List<AnalysisSessionItem> sorted =
+        List<AnalysisSessionItem>.from(sessions)
+          ..sort((AnalysisSessionItem a, AnalysisSessionItem b) =>
+              b.session.startedAt.compareTo(a.session.startedAt));
 
     for (final AnalysisSessionItem session in sorted) {
       final DateTime date = session.startedAt;
-      final String label = _getDateLabel(date);
+      final String label = formatRelativeDateLabel(date);
 
       grouped.putIfAbsent(label, () => <AnalysisSessionItem>[]);
       grouped[label]!.add(session);
@@ -163,21 +182,25 @@ class AnalysisScreen extends ConsumerWidget {
 
     final DateTime now = DateTime.now();
     final DateTime today = DateTime(now.year, now.month, now.day);
-    final DateTime startOfWeek = today.subtract(Duration(days: today.weekday - 1));
+    final DateTime startOfWeek =
+        today.subtract(Duration(days: today.weekday - 1));
 
     for (final AnalysisSessionItem item in sessions) {
       if (!item.isCompleted) {
         continue;
       }
       completedSessions += 1;
-      if (item.startedAt.isAfter(startOfWeek.subtract(const Duration(milliseconds: 1)))) {
+      if (item.startedAt
+          .isAfter(startOfWeek.subtract(const Duration(milliseconds: 1)))) {
         weeklyCompletedSessions += 1;
         weeklyDurationSeconds += item.session.durationSeconds;
       }
     }
 
     final int streakDays = _calculateCurrentStreakDays(
-      sessions.where((AnalysisSessionItem item) => item.isCompleted).toList(growable: false),
+      sessions
+          .where((AnalysisSessionItem item) => item.isCompleted)
+          .toList(growable: false),
     );
 
     return _AnalysisSummary(
@@ -190,12 +213,11 @@ class AnalysisScreen extends ConsumerWidget {
   }
 
   int _calculateCurrentStreakDays(List<AnalysisSessionItem> completedSessions) {
-    final Set<DateTime> workoutDays = completedSessions
-        .map((AnalysisSessionItem item) {
-          final DateTime date = item.startedAt;
-          return DateTime(date.year, date.month, date.day);
-        })
-        .toSet();
+    final Set<DateTime> workoutDays =
+        completedSessions.map((AnalysisSessionItem item) {
+      final DateTime date = item.startedAt;
+      return DateTime(date.year, date.month, date.day);
+    }).toSet();
 
     if (workoutDays.isEmpty) {
       return 0;
@@ -215,36 +237,6 @@ class AnalysisScreen extends ConsumerWidget {
       cursor = cursor.subtract(const Duration(days: 1));
     }
     return streak;
-  }
-
-  String _getDateLabel(DateTime date) {
-    final DateTime now = DateTime.now();
-    final DateTime today = DateTime(now.year, now.month, now.day);
-    final DateTime sessionDate = DateTime(date.year, date.month, date.day);
-
-    final int difference = today.difference(sessionDate).inDays;
-
-    if (difference == 0) {
-      return 'Today';
-    }
-    if (difference == 1) {
-      return 'Yesterday';
-    }
-    if (difference < 7) {
-      return _getWeekdayName(date.weekday);
-    }
-    
-    return '${_getMonthName(date.month)} ${date.day}, ${date.year}';
-  }
-
-  String _getWeekdayName(int weekday) {
-    const List<String> names = <String>['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    return names[weekday - 1];
-  }
-
-  String _getMonthName(int month) {
-    const List<String> names = <String>['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return names[month - 1];
   }
 }
 
@@ -287,14 +279,20 @@ class _SummaryGrid extends StatelessWidget {
         ),
         _SummaryCard(
           label: 'Active Time',
-          value: _formatDuration(summary.weeklyDurationSeconds),
+          value: formatDuration(
+            summary.weeklyDurationSeconds,
+            zeroLabel: '0m',
+            includeSeconds: false,
+            omitZeroMinuteRemainder: true,
+          ),
           detail: 'This Week',
           icon: Icons.timer_outlined,
         ),
         _SummaryCard(
           label: 'Completion',
           value: '$completionPercent%',
-          detail: '${summary.completedSessions}/${summary.totalSessions} sessions',
+          detail:
+              '${summary.completedSessions}/${summary.totalSessions} sessions',
           icon: Icons.flag_circle_outlined,
         ),
         _SummaryCard(
@@ -305,26 +303,14 @@ class _SummaryGrid extends StatelessWidget {
         ),
       ].map((Widget card) {
         return SizedBox(
-          width: (MediaQuery.sizeOf(context).width - (AppSpacing.xl * 2) - AppSpacing.md) / 2,
+          width: (MediaQuery.sizeOf(context).width -
+                  (AppSpacing.xl * 2) -
+                  AppSpacing.md) /
+              2,
           child: card,
         );
       }).toList(growable: false),
     );
-  }
-
-  static String _formatDuration(int seconds) {
-    if (seconds <= 0) {
-      return '0m';
-    }
-    final Duration duration = Duration(seconds: seconds);
-    if (duration.inHours == 0) {
-      return '${duration.inMinutes}m';
-    }
-    final int minutesRemainder = duration.inMinutes.remainder(60);
-    if (minutesRemainder == 0) {
-      return '${duration.inHours}h';
-    }
-    return '${duration.inHours}h ${minutesRemainder}m';
   }
 }
 

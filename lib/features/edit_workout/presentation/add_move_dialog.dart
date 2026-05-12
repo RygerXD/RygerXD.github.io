@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
+import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
 
 class AddMoveDialog extends StatefulWidget {
@@ -32,8 +33,11 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
       TextEditingController(text: '30');
   final TextEditingController _metronomeController =
       TextEditingController(text: '60');
+  final TextEditingController _weightController = TextEditingController();
   bool _isRepBased = true;
   bool _useMetronome = false;
+  bool _hasWeight = false;
+  WeightUnit _weightUnit = WeightUnit.lb;
   bool get _isEditing => widget.initialMove != null;
 
   @override
@@ -52,6 +56,11 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
       _repsController.text = (initialMove.repCount ?? 10).toString();
       _durationController.text = (initialMove.durationSeconds ?? 30).toString();
       _metronomeController.text = (initialMove.metronomeSpeed ?? 60).toString();
+      _hasWeight = initialMove.targetWeight != null;
+      _weightController.text = initialMove.targetWeight == null
+          ? ''
+          : formatWeight(initialMove.targetWeight!);
+      _weightUnit = initialMove.targetWeightUnit ?? WeightUnit.lb;
     }
   }
 
@@ -63,6 +72,7 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
     _repsController.dispose();
     _durationController.dispose();
     _metronomeController.dispose();
+    _weightController.dispose();
     super.dispose();
   }
 
@@ -70,9 +80,16 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
     final String name = _nameController.text.trim();
     if (name.isEmpty) return;
     final int? metronomeSpeed = _parseMetronomeSpeed();
+    final double? targetWeight = _parseTargetWeight();
     if (!_isRepBased && _useMetronome && metronomeSpeed == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('BPM must be between 20 and 300.')),
+      );
+      return;
+    }
+    if (_hasWeight && targetWeight == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Weight must be greater than 0.')),
       );
       return;
     }
@@ -82,7 +99,7 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
     final Exercise exercise = Exercise(
       exerciseId: exerciseId,
       name: name,
-      imageUrl: _optionalText(_mediaUrlController.text),
+      imageUrl: optionalText(_mediaUrlController.text),
       description: widget.initialExercise?.description,
     );
 
@@ -95,18 +112,13 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
       durationSeconds:
           _isRepBased ? null : (int.tryParse(_durationController.text) ?? 30),
       finishTimeSeconds: widget.initialMove?.finishTimeSeconds ?? 0,
-      targetWeight: widget.initialMove?.targetWeight,
-      targetWeightUnit: widget.initialMove?.targetWeightUnit,
+      targetWeight: _hasWeight ? targetWeight : null,
+      targetWeightUnit: _hasWeight ? _weightUnit : null,
       metronomeSpeed: metronomeSpeed,
     );
 
     widget.onAdd(move, exercise);
     Navigator.of(context).pop();
-  }
-
-  String? _optionalText(String value) {
-    final String trimmed = value.trim();
-    return trimmed.isEmpty ? null : trimmed;
   }
 
   int? _parseMetronomeSpeed() {
@@ -118,6 +130,17 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
       return null;
     }
     return bpm;
+  }
+
+  double? _parseTargetWeight() {
+    if (!_hasWeight) {
+      return null;
+    }
+    final double? weight = double.tryParse(_weightController.text);
+    if (weight == null || weight <= 0) {
+      return null;
+    }
+    return weight;
   }
 
   @override
@@ -234,6 +257,59 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
                       ),
                   ],
                 ),
+              const SizedBox(height: AppSpacing.md),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Track weight'),
+                subtitle: const Text('Adjust actual weight during workouts'),
+                value: _hasWeight,
+                onChanged: (bool value) {
+                  setState(() {
+                    _hasWeight = value;
+                    if (value && _weightController.text.trim().isEmpty) {
+                      _weightController.text = '0';
+                    }
+                  });
+                },
+              ),
+              if (_hasWeight) ...<Widget>[
+                const SizedBox(height: AppSpacing.sm),
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: TextField(
+                        controller: _weightController,
+                        decoration: const InputDecoration(
+                          labelText: 'Target Weight',
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    SegmentedButton<WeightUnit>(
+                      segments: const <ButtonSegment<WeightUnit>>[
+                        ButtonSegment<WeightUnit>(
+                          value: WeightUnit.lb,
+                          label: Text('lb'),
+                        ),
+                        ButtonSegment<WeightUnit>(
+                          value: WeightUnit.kg,
+                          label: Text('kg'),
+                        ),
+                      ],
+                      selected: <WeightUnit>{_weightUnit},
+                      onSelectionChanged: (Set<WeightUnit> selected) {
+                        setState(() {
+                          _weightUnit = selected.first;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),

@@ -92,17 +92,21 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
   }
 
   void _removeMove(int setIndex, int moveIndex) {
+    _updateSetMoves(setIndex, (List<Move> moves) => moves..removeAt(moveIndex));
+  }
+
+  void _updateSet(int setIndex, WorkoutSet Function(WorkoutSet set) update) {
     setState(() {
-      final WorkoutSet originalSet = _sets[setIndex];
-      final List<Move> updatedMoves = List<Move>.from(originalSet.moves)
-        ..removeAt(moveIndex);
-      _sets[setIndex] = WorkoutSet(
-        setId: originalSet.setId,
-        name: originalSet.name,
-        loopCount: originalSet.loopCount,
-        restBetweenLoopsSeconds: originalSet.restBetweenLoopsSeconds,
-        moves: updatedMoves,
-      );
+      _sets[setIndex] = update(_sets[setIndex]);
+    });
+  }
+
+  void _updateSetMoves(
+    int setIndex,
+    List<Move> Function(List<Move> moves) update,
+  ) {
+    _updateSet(setIndex, (WorkoutSet set) {
+      return set.copyWith(moves: update(List<Move>.from(set.moves)));
     });
   }
 
@@ -113,18 +117,7 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
         initialExercise: initialExercise,
         onAdd: (Move move, Exercise newExercise) {
           _upsertExerciseInPlan(newExercise);
-          setState(() {
-            final WorkoutSet originalSet = _sets[setIndex];
-            final List<Move> updatedMoves = List<Move>.from(originalSet.moves)
-              ..add(move);
-            _sets[setIndex] = WorkoutSet(
-              setId: originalSet.setId,
-              name: originalSet.name,
-              loopCount: originalSet.loopCount,
-              restBetweenLoopsSeconds: originalSet.restBetweenLoopsSeconds,
-              moves: updatedMoves,
-            );
-          });
+          _updateSetMoves(setIndex, (List<Move> moves) => moves..add(move));
         },
       ),
     );
@@ -142,18 +135,13 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
         initialExercise: initialExercise,
         onAdd: (Move updatedMove, Exercise updatedExercise) {
           _upsertExerciseInPlan(updatedExercise);
-          setState(() {
-            final WorkoutSet originalSet = _sets[setIndex];
-            final List<Move> updatedMoves = List<Move>.from(originalSet.moves);
-            updatedMoves[moveIndex] = updatedMove;
-            _sets[setIndex] = WorkoutSet(
-              setId: originalSet.setId,
-              name: originalSet.name,
-              loopCount: originalSet.loopCount,
-              restBetweenLoopsSeconds: originalSet.restBetweenLoopsSeconds,
-              moves: updatedMoves,
-            );
-          });
+          _updateSetMoves(
+            setIndex,
+            (List<Move> moves) {
+              moves[moveIndex] = updatedMove;
+              return moves;
+            },
+          );
         },
       ),
     );
@@ -191,17 +179,8 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
       } else {
         updatedExercises.add(exercise);
       }
-      final WorkoutPlan updatedPlan = WorkoutPlan(
-        schemaVersion: plan.schemaVersion,
-        planId: plan.planId,
-        name: plan.name,
-        description: plan.description,
-        author: plan.author,
-        imageUrl: plan.imageUrl,
-        tags: plan.tags,
-        exercises: updatedExercises,
-        workouts: plan.workouts,
-      );
+      final WorkoutPlan updatedPlan =
+          plan.copyWith(exercises: updatedExercises);
       // We load it silently into memory so the UI can instantly find it.
       ref
           .read(loadedWorkoutPlansNotifierProvider.notifier)
@@ -217,17 +196,11 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
   }
 
   void _updateSetName(int setIndex, String value) {
-    final WorkoutSet originalSet = _sets[setIndex];
     final String trimmed = value.trim();
-    setState(() {
-      _sets[setIndex] = WorkoutSet(
-        setId: originalSet.setId,
-        name: trimmed.isEmpty ? null : trimmed,
-        loopCount: originalSet.loopCount,
-        restBetweenLoopsSeconds: originalSet.restBetweenLoopsSeconds,
-        moves: originalSet.moves,
-      );
-    });
+    _updateSet(
+      setIndex,
+      (WorkoutSet set) => set.copyWith(name: trimmed.isEmpty ? null : trimmed),
+    );
   }
 
   void _updateSetLoopCount(int setIndex, String value) {
@@ -236,16 +209,10 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
       return;
     }
 
-    final WorkoutSet originalSet = _sets[setIndex];
-    setState(() {
-      _sets[setIndex] = WorkoutSet(
-        setId: originalSet.setId,
-        name: originalSet.name,
-        loopCount: loopCount,
-        restBetweenLoopsSeconds: originalSet.restBetweenLoopsSeconds,
-        moves: originalSet.moves,
-      );
-    });
+    _updateSet(
+      setIndex,
+      (WorkoutSet set) => set.copyWith(loopCount: loopCount),
+    );
   }
 
   String _getExerciseName(String exerciseId) {
@@ -312,14 +279,7 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
       updatedWorkouts.add(newWorkout);
     }
 
-    final WorkoutPlan updatedPlan = WorkoutPlan(
-      schemaVersion: plan.schemaVersion,
-      planId: plan.planId,
-      name: plan.name,
-      description: plan.description,
-      author: plan.author,
-      imageUrl: plan.imageUrl,
-      tags: plan.tags,
+    final WorkoutPlan updatedPlan = plan.copyWith(
       exercises: _mergedExercises(plan),
       workouts: updatedWorkouts,
     );
