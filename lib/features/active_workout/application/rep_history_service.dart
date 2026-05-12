@@ -15,8 +15,10 @@ class RepHistoryService {
   final SharedPreferences _prefs;
   static const String _storageKey = 'rep_history_v1';
   static const String _weightStorageKey = 'weight_history_v1';
+  static const String _durationStorageKey = 'duration_history_v1';
   Map<String, int>? _cache;
   Map<String, double>? _weightCache;
+  Map<String, int>? _durationCache;
 
   Future<int?> getLastReps({
     required String workoutId,
@@ -84,6 +86,36 @@ class RepHistoryService {
     await _prefs.setString(_weightStorageKey, jsonEncode(_weightCache));
   }
 
+  Future<int?> getLastDuration({
+    required String workoutId,
+    required String setId,
+    required int loopIndex,
+    required String exerciseId,
+  }) async {
+    await _ensureDurationsLoaded();
+    return _durationCache![_key(
+        workoutId: workoutId,
+        setId: setId,
+        loopIndex: loopIndex,
+        exerciseId: exerciseId)];
+  }
+
+  Future<void> saveDuration({
+    required String workoutId,
+    required String setId,
+    required int loopIndex,
+    required String exerciseId,
+    required int seconds,
+  }) async {
+    await _ensureDurationsLoaded();
+    _durationCache![_key(
+        workoutId: workoutId,
+        setId: setId,
+        loopIndex: loopIndex,
+        exerciseId: exerciseId)] = seconds;
+    await _prefs.setString(_durationStorageKey, jsonEncode(_durationCache));
+  }
+
   Future<void> _ensureLoaded() async {
     if (_cache != null) {
       return;
@@ -140,6 +172,37 @@ class RepHistoryService {
       };
     } catch (_) {
       _weightCache = <String, double>{};
+    }
+  }
+
+  Future<void> _ensureDurationsLoaded() async {
+    if (_durationCache != null) {
+      return;
+    }
+
+    await _prefs.reload();
+    final String? raw = _prefs.getString(_durationStorageKey);
+    if (raw == null || raw.isEmpty) {
+      _durationCache = <String, int>{};
+      return;
+    }
+
+    try {
+      final Object? decoded = jsonDecode(raw);
+      if (decoded is! Map<String, dynamic>) {
+        _durationCache = <String, int>{};
+        return;
+      }
+
+      _durationCache = <String, int>{
+        for (final MapEntry<String, dynamic> entry in decoded.entries)
+          if (entry.value is int)
+            entry.key: entry.value as int
+          else if (entry.value is num)
+            entry.key: (entry.value as num).toInt(),
+      };
+    } catch (_) {
+      _durationCache = <String, int>{};
     }
   }
 

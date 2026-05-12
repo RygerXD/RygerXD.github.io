@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+import 'package:workout_app_rewrite/core/media/keyboard_media_saver.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
 import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
@@ -34,7 +37,7 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
   final TextEditingController _metronomeController =
       TextEditingController(text: '60');
   final TextEditingController _weightController = TextEditingController();
-  bool _isRepBased = true;
+  MoveType _moveType = MoveType.reps;
   bool _useMetronome = false;
   bool _hasWeight = false;
   WeightUnit _weightUnit = WeightUnit.lb;
@@ -50,7 +53,7 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
       _mediaUrlController.text = initialExercise.imageUrl ?? '';
     }
     if (initialMove != null) {
-      _isRepBased = initialMove.type == MoveType.reps;
+      _moveType = initialMove.type;
       _useMetronome = initialMove.metronomeSpeed != null;
       _prepController.text = initialMove.prepTimeSeconds.toString();
       _repsController.text = (initialMove.repCount ?? 10).toString();
@@ -81,7 +84,9 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
     if (name.isEmpty) return;
     final int? metronomeSpeed = _parseMetronomeSpeed();
     final double? targetWeight = _parseTargetWeight();
-    if (!_isRepBased && _useMetronome && metronomeSpeed == null) {
+    if (_moveType == MoveType.duration &&
+        _useMetronome &&
+        metronomeSpeed == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('BPM must be between 20 and 300.')),
       );
@@ -106,11 +111,14 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
     final Move move = Move(
       moveId: widget.initialMove?.moveId ?? const Uuid().v4(),
       exerciseId: exerciseId,
-      type: _isRepBased ? MoveType.reps : MoveType.duration,
+      type: _moveType,
       prepTimeSeconds: int.tryParse(_prepController.text) ?? 5,
-      repCount: _isRepBased ? (int.tryParse(_repsController.text) ?? 10) : null,
-      durationSeconds:
-          _isRepBased ? null : (int.tryParse(_durationController.text) ?? 30),
+      repCount: _moveType == MoveType.reps
+          ? (int.tryParse(_repsController.text) ?? 10)
+          : null,
+      durationSeconds: _moveType == MoveType.duration
+          ? (int.tryParse(_durationController.text) ?? 30)
+          : null,
       finishTimeSeconds: widget.initialMove?.finishTimeSeconds ?? 0,
       targetWeight: _hasWeight ? targetWeight : null,
       targetWeightUnit: _hasWeight ? _weightUnit : null,
@@ -122,7 +130,7 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
   }
 
   int? _parseMetronomeSpeed() {
-    if (_isRepBased || !_useMetronome) {
+    if (_moveType != MoveType.duration || !_useMetronome) {
       return null;
     }
     final int? bpm = int.tryParse(_metronomeController.text);
@@ -141,6 +149,26 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
       return null;
     }
     return weight;
+  }
+
+  Future<void> _handleKeyboardMediaInserted(
+    KeyboardInsertedContent content,
+  ) async {
+    final String? savedPath = await saveKeyboardInsertedMedia(content);
+    if (!mounted) {
+      return;
+    }
+    if (savedPath == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not add that image.')),
+      );
+      return;
+    }
+
+    _mediaUrlController.text = savedPath;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Image added.')),
+    );
   }
 
   @override
@@ -182,25 +210,41 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
                   prefixIcon: Icon(Icons.image_outlined),
                 ),
                 keyboardType: TextInputType.url,
+                contentInsertionConfiguration: ContentInsertionConfiguration(
+                  allowedMimeTypes: const <String>[
+                    'image/gif',
+                    'image/png',
+                    'image/jpeg',
+                    'image/webp',
+                  ],
+                  onContentInserted: (KeyboardInsertedContent content) {
+                    unawaited(_handleKeyboardMediaInserted(content));
+                  },
+                ),
               ),
               const SizedBox(height: AppSpacing.md),
-              SegmentedButton<bool>(
-                segments: const <ButtonSegment<bool>>[
-                  ButtonSegment<bool>(
-                    value: true,
+              SegmentedButton<MoveType>(
+                segments: const <ButtonSegment<MoveType>>[
+                  ButtonSegment<MoveType>(
+                    value: MoveType.reps,
                     label: Text('Reps'),
                     icon: Icon(Icons.repeat),
                   ),
-                  ButtonSegment<bool>(
-                    value: false,
-                    label: Text('Duration'),
+                  ButtonSegment<MoveType>(
+                    value: MoveType.duration,
+                    label: Text('Time'),
                     icon: Icon(Icons.timer),
                   ),
+                  ButtonSegment<MoveType>(
+                    value: MoveType.stopwatch,
+                    label: Text('Max Time'),
+                    icon: Icon(Icons.timer_outlined),
+                  ),
                 ],
-                selected: <bool>{_isRepBased},
-                onSelectionChanged: (Set<bool> selected) {
+                selected: <MoveType>{_moveType},
+                onSelectionChanged: (Set<MoveType> selected) {
                   setState(() {
-                    _isRepBased = selected.first;
+                    _moveType = selected.first;
                   });
                 },
               ),
@@ -214,7 +258,7 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
                 keyboardType: TextInputType.number,
               ),
               const SizedBox(height: AppSpacing.md),
-              if (_isRepBased)
+              if (_moveType == MoveType.reps)
                 TextField(
                   controller: _repsController,
                   decoration: const InputDecoration(
@@ -223,7 +267,7 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
                   ),
                   keyboardType: TextInputType.number,
                 )
-              else
+              else if (_moveType == MoveType.duration)
                 Column(
                   children: <Widget>[
                     TextField(
@@ -256,7 +300,9 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
                         keyboardType: TextInputType.number,
                       ),
                   ],
-                ),
+                )
+              else
+                const SizedBox.shrink(),
               const SizedBox(height: AppSpacing.md),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,

@@ -165,7 +165,8 @@
           "type": "string",
           "enum": [
             "reps",
-            "duration"
+            "duration",
+            "stopwatch"
           ]
         },
         "repCount": {
@@ -233,6 +234,31 @@
             "required": [
               "durationSeconds"
             ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "stopwatch"
+              }
+            }
+          },
+          "then": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "durationSeconds"
+                  ]
+                },
+                {
+                  "required": [
+                    "metronomeSpeed"
+                  ]
+                }
+              ]
+            }
           }
         }
       ]

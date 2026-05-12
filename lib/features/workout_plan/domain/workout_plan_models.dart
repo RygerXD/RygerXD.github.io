@@ -1,6 +1,7 @@
 enum MoveType {
   reps,
   duration,
+  stopwatch,
 }
 
 enum WeightUnit {

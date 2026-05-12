@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:workout_app_rewrite/core/media/exercise_media_image.dart';
 import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/active_workout_controller.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/metronome_audio.dart';
@@ -36,6 +37,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   String? _activeMetronomeKey;
   int? _lastRepsForCurrentMove;
   double? _lastWeightForCurrentMove;
+  int? _lastDurationForCurrentMove;
   final Stopwatch _moveStopwatch = Stopwatch();
 
   @override
@@ -217,7 +219,28 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                               lastWeight: _lastWeightForCurrentMove,
                             ),
                           ],
-                        ] else
+                        ] else if (currentMove.type == MoveType.stopwatch)
+                          Column(
+                            children: <Widget>[
+                              _StopwatchDisplay(
+                                seconds: _timerSeconds,
+                                color: statusColor,
+                                lastDuration: _lastDurationForCurrentMove,
+                              ),
+                              if (hasTrackedWeight) ...<Widget>[
+                                const SizedBox(height: 18),
+                                _AdjustableWeightDisplay(
+                                  move: currentMove,
+                                  currentWeight: _currentWeight,
+                                  onWeightChanged: (double value) => setState(
+                                      () => _currentWeight =
+                                          value.clamp(0, 9999).toDouble()),
+                                  lastWeight: _lastWeightForCurrentMove,
+                                ),
+                              ],
+                            ],
+                          )
+                        else
                           Column(
                             children: <Widget>[
                               _AdjustableRepDisplay(
@@ -323,12 +346,26 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   void _startTicker() {
     _ticker?.cancel();
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) async {
-      if (!mounted || _isProcessing || _timerSeconds <= 0) {
+      if (!mounted || _isProcessing) {
         return;
       }
 
       final WorkoutState state = ref.read(activeWorkoutControllerProvider);
       if (state.phase == WorkoutPhase.paused || _isInactiveState(state)) {
+        return;
+      }
+
+      final Move? currentMove =
+          ref.read(activeWorkoutControllerProvider.notifier).currentMove;
+      if (_displayPhase(state) == WorkoutPhase.move &&
+          currentMove?.type == MoveType.stopwatch) {
+        setState(() {
+          _timerSeconds += 1;
+        });
+        return;
+      }
+
+      if (_timerSeconds <= 0) {
         return;
       }
 
@@ -405,18 +442,32 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       );
       final int? repsToSave =
           currentMove.type == MoveType.reps ? _currentReps : metronomeReps;
+      final bool tracksDuration = currentMove.type == MoveType.stopwatch;
       final WeightUnit? weightUnit = currentMove.targetWeightUnit;
       final bool hasTrackedWeight =
           currentMove.targetWeight != null && weightUnit != null;
-      if (repsToSave != null && currentSet != null && workout != null) {
+      if (currentSet != null && workout != null) {
         final int elapsedSeconds = _elapsedSecondsForMove(currentMove);
-        await ref.read(repHistoryServiceProvider).saveReps(
-              workoutId: workout.workoutId,
-              setId: currentSet.setId,
-              loopIndex: state.loopIndex,
-              exerciseId: currentMove.exerciseId,
-              reps: repsToSave,
-            );
+        if (repsToSave != null) {
+          await ref.read(repHistoryServiceProvider).saveReps(
+                workoutId: workout.workoutId,
+                setId: currentSet.setId,
+                loopIndex: state.loopIndex,
+                exerciseId: currentMove.exerciseId,
+                reps: repsToSave,
+              );
+          _lastRepsForCurrentMove = repsToSave;
+        }
+        if (tracksDuration) {
+          await ref.read(repHistoryServiceProvider).saveDuration(
+                workoutId: workout.workoutId,
+                setId: currentSet.setId,
+                loopIndex: state.loopIndex,
+                exerciseId: currentMove.exerciseId,
+                seconds: elapsedSeconds,
+              );
+          _lastDurationForCurrentMove = elapsedSeconds;
+        }
         if (hasTrackedWeight) {
           await ref.read(repHistoryServiceProvider).saveWeight(
                 workoutId: workout.workoutId,
@@ -436,14 +487,13 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                 loopIndex: state.loopIndex,
                 moveId: currentMove.moveId,
                 exerciseId: currentMove.exerciseId,
-                repCount: repsToSave,
+                repCount: repsToSave ?? 0,
                 actualWeight: hasTrackedWeight ? _currentWeight : null,
                 actualWeightUnit: hasTrackedWeight ? weightUnit.name : null,
                 elapsedSeconds: elapsedSeconds,
                 completedAt: DateTime.now(),
               );
         }
-        _lastRepsForCurrentMove = repsToSave;
       }
       controller.completeMove();
     });
@@ -518,6 +568,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
         _currentWeight = move.targetWeight ?? 0;
         _lastRepsForCurrentMove = null;
         _lastWeightForCurrentMove = null;
+        _lastDurationForCurrentMove = null;
       }
       if (nextTimer != null) {
         _timerSeconds = nextTimer;
@@ -526,6 +577,14 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
 
     if (moveChanged && move.type == MoveType.reps) {
       _loadLastRepsForMove(
+        moveKey: moveKey,
+        state: next,
+        move: move,
+        set: set,
+      );
+    }
+    if (moveChanged && move.type == MoveType.stopwatch) {
+      _loadLastDurationForMove(
         moveKey: moveKey,
         state: next,
         move: move,
@@ -602,6 +661,35 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     setState(() {
       _lastWeightForCurrentMove = lastWeight;
       _currentWeight = lastWeight ?? (move.targetWeight ?? 0);
+    });
+  }
+
+  Future<void> _loadLastDurationForMove({
+    required String moveKey,
+    required WorkoutState state,
+    required Move move,
+    required WorkoutSet set,
+  }) async {
+    final Workout? workout =
+        ref.read(activeWorkoutControllerProvider.notifier).workout;
+    if (workout == null) {
+      return;
+    }
+
+    final int? lastDuration =
+        await ref.read(repHistoryServiceProvider).getLastDuration(
+              workoutId: workout.workoutId,
+              setId: set.setId,
+              loopIndex: state.loopIndex,
+              exerciseId: move.exerciseId,
+            );
+
+    if (!mounted || _lastMoveKey != moveKey) {
+      return;
+    }
+
+    setState(() {
+      _lastDurationForCurrentMove = lastDuration;
     });
   }
 
@@ -832,34 +920,19 @@ class _MoveMedia extends StatelessWidget {
           maxHeight: screenSize.height * 0.24,
         ),
         color: colorScheme.surfaceContainerHighest,
-        child: Image.network(
-          url,
+        child: ExerciseMediaImage(
+          source: url,
           fit: BoxFit.contain,
-          loadingBuilder: (
-            BuildContext context,
-            Widget child,
-            ImageChunkEvent? loadingProgress,
-          ) {
-            if (loadingProgress == null) {
-              return child;
-            }
-            return const SizedBox(
-              width: 160,
-              height: 120,
-              child: Center(child: CircularProgressIndicator()),
-            );
-          },
-          errorBuilder: (
-            BuildContext context,
-            Object error,
-            StackTrace? stackTrace,
-          ) {
-            return const SizedBox(
-              width: 160,
-              height: 120,
-              child: Icon(Icons.broken_image_outlined, size: 40),
-            );
-          },
+          loadingPlaceholder: const SizedBox(
+            width: 160,
+            height: 120,
+            child: Center(child: CircularProgressIndicator()),
+          ),
+          errorPlaceholder: const SizedBox(
+            width: 160,
+            height: 120,
+            child: Icon(Icons.broken_image_outlined, size: 40),
+          ),
         ),
       ),
     );
@@ -894,6 +967,33 @@ class _TimerDisplay extends StatelessWidget {
         color: color,
         fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
       ),
+    );
+  }
+}
+
+class _StopwatchDisplay extends StatelessWidget {
+  const _StopwatchDisplay({
+    required this.seconds,
+    required this.color,
+    this.lastDuration,
+  });
+
+  final int seconds;
+  final Color color;
+  final int? lastDuration;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: <Widget>[
+        _TimerDisplay(seconds: seconds, color: color),
+        if (lastDuration != null)
+          Text(
+            'Last: ${formatShortDuration(lastDuration!)}',
+            style: const TextStyle(color: Colors.orange, fontSize: 16),
+            textAlign: TextAlign.center,
+          ),
+      ],
     );
   }
 }

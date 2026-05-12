@@ -225,6 +225,14 @@ class WorkoutPlanParser {
               ));
             }
           }
+          if (move.type == MoveType.stopwatch && move.durationSeconds != null) {
+            issues.add(PlanValidationIssue(
+              path:
+                  '\$.workouts[$workoutIndex].sets[$setIndex].moves[$moveIndex].durationSeconds',
+              message:
+                  'stopwatch moves count up and should not set durationSeconds.',
+            ));
+          }
         }
       }
     }

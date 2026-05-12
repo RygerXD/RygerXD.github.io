@@ -147,5 +147,29 @@ void main() {
       expect(pounds, 100);
       expect(kilos, 45);
     });
+
+    test('saves and retrieves duration by workout/set/loop/exercise key',
+        () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final RepHistoryService service = RepHistoryService(prefs);
+
+      await service.saveDuration(
+        workoutId: 'w1',
+        setId: 's1',
+        loopIndex: 0,
+        exerciseId: 'e1',
+        seconds: 75,
+      );
+
+      final int? stored = await service.getLastDuration(
+        workoutId: 'w1',
+        setId: 's1',
+        loopIndex: 0,
+        exerciseId: 'e1',
+      );
+
+      expect(stored, 75);
+    });
   });
 }

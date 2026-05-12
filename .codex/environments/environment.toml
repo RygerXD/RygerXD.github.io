@@ -6,6 +6,11 @@ name = "Workout App Rewrite"
 script = ""
 
 [[actions]]
-name = "Run"
+name = "Run Chrome"
 icon = "run"
 command = "C:\\src\\flutter\\bin\\flutter.bat run -d chrome --web-port 7357"
+
+[[actions]]
+name = "Run Android"
+icon = "run"
+command = "C:\\src\\flutter\\bin\\flutter.bat run -d 59061JEBF08244"

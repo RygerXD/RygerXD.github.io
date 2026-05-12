@@ -217,6 +217,7 @@ List<_MoveSeries> _buildMoveSeries({
         .map((MapEntry<String, List<_MovePoint>> entry) => _MoveSeries(
               label: entry.key,
               points: entry.value,
+              moveType: null,
             ))
         .toList(growable: false)
       ..sort((_MoveSeries a, _MoveSeries b) => a.label.compareTo(b.label));
@@ -247,6 +248,7 @@ List<_MoveSeries> _buildMoveSeries({
           _MoveSeries(
             label: '$moveName - $setName, Loop ${loopIndex + 1}',
             points: points,
+            moveType: move.type,
           ),
         );
       }
@@ -296,13 +298,20 @@ class _MoveSeries {
   const _MoveSeries({
     required this.label,
     required this.points,
+    required this.moveType,
   });
 
   final String label;
   final List<_MovePoint> points;
+  final MoveType? moveType;
 
   bool get hasWeight =>
       points.any((_MovePoint point) => point.actualWeight != null);
+
+  bool get tracksReps =>
+      moveType == null ||
+      moveType == MoveType.reps ||
+      points.any((_MovePoint point) => point.reps > 0);
 
   _MovePoint? get selectedPoint {
     for (final _MovePoint point in points.reversed) {
@@ -377,7 +386,11 @@ class _MoveProgressCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
           if (selected != null)
-            _ProgressSummary(selected: selected, previous: previous)
+            _ProgressSummary(
+              selected: selected,
+              previous: previous,
+              tracksReps: series.tracksReps,
+            )
           else
             Text(
               '${series.points.length} past ${series.points.length == 1 ? 'entry' : 'entries'}',
@@ -392,6 +405,7 @@ class _MoveProgressCard extends StatelessWidget {
               painter: _MoveProgressChartPainter(
                 points: series.points,
                 colorScheme: colors,
+                tracksReps: series.tracksReps,
               ),
             ),
           ),
@@ -401,7 +415,8 @@ class _MoveProgressCard extends StatelessWidget {
             runSpacing: AppSpacing.xs,
             children: <Widget>[
               _LegendItem(color: colors.primary, label: 'Time'),
-              _LegendItem(color: colors.tertiary, label: 'Reps'),
+              if (series.tracksReps)
+                _LegendItem(color: colors.tertiary, label: 'Reps'),
               if (series.hasWeight)
                 _LegendItem(color: colors.secondary, label: 'Weight'),
             ],
@@ -416,10 +431,12 @@ class _ProgressSummary extends StatelessWidget {
   const _ProgressSummary({
     required this.selected,
     required this.previous,
+    required this.tracksReps,
   });
 
   final _MovePoint selected;
   final _MovePoint? previous;
+  final bool tracksReps;
 
   @override
   Widget build(BuildContext context) {
@@ -440,13 +457,14 @@ class _ProgressSummary extends StatelessWidget {
       spacing: AppSpacing.md,
       runSpacing: AppSpacing.sm,
       children: <Widget>[
-        _MetricPill(
-          icon: Icons.repeat,
-          label: '${selected.reps} reps',
-          detail: repDelta == null
-              ? 'No earlier entry'
-              : _formatSigned(repDelta, suffix: ' reps'),
-        ),
+        if (tracksReps)
+          _MetricPill(
+            icon: Icons.repeat,
+            label: '${selected.reps} reps',
+            detail: repDelta == null
+                ? 'No earlier entry'
+                : _formatSigned(repDelta, suffix: ' reps'),
+          ),
         _MetricPill(
           icon: Icons.timer_outlined,
           label: formatShortDuration(selected.elapsedSeconds),
@@ -570,10 +588,12 @@ class _MoveProgressChartPainter extends CustomPainter {
   const _MoveProgressChartPainter({
     required this.points,
     required this.colorScheme,
+    required this.tracksReps,
   });
 
   final List<_MovePoint> points;
   final ColorScheme colorScheme;
+  final bool tracksReps;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -607,12 +627,13 @@ class _MoveProgressChartPainter extends CustomPainter {
             .map((_MovePoint point) => point.elapsedSeconds.toDouble())
             .toList(growable: false),
       ),
-      _ChartSeries(
-        color: colorScheme.tertiary,
-        values: points
-            .map((_MovePoint point) => point.reps.toDouble())
-            .toList(growable: false),
-      ),
+      if (tracksReps)
+        _ChartSeries(
+          color: colorScheme.tertiary,
+          values: points
+              .map((_MovePoint point) => point.reps.toDouble())
+              .toList(growable: false),
+        ),
       if (points.any((_MovePoint point) => point.actualWeight != null))
         _ChartSeries(
           color: colorScheme.secondary,
@@ -736,7 +757,8 @@ class _MoveProgressChartPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _MoveProgressChartPainter oldDelegate) {
     return oldDelegate.points != points ||
-        oldDelegate.colorScheme != colorScheme;
+        oldDelegate.colorScheme != colorScheme ||
+        oldDelegate.tracksReps != tracksReps;
   }
 }
 

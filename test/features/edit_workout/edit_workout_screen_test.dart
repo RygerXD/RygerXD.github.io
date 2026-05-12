@@ -103,7 +103,7 @@ void main() {
         )
         .first;
     await tester.enterText(exerciseNameField, 'Jumping Jacks');
-    await tester.tap(find.text('Duration'));
+    await tester.tap(find.text('Time'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Metronome'));
     await tester.pumpAndSettle();
@@ -229,6 +229,96 @@ void main() {
 
     expect(capturedMove?.targetWeight, 35);
     expect(capturedMove?.targetWeightUnit, WeightUnit.lb);
+  });
+
+  testWidgets('add move media field accepts keyboard GIF insertion',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (BuildContext context) {
+              return TextButton(
+                onPressed: () {
+                  showDialog<void>(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AddMoveDialog(
+                        onAdd: (Move move, Exercise exercise) {},
+                      );
+                    },
+                  );
+                },
+                child: const Text('Open'),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+
+    final Finder dialogFields = find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.byType(TextField),
+    );
+    final TextField mediaField = tester.widget<TextField>(dialogFields.at(1));
+
+    expect(mediaField.contentInsertionConfiguration, isNotNull);
+    expect(
+      mediaField.contentInsertionConfiguration!.allowedMimeTypes,
+      contains('image/gif'),
+    );
+  });
+
+  testWidgets('add move dialog saves max-time moves',
+      (WidgetTester tester) async {
+    Move? capturedMove;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (BuildContext context) {
+              return TextButton(
+                onPressed: () {
+                  showDialog<void>(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AddMoveDialog(
+                        onAdd: (Move move, Exercise exercise) {
+                          capturedMove = move;
+                        },
+                      );
+                    },
+                  );
+                },
+                child: const Text('Open'),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+
+    final Finder dialogFields = find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.byType(TextField),
+    );
+    await tester.enterText(dialogFields.at(0), 'Wall Sit');
+    await tester.tap(find.text('Max Time'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Add'));
+    await tester.pumpAndSettle();
+
+    expect(capturedMove?.type, MoveType.stopwatch);
+    expect(capturedMove?.repCount, isNull);
+    expect(capturedMove?.durationSeconds, isNull);
   });
 
   testWidgets('edits added moves', (WidgetTester tester) async {

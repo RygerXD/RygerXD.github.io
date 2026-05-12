@@ -422,9 +422,7 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
                                 contentPadding: EdgeInsets.zero,
                                 title: Text(exerciseName),
                                 subtitle: Text(
-                                  move.type == MoveType.reps
-                                      ? '${move.repCount ?? 0} reps'
-                                      : _durationMoveSummary(move),
+                                  _moveSummary(move),
                                 ),
                                 onTap: () =>
                                     _showEditMoveDialog(setIndex, moveIndex),
@@ -480,7 +478,13 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
     );
   }
 
-  String _durationMoveSummary(Move move) {
+  String _moveSummary(Move move) {
+    if (move.type == MoveType.reps) {
+      return '${move.repCount ?? 0} reps';
+    }
+    if (move.type == MoveType.stopwatch) {
+      return 'Max time';
+    }
     final int? bpm = move.metronomeSpeed;
     if (bpm == null) {
       return '${move.durationSeconds ?? 0} seconds';

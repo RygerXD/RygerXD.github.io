@@ -3,15 +3,18 @@ package com.example.workout_app_rewrite
 import android.media.AudioFormat
 import android.media.AudioManager
 import android.media.AudioTrack
+import android.net.Uri
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import java.io.File
 import kotlin.math.PI
 import kotlin.math.exp
 import kotlin.math.sin
 
 class MainActivity : FlutterActivity() {
     private val metronomeChannelName = "workout_app_rewrite/metronome"
+    private val mediaChannelName = "workout_app_rewrite/media"
     private val sampleRate = 44100
     private val activeTracks = mutableSetOf<AudioTrack>()
 
@@ -32,6 +35,58 @@ class MainActivity : FlutterActivity() {
 
                 else -> result.notImplemented()
             }
+        }
+
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            mediaChannelName,
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "copyKeyboardContent" -> {
+                    val uri = call.argument<String>("uri")
+                    val mimeType = call.argument<String>("mimeType") ?: ""
+                    if (uri == null) {
+                        result.error("missing_uri", "No content URI was provided.", null)
+                        return@setMethodCallHandler
+                    }
+
+                    try {
+                        result.success(copyKeyboardContent(uri, mimeType))
+                    } catch (error: Exception) {
+                        result.error("copy_failed", error.message, null)
+                    }
+                }
+
+                else -> result.notImplemented()
+            }
+        }
+    }
+
+    private fun copyKeyboardContent(uriString: String, mimeType: String): String {
+        val mediaDirectory = File(filesDir, "exercise_media")
+        mediaDirectory.mkdirs()
+
+        val extension = extensionForMimeType(mimeType)
+        val mediaFile = File(
+            mediaDirectory,
+            "keyboard_${System.currentTimeMillis()}$extension",
+        )
+        contentResolver.openInputStream(Uri.parse(uriString)).use { inputStream ->
+            requireNotNull(inputStream) { "Could not open keyboard content." }
+            mediaFile.outputStream().use { outputStream ->
+                inputStream.copyTo(outputStream)
+            }
+        }
+        return mediaFile.absolutePath
+    }
+
+    private fun extensionForMimeType(mimeType: String): String {
+        return when (mimeType.lowercase()) {
+            "image/gif" -> ".gif"
+            "image/png" -> ".png"
+            "image/webp" -> ".webp"
+            "image/jpeg", "image/jpg" -> ".jpg"
+            else -> ".img"
         }
     }
 

@@ -65,7 +65,7 @@ class HistoryDatabase extends _$HistoryDatabase {
         if (from < 3) {
           await m.createTable(workoutMovePerformances);
         }
-        if (from < 4) {
+        if (from == 3) {
           await m.addColumn(
               workoutMovePerformances, workoutMovePerformances.actualWeight);
           await m.addColumn(workoutMovePerformances,

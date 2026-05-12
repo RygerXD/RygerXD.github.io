@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:workout_app_rewrite/core/media/exercise_media_image.dart';
 import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
 
@@ -171,11 +172,18 @@ class _ExerciseThumbnail extends StatelessWidget {
       return const CircleAvatar(child: Icon(Icons.fitness_center));
     }
 
-    return CircleAvatar(
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-      foregroundImage: NetworkImage(imageUrl!),
-      onForegroundImageError: (_, __) {},
-      child: const Icon(Icons.fitness_center),
+    return ClipOval(
+      child: ColoredBox(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        child: SizedBox.square(
+          dimension: 40,
+          child: ExerciseMediaImage(
+            source: imageUrl!,
+            fit: BoxFit.cover,
+            errorPlaceholder: const Icon(Icons.fitness_center),
+          ),
+        ),
+      ),
     );
   }
 }

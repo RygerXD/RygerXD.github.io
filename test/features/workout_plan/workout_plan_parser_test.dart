@@ -141,6 +141,47 @@ void main() {
           parsed.workouts.single.sets.single.moves.single.metronomeSpeed, 60);
     });
 
+    test('parses stopwatch moves', () {
+      final Map<String, dynamic> json = <String, dynamic>{
+        'schemaVersion': 1,
+        'planId': 'plan-1',
+        'name': 'Plan 1',
+        'exercises': <Map<String, dynamic>>[
+          <String, dynamic>{
+            'exerciseId': 'ex-1',
+            'name': 'Wall Sit',
+          },
+        ],
+        'workouts': <Map<String, dynamic>>[
+          <String, dynamic>{
+            'workoutId': 'w-1',
+            'title': 'Workout A',
+            'sets': <Map<String, dynamic>>[
+              <String, dynamic>{
+                'setId': 's-1',
+                'loopCount': 1,
+                'restBetweenLoopsSeconds': 30,
+                'moves': <Map<String, dynamic>>[
+                  <String, dynamic>{
+                    'moveId': 'm-1',
+                    'exerciseId': 'ex-1',
+                    'type': 'stopwatch',
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      final WorkoutPlan parsed = parser.parseFromJson(json);
+
+      expect(parsed.workouts.single.sets.single.moves.single.type,
+          MoveType.stopwatch);
+      expect(parsed.workouts.single.sets.single.moves.single.durationSeconds,
+          isNull);
+    });
+
     test('throws when metronome BPM is set on a rep move', () {
       final Map<String, dynamic> json = <String, dynamic>{
         'schemaVersion': 1,
