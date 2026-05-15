@@ -60,5 +60,19 @@ void main() {
 
     expect(find.text('Theme'), findsOneWidget);
     expect(find.text('Audio cues'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('Get ready ding'),
+      500,
+      scrollable: find.byType(Scrollable),
+    );
+    expect(find.text('Get ready ding'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('Exercise finished ding'),
+      500,
+      scrollable: find.byType(Scrollable),
+    );
+    expect(find.text('Exercise finished ding'), findsOneWidget);
   });
 }

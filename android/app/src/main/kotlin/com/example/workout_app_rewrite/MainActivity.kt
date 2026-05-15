@@ -33,6 +33,34 @@ class MainActivity : FlutterActivity() {
                     result.success(null)
                 }
 
+                "playGetReadyDing" -> {
+                    val sound = call.argument<String>("sound") ?: "classic"
+                    val volume = call.argument<Double>("volume") ?: 0.8
+                    playGetReadyDing(sound, volume)
+                    result.success(null)
+                }
+
+                "playGetReadyCountdown" -> {
+                    val sound = call.argument<String>("sound") ?: "click"
+                    val volume = call.argument<Double>("volume") ?: 0.8
+                    playGetReadyCountdown(sound, volume)
+                    result.success(null)
+                }
+
+                "playExerciseCountdown" -> {
+                    val sound = call.argument<String>("sound") ?: "pulse"
+                    val volume = call.argument<Double>("volume") ?: 0.8
+                    playExerciseCountdown(sound, volume)
+                    result.success(null)
+                }
+
+                "playExerciseFinishedDing" -> {
+                    val sound = call.argument<String>("sound") ?: "classic"
+                    val volume = call.argument<Double>("volume") ?: 0.8
+                    playExerciseFinishedDing(sound, volume)
+                    result.success(null)
+                }
+
                 else -> result.notImplemented()
             }
         }
@@ -91,12 +119,31 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun playMetronomeClick(sound: String, volume: Double) {
+        playPcm(buildClickPcm(sound), volume)
+    }
+
+    private fun playGetReadyDing(sound: String, volume: Double) {
+        playPcm(buildGetReadyDingPcm(sound), volume)
+    }
+
+    private fun playGetReadyCountdown(sound: String, volume: Double) {
+        playPcm(buildCountdownPcm(sound, exerciseCue = false), volume)
+    }
+
+    private fun playExerciseCountdown(sound: String, volume: Double) {
+        playPcm(buildCountdownPcm(sound, exerciseCue = true), volume)
+    }
+
+    private fun playExerciseFinishedDing(sound: String, volume: Double) {
+        playPcm(buildExerciseFinishedDingPcm(sound), volume)
+    }
+
+    private fun playPcm(pcm: ByteArray, volume: Double) {
         val safeVolume = volume.coerceIn(0.0, 1.0).toFloat()
         if (safeVolume <= 0f) {
             return
         }
 
-        val pcm = buildClickPcm(sound)
         val audioTrack = AudioTrack(
             AudioManager.STREAM_MUSIC,
             sampleRate,
@@ -163,6 +210,147 @@ class MainActivity : FlutterActivity() {
                 }
             }
             val intSample = (sample.coerceIn(-1.0, 1.0) * Short.MAX_VALUE * 0.75).toInt()
+            val byteIndex = frame * 2
+            pcm[byteIndex] = (intSample and 0xff).toByte()
+            pcm[byteIndex + 1] = ((intSample shr 8) and 0xff).toByte()
+        }
+
+        return pcm
+    }
+
+    private fun buildGetReadyDingPcm(sound: String): ByteArray {
+        val durationMs = when (sound) {
+            "bright" -> 160
+            "soft" -> 220
+            "bell" -> 240
+            else -> 180
+        }
+        val frameCount = sampleRate * durationMs / 1000
+        val pcm = ByteArray(frameCount * 2)
+
+        for (frame in 0 until frameCount) {
+            val t = frame.toDouble() / sampleRate
+            val normalized = frame.toDouble() / frameCount
+            val sample = when (sound) {
+                "bright" -> {
+                    val envelope = exp(-normalized * 6.0)
+                    envelope * (sin(2.0 * PI * 1568.0 * t) + 0.55 * sin(2.0 * PI * 3136.0 * t))
+                }
+
+                "soft" -> {
+                    val envelope = exp(-normalized * 5.0)
+                    envelope * (sin(2.0 * PI * 740.0 * t) + 0.4 * sin(2.0 * PI * 1480.0 * t))
+                }
+
+                "bell" -> {
+                    val envelope = exp(-normalized * 4.5)
+                    envelope * (
+                        sin(2.0 * PI * 1320.0 * t) +
+                            0.45 * sin(2.0 * PI * 1976.0 * t) +
+                            0.35 * sin(2.0 * PI * 2637.0 * t)
+                        )
+                }
+
+                else -> {
+                    val envelope = exp(-normalized * 5.5)
+                    envelope * (sin(2.0 * PI * 1046.0 * t) + 0.5 * sin(2.0 * PI * 2093.0 * t))
+                }
+            }
+            val intSample = (sample.coerceIn(-1.0, 1.0) * Short.MAX_VALUE * 0.7).toInt()
+            val byteIndex = frame * 2
+            pcm[byteIndex] = (intSample and 0xff).toByte()
+            pcm[byteIndex + 1] = ((intSample shr 8) and 0xff).toByte()
+        }
+
+        return pcm
+    }
+
+    private fun buildCountdownPcm(sound: String, exerciseCue: Boolean): ByteArray {
+        val durationMs = when (sound) {
+            "pulse" -> if (exerciseCue) 90 else 70
+            "low" -> if (exerciseCue) 90 else 80
+            "wood" -> if (exerciseCue) 55 else 45
+            else -> if (exerciseCue) 60 else 50
+        }
+        val frameCount = sampleRate * durationMs / 1000
+        val pcm = ByteArray(frameCount * 2)
+
+        for (frame in 0 until frameCount) {
+            val t = frame.toDouble() / sampleRate
+            val normalized = frame.toDouble() / frameCount
+            val sample = when (sound) {
+                "pulse" -> {
+                    val base = if (exerciseCue) 880.0 else 980.0
+                    val envelope = exp(-normalized * 10.0)
+                    envelope * (sin(2.0 * PI * base * t) + 0.45 * sin(2.0 * PI * base * 2.0 * t))
+                }
+
+                "wood" -> {
+                    val base = if (exerciseCue) 640.0 else 720.0
+                    val envelope = exp(-normalized * 18.0)
+                    envelope * (sin(2.0 * PI * base * t) + 0.55 * sin(2.0 * PI * base * 1.5 * t))
+                }
+
+                "low" -> {
+                    val base = if (exerciseCue) 420.0 else 520.0
+                    val envelope = exp(-normalized * 12.0)
+                    envelope * (sin(2.0 * PI * base * t) + 0.4 * sin(2.0 * PI * base * 2.0 * t))
+                }
+
+                else -> {
+                    val base = if (exerciseCue) 1450.0 else 1200.0
+                    val envelope = exp(-normalized * 16.0)
+                    envelope * (sin(2.0 * PI * base * t) + 0.45 * sin(2.0 * PI * base * 2.0 * t))
+                }
+            }
+            val intSample = (sample.coerceIn(-1.0, 1.0) * Short.MAX_VALUE * 0.65).toInt()
+            val byteIndex = frame * 2
+            pcm[byteIndex] = (intSample and 0xff).toByte()
+            pcm[byteIndex + 1] = ((intSample shr 8) and 0xff).toByte()
+        }
+
+        return pcm
+    }
+
+    private fun buildExerciseFinishedDingPcm(sound: String): ByteArray {
+        val durationMs = when (sound) {
+            "bright" -> 180
+            "soft" -> 240
+            "bell" -> 280
+            else -> 200
+        }
+        val frameCount = sampleRate * durationMs / 1000
+        val pcm = ByteArray(frameCount * 2)
+
+        for (frame in 0 until frameCount) {
+            val t = frame.toDouble() / sampleRate
+            val normalized = frame.toDouble() / frameCount
+            val sample = when (sound) {
+                "bright" -> {
+                    val envelope = exp(-normalized * 5.5)
+                    envelope * (sin(2.0 * PI * 1760.0 * t) + 0.5 * sin(2.0 * PI * 3520.0 * t))
+                }
+
+                "soft" -> {
+                    val envelope = exp(-normalized * 4.8)
+                    envelope * (sin(2.0 * PI * 660.0 * t) + 0.4 * sin(2.0 * PI * 1320.0 * t))
+                }
+
+                "bell" -> {
+                    val envelope = exp(-normalized * 4.2)
+                    envelope * (
+                        sin(2.0 * PI * 1480.0 * t) +
+                            0.45 * sin(2.0 * PI * 2220.0 * t) +
+                            0.35 * sin(2.0 * PI * 2960.0 * t)
+                        )
+                }
+
+                else -> {
+                    val envelope = exp(-normalized * 5.2)
+                    envelope * (sin(2.0 * PI * 1175.0 * t) + 0.5 * sin(2.0 * PI * 2350.0 * t))
+                }
+            }
+            val intSample = (sample.coerceIn(-1.0, 1.0) * Short.MAX_VALUE * 0.7).toInt()
             val byteIndex = frame * 2
             pcm[byteIndex] = (intSample and 0xff).toByte()
             pcm[byteIndex + 1] = ((intSample shr 8) and 0xff).toByte()

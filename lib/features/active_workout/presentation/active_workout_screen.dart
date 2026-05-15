@@ -35,6 +35,8 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   bool _isExiting = false;
   String? _lastMoveKey;
   String? _activeMetronomeKey;
+  String? _lastGetReadyCountdownKey;
+  String? _lastExerciseCountdownKey;
   int? _lastRepsForCurrentMove;
   double? _lastWeightForCurrentMove;
   int? _lastDurationForCurrentMove;
@@ -373,6 +375,15 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
         _timerSeconds -= 1;
       });
 
+      if (_timerSeconds > 0) {
+        _playGetReadyCountdownCueIfNeeded(state, _timerSeconds);
+        _playExerciseCountdownCueIfNeeded(
+          state,
+          currentMove: currentMove,
+          seconds: _timerSeconds,
+        );
+      }
+
       if (_timerSeconds == 0) {
         await _onTimerComplete();
       }
@@ -381,7 +392,6 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
 
   Future<void> _onTimerComplete() async {
     _stopMetronome();
-    await _playAudioCue();
 
     final WorkoutState state = ref.read(activeWorkoutControllerProvider);
     final WorkoutPhase displayPhase = _displayPhase(state);
@@ -389,17 +399,23 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
         ref.read(activeWorkoutControllerProvider.notifier);
 
     if (displayPhase == WorkoutPhase.prep) {
+      await _playGetReadyDing();
       return _runGuarded(() => controller.startPrepNow());
     }
+
+    if (displayPhase == WorkoutPhase.move &&
+        controller.currentMove?.type == MoveType.duration) {
+      await _playExerciseFinishedDing();
+      return _completeCurrentMove();
+    }
+
+    await _playAudioCue();
+
     if (displayPhase == WorkoutPhase.restBetweenLoops) {
       return _runGuarded(() => controller.completeRestBetweenLoops());
     }
     if (displayPhase == WorkoutPhase.rest) {
       return _runGuarded(() => controller.completeRest());
-    }
-    if (displayPhase == WorkoutPhase.move &&
-        controller.currentMove?.type == MoveType.duration) {
-      return _completeCurrentMove();
     }
 
     return Future<void>.value();
@@ -413,12 +429,56 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     await SystemSound.play(SystemSoundType.alert);
   }
 
+  Future<void> _playGetReadyDing() async {
+    final AppSettings settings = ref.read(appSettingsProvider);
+    if (!settings.audioCuesEnabled) {
+      return;
+    }
+    await WorkoutAudio.playGetReadyDing(
+      sound: settings.getReadyDingSound,
+      volume: settings.getReadyDingVolume,
+    );
+  }
+
+  Future<void> _playGetReadyCountdownCue() async {
+    final AppSettings settings = ref.read(appSettingsProvider);
+    if (!settings.audioCuesEnabled) {
+      return;
+    }
+    await WorkoutAudio.playGetReadyCountdown(
+      sound: settings.getReadyCountdownSound,
+      volume: settings.getReadyCountdownVolume,
+    );
+  }
+
+  Future<void> _playExerciseCountdownCue() async {
+    final AppSettings settings = ref.read(appSettingsProvider);
+    if (!settings.audioCuesEnabled) {
+      return;
+    }
+    await WorkoutAudio.playExerciseCountdown(
+      sound: settings.exerciseCountdownSound,
+      volume: settings.exerciseCountdownVolume,
+    );
+  }
+
+  Future<void> _playExerciseFinishedDing() async {
+    final AppSettings settings = ref.read(appSettingsProvider);
+    if (!settings.audioCuesEnabled) {
+      return;
+    }
+    await WorkoutAudio.playExerciseFinishedDing(
+      sound: settings.exerciseFinishedDingSound,
+      volume: settings.exerciseFinishedDingVolume,
+    );
+  }
+
   Future<void> _playMetronomeTick() async {
     final AppSettings settings = ref.read(appSettingsProvider);
     if (!settings.audioCuesEnabled) {
       return;
     }
-    await MetronomeAudio.playClick(
+    await WorkoutAudio.playMetronomeClick(
       sound: settings.metronomeClickSound,
       volume: settings.metronomeVolume,
     );
@@ -564,6 +624,8 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     setState(() {
       if (moveChanged) {
         _lastMoveKey = moveKey;
+        _lastGetReadyCountdownKey = null;
+        _lastExerciseCountdownKey = null;
         _currentReps = move.repCount ?? 0;
         _currentWeight = move.targetWeight ?? 0;
         _lastRepsForCurrentMove = null;
@@ -574,6 +636,15 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
         _timerSeconds = nextTimer;
       }
     });
+
+    if (nextTimer != null) {
+      _playGetReadyCountdownCueIfNeeded(next, nextTimer);
+      _playExerciseCountdownCueIfNeeded(
+        next,
+        currentMove: move,
+        seconds: nextTimer,
+      );
+    }
 
     if (moveChanged && move.type == MoveType.reps) {
       _loadLastRepsForMove(
@@ -791,6 +862,47 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     _metronomeTimer?.cancel();
     _metronomeTimer = null;
     _activeMetronomeKey = null;
+  }
+
+  void _playGetReadyCountdownCueIfNeeded(WorkoutState state, int seconds) {
+    if (_displayPhase(state) != WorkoutPhase.prep ||
+        seconds < 1 ||
+        seconds > 3) {
+      return;
+    }
+
+    final Move? currentMove =
+        ref.read(activeWorkoutControllerProvider.notifier).currentMove;
+    final String countdownKey =
+        '${state.setIndex}:${state.loopIndex}:${state.moveIndex}:${currentMove?.moveId}:$seconds';
+    if (_lastGetReadyCountdownKey == countdownKey) {
+      return;
+    }
+
+    _lastGetReadyCountdownKey = countdownKey;
+    unawaited(_playGetReadyCountdownCue());
+  }
+
+  void _playExerciseCountdownCueIfNeeded(
+    WorkoutState state, {
+    required Move? currentMove,
+    required int seconds,
+  }) {
+    if (_displayPhase(state) != WorkoutPhase.move ||
+        currentMove?.type != MoveType.duration ||
+        seconds < 1 ||
+        seconds > 3) {
+      return;
+    }
+
+    final String countdownKey =
+        '${state.setIndex}:${state.loopIndex}:${state.moveIndex}:${currentMove?.moveId}:$seconds';
+    if (_lastExerciseCountdownKey == countdownKey) {
+      return;
+    }
+
+    _lastExerciseCountdownKey = countdownKey;
+    unawaited(_playExerciseCountdownCue());
   }
 
   WorkoutPhase _displayPhase(WorkoutState state) {
