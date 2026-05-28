@@ -1,9 +1,8 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
+import 'package:workout_app_rewrite/core/media/image_or_gif_url_field.dart';
 import 'package:workout_app_rewrite/core/media/keyboard_media_saver.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
 import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
@@ -232,7 +231,7 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
                 autofocus: true,
               ),
               const SizedBox(height: AppSpacing.md),
-              _MediaUrlField(
+              ImageOrGifUrlField(
                 controller: _mediaUrlController,
                 onContentInserted: (KeyboardInsertedContent content) {
                   unawaited(_handleKeyboardMediaInserted(content));
@@ -397,132 +396,6 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
           child: Text(_isEditing ? 'Save' : 'Add'),
         ),
       ],
-    );
-  }
-}
-
-class _MediaUrlField extends StatefulWidget {
-  const _MediaUrlField({
-    required this.controller,
-    required this.onContentInserted,
-    required this.onNativeKeyboardMediaInserted,
-  });
-
-  final TextEditingController controller;
-  final ValueChanged<KeyboardInsertedContent> onContentInserted;
-  final ValueChanged<String?> onNativeKeyboardMediaInserted;
-
-  @override
-  State<_MediaUrlField> createState() => _MediaUrlFieldState();
-}
-
-class _MediaUrlFieldState extends State<_MediaUrlField> {
-  static const String _viewType =
-      'workout_app_rewrite/keyboard_media_edit_text';
-  static const MethodChannel _channel =
-      MethodChannel('workout_app_rewrite/keyboard_media_text');
-
-  int? _nativeViewId;
-
-  bool get _usesNativeAndroidField {
-    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
-      return false;
-    }
-
-    final String bindingType = WidgetsBinding.instance.runtimeType.toString();
-    return !bindingType.contains('TestWidgets');
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    widget.controller.addListener(_handleControllerChanged);
-    _channel.setMethodCallHandler(_handleNativeMethodCall);
-  }
-
-  @override
-  void dispose() {
-    widget.controller.removeListener(_handleControllerChanged);
-    _channel.setMethodCallHandler(null);
-    super.dispose();
-  }
-
-  void _handleControllerChanged() {
-    if (mounted) {
-      setState(() {});
-    }
-  }
-
-  Future<void> _handleNativeMethodCall(MethodCall call) async {
-    final Object? rawArguments = call.arguments;
-    if (rawArguments is! Map<Object?, Object?>) {
-      return;
-    }
-
-    final int? viewId = rawArguments['viewId'] as int?;
-    if (viewId == null || viewId != _nativeViewId) {
-      return;
-    }
-
-    switch (call.method) {
-      case 'onTextChanged':
-        final String text = rawArguments['text'] as String? ?? '';
-        if (widget.controller.text != text) {
-          widget.controller.text = text;
-        }
-      case 'onKeyboardMediaInserted':
-        widget.onNativeKeyboardMediaInserted(rawArguments['path'] as String?);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_usesNativeAndroidField) {
-      return InputDecorator(
-        isEmpty: widget.controller.text.isEmpty,
-        decoration: const InputDecoration(
-          labelText: 'Image or GIF URL',
-          border: OutlineInputBorder(),
-          prefixIcon: Icon(Icons.image_outlined),
-        ),
-        child: SizedBox(
-          height: 72,
-          child: AndroidView(
-            viewType: _viewType,
-            creationParams: <String, String>{
-              'initialText': widget.controller.text,
-            },
-            creationParamsCodec: const StandardMessageCodec(),
-            onPlatformViewCreated: (int id) {
-              _nativeViewId = id;
-            },
-          ),
-        ),
-      );
-    }
-
-    return TextField(
-      controller: widget.controller,
-      decoration: const InputDecoration(
-        labelText: 'Image or GIF URL',
-        hintText: 'https://example.com/move.gif',
-        border: OutlineInputBorder(),
-        prefixIcon: Icon(Icons.image_outlined),
-      ),
-      keyboardType: TextInputType.multiline,
-      textInputAction: TextInputAction.newline,
-      minLines: 1,
-      maxLines: 3,
-      contentInsertionConfiguration: ContentInsertionConfiguration(
-        allowedMimeTypes: const <String>[
-          'image/*',
-          'image/gif',
-          'image/png',
-          'image/jpeg',
-          'image/webp',
-        ],
-        onContentInserted: widget.onContentInserted,
-      ),
     );
   }
 }

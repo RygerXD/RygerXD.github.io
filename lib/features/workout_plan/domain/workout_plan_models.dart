@@ -216,20 +216,26 @@ class Workout {
     required this.workoutId,
     required this.title,
     required this.sets,
+    this.imageUrl,
   });
 
   final String workoutId;
   final String title;
+  final String? imageUrl;
   final List<WorkoutSet> sets;
 
   Workout copyWith({
     String? workoutId,
     String? title,
+    Object? imageUrl = _copyWithUnset,
     List<WorkoutSet>? sets,
   }) {
     return Workout(
       workoutId: workoutId ?? this.workoutId,
       title: title ?? this.title,
+      imageUrl: identical(imageUrl, _copyWithUnset)
+          ? this.imageUrl
+          : imageUrl as String?,
       sets: sets ?? this.sets,
     );
   }
@@ -238,6 +244,7 @@ class Workout {
     return Workout(
       workoutId: json['workoutId'] as String,
       title: json['title'] as String,
+      imageUrl: json['imageUrl'] as String?,
       sets: (json['sets'] as List<dynamic>)
           .cast<Map<String, dynamic>>()
           .map(WorkoutSet.fromJson)
@@ -249,6 +256,7 @@ class Workout {
     return <String, dynamic>{
       'workoutId': workoutId,
       'title': title,
+      'imageUrl': imageUrl,
       'sets':
           sets.map((WorkoutSet set) => set.toJson()).toList(growable: false),
     };

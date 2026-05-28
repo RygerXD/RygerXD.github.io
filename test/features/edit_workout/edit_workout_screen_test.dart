@@ -173,6 +173,57 @@ void main() {
         'https://example.com/plank.gif');
   });
 
+  testWidgets('saves image or GIF URL for workouts',
+      (WidgetTester tester) async {
+    final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
+    await repository.savePlan(
+      const WorkoutPlan(
+        schemaVersion: 1,
+        planId: 'plan-1',
+        name: 'Plan 1',
+        workouts: <Workout>[],
+        exercises: <Exercise>[],
+      ),
+    );
+
+    final ProviderContainer container = ProviderContainer(
+      overrides: <Override>[
+        workoutRepositoryProvider.overrideWithValue(repository),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container.read(loadedWorkoutPlansNotifierProvider.future);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(
+          home: EditWorkoutScreen(planId: 'plan-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final Finder fields = find.byType(TextField);
+    await tester.enterText(fields.at(0), 'Cardio');
+    await tester.enterText(fields.at(1), 'https://example.com/cardio.gif');
+
+    final TextField mediaField = tester.widget<TextField>(fields.at(1));
+    expect(mediaField.keyboardType, TextInputType.multiline);
+    expect(mediaField.contentInsertionConfiguration, isNotNull);
+    expect(
+      mediaField.contentInsertionConfiguration!.allowedMimeTypes,
+      contains('image/gif'),
+    );
+
+    await tester.tap(find.text('SAVE'));
+    await tester.pumpAndSettle();
+
+    final WorkoutPlan? updatedPlan = await repository.getPlanById('plan-1');
+    expect(updatedPlan?.workouts.single.imageUrl,
+        'https://example.com/cardio.gif');
+  });
+
   testWidgets('add move dialog saves target weight',
       (WidgetTester tester) async {
     Move? capturedMove;
@@ -616,8 +667,8 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextField).at(0), 'Workout A');
-    await tester.enterText(find.byType(TextField).at(1), 'Warmup');
-    await tester.enterText(find.byType(TextField).at(2), '3');
+    await tester.enterText(find.byType(TextField).at(2), 'Warmup');
+    await tester.enterText(find.byType(TextField).at(3), '3');
     await tester.tap(find.text('SAVE'));
     await tester.pumpAndSettle();
 

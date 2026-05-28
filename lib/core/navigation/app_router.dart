@@ -10,6 +10,7 @@ import 'package:workout_app_rewrite/features/history/presentation/workout_progre
 import 'package:workout_app_rewrite/features/library/presentation/library_screen.dart';
 import 'package:workout_app_rewrite/features/settings/presentation/settings_screen.dart';
 import 'package:workout_app_rewrite/features/workout_detail/presentation/workout_detail_screen.dart';
+import 'package:workout_app_rewrite/features/workout_summary/presentation/workout_summary_screen.dart';
 
 final Provider<GoRouter> appRouterProvider =
     Provider<GoRouter>((Ref<GoRouter> ref) {
@@ -56,6 +57,18 @@ final Provider<GoRouter> appRouterProvider =
                       return WorkoutDetailScreen(planId: planId);
                     },
                     routes: <RouteBase>[
+                      GoRoute(
+                        path: 'workout/:workoutId',
+                        builder: (BuildContext context, GoRouterState state) {
+                          final String planId = state.pathParameters['planId']!;
+                          final String workoutId =
+                              state.pathParameters['workoutId']!;
+                          return WorkoutSummaryScreen(
+                            planId: planId,
+                            workoutId: workoutId,
+                          );
+                        },
+                      ),
                       GoRoute(
                         path: 'edit-workout',
                         builder: (BuildContext context, GoRouterState state) {

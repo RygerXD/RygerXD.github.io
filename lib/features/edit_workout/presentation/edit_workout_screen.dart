@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workout_app_rewrite/core/media/exercise_media_image.dart';
+import 'package:workout_app_rewrite/core/media/image_or_gif_url_field.dart';
+import 'package:workout_app_rewrite/core/media/keyboard_media_saver.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
 import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
 import 'package:workout_app_rewrite/features/edit_workout/presentation/add_move_dialog.dart';
@@ -25,6 +29,7 @@ class EditWorkoutScreen extends ConsumerStatefulWidget {
 
 class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
   final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _imageUrlController = TextEditingController();
   final List<WorkoutSet> _sets = <WorkoutSet>[];
   final Map<String, Exercise> _exercisesById = <String, Exercise>{};
 
@@ -58,6 +63,7 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
           .firstOrNull;
       if (workout != null) {
         _titleController.text = workout.title;
+        _imageUrlController.text = workout.imageUrl ?? '';
         _sets.addAll(workout.sets);
       } else {
         _addSet();
@@ -70,6 +76,7 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
   @override
   void dispose() {
     _titleController.dispose();
+    _imageUrlController.dispose();
     super.dispose();
   }
 
@@ -199,6 +206,43 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
     }
   }
 
+  Future<void> _handleWorkoutKeyboardMediaInserted(
+    KeyboardInsertedContent content,
+  ) async {
+    final String? savedPath = await saveKeyboardInsertedMedia(content);
+    if (!mounted) {
+      return;
+    }
+    if (savedPath == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not add that image.')),
+      );
+      return;
+    }
+
+    _imageUrlController.text = savedPath;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Image added.')),
+    );
+  }
+
+  void _handleWorkoutNativeKeyboardMediaInserted(String? savedPath) {
+    if (!mounted) {
+      return;
+    }
+    if (savedPath == null || savedPath.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not add that image.')),
+      );
+      return;
+    }
+
+    _imageUrlController.text = savedPath;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Image added.')),
+    );
+  }
+
   void _cacheExercises(List<Exercise> exercises) {
     _exercisesById.addEntries(
       exercises.map((Exercise exercise) =>
@@ -272,6 +316,7 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
     final Workout newWorkout = Workout(
       workoutId: widget.workoutId ?? const Uuid().v4(),
       title: title,
+      imageUrl: optionalText(_imageUrlController.text),
       sets: _sets,
     );
 
@@ -335,6 +380,16 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
                 border: OutlineInputBorder(),
               ),
               textCapitalization: TextCapitalization.words,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            ImageOrGifUrlField(
+              controller: _imageUrlController,
+              hintText: 'https://example.com/workout.gif',
+              onContentInserted: (KeyboardInsertedContent content) {
+                unawaited(_handleWorkoutKeyboardMediaInserted(content));
+              },
+              onNativeKeyboardMediaInserted:
+                  _handleWorkoutNativeKeyboardMediaInserted,
             ),
             const SizedBox(height: AppSpacing.xxl),
             Row(

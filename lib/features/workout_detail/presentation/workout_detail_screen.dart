@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
-import 'package:workout_app_rewrite/features/active_workout/application/active_workout_controller.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
 
@@ -89,40 +88,47 @@ class WorkoutDetailScreen extends ConsumerWidget {
               ...plan.workouts.map((Workout workout) {
                 return Card(
                   margin: const EdgeInsets.only(bottom: AppSpacing.md),
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSpacing.md),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: <Widget>[
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            Expanded(
-                              child: Text(
-                                workout.title,
-                                style: Theme.of(context).textTheme.titleMedium,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(AppRadii.md),
+                    onTap: () => context.go(
+                      '/library/detail/$planId/workout/${workout.workoutId}',
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: <Widget>[
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Expanded(
+                                child: Text(
+                                  workout.title,
+                                  style:
+                                      Theme.of(context).textTheme.titleMedium,
+                                ),
                               ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.edit_outlined),
-                              onPressed: () => context.go(
-                                  '/library/detail/$planId/edit-workout?workoutId=${workout.workoutId}'),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        Text('${workout.sets.length} Sets'),
-                        const SizedBox(height: AppSpacing.lg),
-                        FilledButton(
-                          onPressed: () {
-                            ref
-                                .read(activeWorkoutControllerProvider.notifier)
-                                .startWithWorkout(workout, planId);
-                            context.go('/active');
-                          },
-                          child: const Text('Start Workout'),
-                        ),
-                      ],
+                              IconButton(
+                                icon: const Icon(Icons.edit_outlined),
+                                onPressed: () => context.go(
+                                    '/library/detail/$planId/edit-workout?workoutId=${workout.workoutId}'),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          Text('${workout.sets.length} Sets'),
+                          const SizedBox(height: AppSpacing.sm),
+                          Text(
+                            'Tap to preview',
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
+                                    ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );
