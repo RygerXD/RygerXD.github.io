@@ -46,6 +46,7 @@ class AppSettings {
   const AppSettings({
     required this.themePreference,
     required this.unitSystem,
+    required this.streakWorkoutsPerWeek,
     required this.audioCuesEnabled,
     required this.metronomeClickSound,
     required this.metronomeVolume,
@@ -61,6 +62,7 @@ class AppSettings {
 
   final AppThemePreference themePreference;
   final AppUnitSystem unitSystem;
+  final int streakWorkoutsPerWeek;
   final bool audioCuesEnabled;
   final MetronomeClickSound metronomeClickSound;
   final double metronomeVolume;
@@ -76,6 +78,7 @@ class AppSettings {
   AppSettings copyWith({
     AppThemePreference? themePreference,
     AppUnitSystem? unitSystem,
+    int? streakWorkoutsPerWeek,
     bool? audioCuesEnabled,
     MetronomeClickSound? metronomeClickSound,
     double? metronomeVolume,
@@ -91,6 +94,8 @@ class AppSettings {
     return AppSettings(
       themePreference: themePreference ?? this.themePreference,
       unitSystem: unitSystem ?? this.unitSystem,
+      streakWorkoutsPerWeek:
+          streakWorkoutsPerWeek ?? this.streakWorkoutsPerWeek,
       audioCuesEnabled: audioCuesEnabled ?? this.audioCuesEnabled,
       metronomeClickSound: metronomeClickSound ?? this.metronomeClickSound,
       metronomeVolume: metronomeVolume ?? this.metronomeVolume,
@@ -201,9 +206,17 @@ final Provider<AppUnitSystem> appUnitSystemProvider =
       appSettingsProvider.select((AppSettings value) => value.unitSystem));
 });
 
+final Provider<int> streakWorkoutsPerWeekProvider =
+    Provider<int>((Ref<int> ref) {
+  return ref.watch(appSettingsProvider
+      .select((AppSettings value) => value.streakWorkoutsPerWeek));
+});
+
 class AppSettingsController extends Notifier<AppSettings> {
   static const String _themePreferenceKey = 'settings.theme_preference.v1';
   static const String _unitSystemKey = 'settings.unit_system.v1';
+  static const String _streakWorkoutsPerWeekKey =
+      'settings.streak_workouts_per_week.v1';
   static const String _audioCuesEnabledKey = 'settings.audio_cues_enabled.v1';
   static const String _metronomeClickSoundKey =
       'settings.metronome_click_sound.v1';
@@ -231,6 +244,7 @@ class AppSettingsController extends Notifier<AppSettings> {
     return AppSettings(
       themePreference: _readThemePreference(prefs),
       unitSystem: _readUnitSystem(prefs),
+      streakWorkoutsPerWeek: _readStreakWorkoutsPerWeek(prefs),
       audioCuesEnabled: prefs.getBool(_audioCuesEnabledKey) ?? true,
       metronomeClickSound: _readMetronomeClickSound(prefs),
       metronomeVolume: _readMetronomeVolume(prefs),
@@ -281,6 +295,16 @@ class AppSettingsController extends Notifier<AppSettings> {
     state = state.copyWith(unitSystem: value);
     final SharedPreferences prefs = ref.read(sharedPreferencesProvider);
     await prefs.setString(_unitSystemKey, value.name);
+  }
+
+  Future<void> setStreakWorkoutsPerWeek(int value) async {
+    final int clamped = value.clamp(1, 14);
+    if (state.streakWorkoutsPerWeek == clamped) {
+      return;
+    }
+    state = state.copyWith(streakWorkoutsPerWeek: clamped);
+    final SharedPreferences prefs = ref.read(sharedPreferencesProvider);
+    await prefs.setInt(_streakWorkoutsPerWeekKey, clamped);
   }
 
   Future<void> setAudioCuesEnabled(bool value) async {
@@ -412,6 +436,11 @@ class AppSettingsController extends Notifier<AppSettings> {
       }
     }
     return AppUnitSystem.metric;
+  }
+
+  int _readStreakWorkoutsPerWeek(SharedPreferences prefs) {
+    final int raw = prefs.getInt(_streakWorkoutsPerWeekKey) ?? 3;
+    return raw.clamp(1, 14);
   }
 
   MetronomeClickSound _readMetronomeClickSound(SharedPreferences prefs) {

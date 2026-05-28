@@ -54,10 +54,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      find.descendant(
-        of: find.byType(ListTile),
-        matching: find.text('Push Up'),
-      ),
+      find.text('Push Up'),
       findsOneWidget,
     );
     expect(find.text('Unknown Exercise'), findsNothing);
@@ -105,6 +102,7 @@ void main() {
     await tester.enterText(exerciseNameField, 'Jumping Jacks');
     await tester.tap(find.text('Time'));
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Metronome'));
     await tester.tap(find.text('Metronome'));
     await tester.pumpAndSettle();
 
@@ -231,6 +229,95 @@ void main() {
     expect(capturedMove?.targetWeightUnit, WeightUnit.lb);
   });
 
+  testWidgets('add move dialog saves cooldown time',
+      (WidgetTester tester) async {
+    Move? capturedMove;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (BuildContext context) {
+              return TextButton(
+                onPressed: () {
+                  showDialog<void>(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AddMoveDialog(
+                        onAdd: (Move move, Exercise exercise) {
+                          capturedMove = move;
+                        },
+                      );
+                    },
+                  );
+                },
+                child: const Text('Open'),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+
+    final Finder dialogFields = find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.byType(TextField),
+    );
+    await tester.enterText(dialogFields.at(0), 'Burpee');
+    await tester.enterText(dialogFields.at(3), '20');
+    await tester.tap(find.widgetWithText(FilledButton, 'Add'));
+    await tester.pumpAndSettle();
+
+    expect(capturedMove?.finishTimeSeconds, 20);
+  });
+
+  testWidgets('add move dialog defaults cooldown time to zero',
+      (WidgetTester tester) async {
+    Move? capturedMove;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (BuildContext context) {
+              return TextButton(
+                onPressed: () {
+                  showDialog<void>(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AddMoveDialog(
+                        onAdd: (Move move, Exercise exercise) {
+                          capturedMove = move;
+                        },
+                      );
+                    },
+                  );
+                },
+                child: const Text('Open'),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+
+    final Finder dialogFields = find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.byType(TextField),
+    );
+    await tester.enterText(dialogFields.at(0), 'Jumping Jacks');
+    await tester.tap(find.widgetWithText(FilledButton, 'Add'));
+    await tester.pumpAndSettle();
+
+    expect(capturedMove?.finishTimeSeconds, 0);
+  });
+
   testWidgets('add move media field accepts keyboard GIF insertion',
       (WidgetTester tester) async {
     await tester.pumpWidget(
@@ -266,7 +353,15 @@ void main() {
     );
     final TextField mediaField = tester.widget<TextField>(dialogFields.at(1));
 
+    expect(mediaField.keyboardType, TextInputType.multiline);
+    expect(mediaField.textInputAction, TextInputAction.newline);
+    expect(mediaField.minLines, 1);
+    expect(mediaField.maxLines, 3);
     expect(mediaField.contentInsertionConfiguration, isNotNull);
+    expect(
+      mediaField.contentInsertionConfiguration!.allowedMimeTypes,
+      contains('image/*'),
+    );
     expect(
       mediaField.contentInsertionConfiguration!.allowedMimeTypes,
       contains('image/gif'),
@@ -363,7 +458,7 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Add'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.edit_outlined));
+    await tester.tap(find.text('Push Up'));
     await tester.pumpAndSettle();
 
     dialogFields = find.descendant(
@@ -485,6 +580,7 @@ void main() {
     expect(addedMove.exerciseId, 'burpee');
     expect(addedMove.repCount, 10);
     expect(addedMove.prepTimeSeconds, 5);
+    expect(addedMove.finishTimeSeconds, 0);
     expect(updatedPlan.exercises.single.imageUrl,
         'https://example.com/burpee.gif');
   });
@@ -529,5 +625,84 @@ void main() {
     final WorkoutSet savedSet = updatedPlan!.workouts.single.sets.single;
     expect(savedSet.name, 'Warmup');
     expect(savedSet.loopCount, 3);
+  });
+
+  testWidgets('reorders moves inside a set', (WidgetTester tester) async {
+    final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
+    await repository.savePlan(
+      const WorkoutPlan(
+        schemaVersion: 1,
+        planId: 'plan-1',
+        name: 'Plan 1',
+        workouts: <Workout>[
+          Workout(
+            workoutId: 'workout-1',
+            title: 'Workout A',
+            sets: <WorkoutSet>[
+              WorkoutSet(
+                setId: 'set-1',
+                loopCount: 1,
+                restBetweenLoopsSeconds: 30,
+                moves: <Move>[
+                  Move(
+                    moveId: 'move-1',
+                    exerciseId: 'push-up',
+                    type: MoveType.reps,
+                    repCount: 10,
+                  ),
+                  Move(
+                    moveId: 'move-2',
+                    exerciseId: 'squat',
+                    type: MoveType.reps,
+                    repCount: 12,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+        exercises: <Exercise>[
+          Exercise(exerciseId: 'push-up', name: 'Push Up'),
+          Exercise(exerciseId: 'squat', name: 'Squat'),
+        ],
+      ),
+    );
+
+    final ProviderContainer container = ProviderContainer(
+      overrides: <Override>[
+        workoutRepositoryProvider.overrideWithValue(repository),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container.read(loadedWorkoutPlansNotifierProvider.future);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(
+          home: EditWorkoutScreen(planId: 'plan-1', workoutId: 'workout-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final Offset firstHandleCenter =
+        tester.getCenter(find.byIcon(Icons.drag_indicator).first);
+    final TestGesture gesture = await tester.startGesture(firstHandleCenter);
+    await tester.pump();
+    await gesture.moveBy(const Offset(0, 180));
+    await tester.pump(const Duration(milliseconds: 500));
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('SAVE'));
+    await tester.pumpAndSettle();
+
+    final WorkoutPlan updatedPlan = (await repository.getPlanById('plan-1'))!;
+    final List<Move> savedMoves = updatedPlan.workouts.single.sets.single.moves;
+    expect(savedMoves.map((Move move) => move.exerciseId), <String>[
+      'squat',
+      'push-up',
+    ]);
   });
 }

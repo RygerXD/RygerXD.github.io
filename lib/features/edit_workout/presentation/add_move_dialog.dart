@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workout_app_rewrite/core/media/keyboard_media_saver.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
@@ -30,6 +32,8 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
   final TextEditingController _mediaUrlController = TextEditingController();
   final TextEditingController _prepController =
       TextEditingController(text: '5');
+  final TextEditingController _cooldownController =
+      TextEditingController(text: '0');
   final TextEditingController _repsController =
       TextEditingController(text: '10');
   final TextEditingController _durationController =
@@ -56,6 +60,7 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
       _moveType = initialMove.type;
       _useMetronome = initialMove.metronomeSpeed != null;
       _prepController.text = initialMove.prepTimeSeconds.toString();
+      _cooldownController.text = initialMove.finishTimeSeconds.toString();
       _repsController.text = (initialMove.repCount ?? 10).toString();
       _durationController.text = (initialMove.durationSeconds ?? 30).toString();
       _metronomeController.text = (initialMove.metronomeSpeed ?? 60).toString();
@@ -72,6 +77,7 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
     _nameController.dispose();
     _mediaUrlController.dispose();
     _prepController.dispose();
+    _cooldownController.dispose();
     _repsController.dispose();
     _durationController.dispose();
     _metronomeController.dispose();
@@ -112,14 +118,14 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
       moveId: widget.initialMove?.moveId ?? const Uuid().v4(),
       exerciseId: exerciseId,
       type: _moveType,
-      prepTimeSeconds: int.tryParse(_prepController.text) ?? 5,
+      prepTimeSeconds: _parseNonNegativeSeconds(_prepController.text, 5),
       repCount: _moveType == MoveType.reps
           ? (int.tryParse(_repsController.text) ?? 10)
           : null,
       durationSeconds: _moveType == MoveType.duration
           ? (int.tryParse(_durationController.text) ?? 30)
           : null,
-      finishTimeSeconds: widget.initialMove?.finishTimeSeconds ?? 0,
+      finishTimeSeconds: _parseNonNegativeSeconds(_cooldownController.text, 0),
       targetWeight: _hasWeight ? targetWeight : null,
       targetWeightUnit: _hasWeight ? _weightUnit : null,
       metronomeSpeed: metronomeSpeed,
@@ -127,6 +133,14 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
 
     widget.onAdd(move, exercise);
     Navigator.of(context).pop();
+  }
+
+  int _parseNonNegativeSeconds(String value, int fallback) {
+    final int? seconds = int.tryParse(value);
+    if (seconds == null || seconds < 0) {
+      return fallback;
+    }
+    return seconds;
   }
 
   int? _parseMetronomeSpeed() {
@@ -171,6 +185,23 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
     );
   }
 
+  void _handleNativeKeyboardMediaInserted(String? savedPath) {
+    if (!mounted) {
+      return;
+    }
+    if (savedPath == null || savedPath.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not add that image.')),
+      );
+      return;
+    }
+
+    _mediaUrlController.text = savedPath;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Image added.')),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final Size screenSize = MediaQuery.sizeOf(context);
@@ -201,26 +232,13 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
                 autofocus: true,
               ),
               const SizedBox(height: AppSpacing.md),
-              TextField(
+              _MediaUrlField(
                 controller: _mediaUrlController,
-                decoration: const InputDecoration(
-                  labelText: 'Image or GIF URL',
-                  hintText: 'https://example.com/move.gif',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.image_outlined),
-                ),
-                keyboardType: TextInputType.url,
-                contentInsertionConfiguration: ContentInsertionConfiguration(
-                  allowedMimeTypes: const <String>[
-                    'image/gif',
-                    'image/png',
-                    'image/jpeg',
-                    'image/webp',
-                  ],
-                  onContentInserted: (KeyboardInsertedContent content) {
-                    unawaited(_handleKeyboardMediaInserted(content));
-                  },
-                ),
+                onContentInserted: (KeyboardInsertedContent content) {
+                  unawaited(_handleKeyboardMediaInserted(content));
+                },
+                onNativeKeyboardMediaInserted:
+                    _handleNativeKeyboardMediaInserted,
               ),
               const SizedBox(height: AppSpacing.md),
               SegmentedButton<MoveType>(
@@ -253,6 +271,15 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
                 controller: _prepController,
                 decoration: const InputDecoration(
                   labelText: 'Prep Time (sec)',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              TextField(
+                controller: _cooldownController,
+                decoration: const InputDecoration(
+                  labelText: 'Cooldown Time (sec)',
                   border: OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.number,
@@ -370,6 +397,132 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
           child: Text(_isEditing ? 'Save' : 'Add'),
         ),
       ],
+    );
+  }
+}
+
+class _MediaUrlField extends StatefulWidget {
+  const _MediaUrlField({
+    required this.controller,
+    required this.onContentInserted,
+    required this.onNativeKeyboardMediaInserted,
+  });
+
+  final TextEditingController controller;
+  final ValueChanged<KeyboardInsertedContent> onContentInserted;
+  final ValueChanged<String?> onNativeKeyboardMediaInserted;
+
+  @override
+  State<_MediaUrlField> createState() => _MediaUrlFieldState();
+}
+
+class _MediaUrlFieldState extends State<_MediaUrlField> {
+  static const String _viewType =
+      'workout_app_rewrite/keyboard_media_edit_text';
+  static const MethodChannel _channel =
+      MethodChannel('workout_app_rewrite/keyboard_media_text');
+
+  int? _nativeViewId;
+
+  bool get _usesNativeAndroidField {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
+      return false;
+    }
+
+    final String bindingType = WidgetsBinding.instance.runtimeType.toString();
+    return !bindingType.contains('TestWidgets');
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_handleControllerChanged);
+    _channel.setMethodCallHandler(_handleNativeMethodCall);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_handleControllerChanged);
+    _channel.setMethodCallHandler(null);
+    super.dispose();
+  }
+
+  void _handleControllerChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  Future<void> _handleNativeMethodCall(MethodCall call) async {
+    final Object? rawArguments = call.arguments;
+    if (rawArguments is! Map<Object?, Object?>) {
+      return;
+    }
+
+    final int? viewId = rawArguments['viewId'] as int?;
+    if (viewId == null || viewId != _nativeViewId) {
+      return;
+    }
+
+    switch (call.method) {
+      case 'onTextChanged':
+        final String text = rawArguments['text'] as String? ?? '';
+        if (widget.controller.text != text) {
+          widget.controller.text = text;
+        }
+      case 'onKeyboardMediaInserted':
+        widget.onNativeKeyboardMediaInserted(rawArguments['path'] as String?);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_usesNativeAndroidField) {
+      return InputDecorator(
+        isEmpty: widget.controller.text.isEmpty,
+        decoration: const InputDecoration(
+          labelText: 'Image or GIF URL',
+          border: OutlineInputBorder(),
+          prefixIcon: Icon(Icons.image_outlined),
+        ),
+        child: SizedBox(
+          height: 72,
+          child: AndroidView(
+            viewType: _viewType,
+            creationParams: <String, String>{
+              'initialText': widget.controller.text,
+            },
+            creationParamsCodec: const StandardMessageCodec(),
+            onPlatformViewCreated: (int id) {
+              _nativeViewId = id;
+            },
+          ),
+        ),
+      );
+    }
+
+    return TextField(
+      controller: widget.controller,
+      decoration: const InputDecoration(
+        labelText: 'Image or GIF URL',
+        hintText: 'https://example.com/move.gif',
+        border: OutlineInputBorder(),
+        prefixIcon: Icon(Icons.image_outlined),
+      ),
+      keyboardType: TextInputType.multiline,
+      textInputAction: TextInputAction.newline,
+      minLines: 1,
+      maxLines: 3,
+      contentInsertionConfiguration: ContentInsertionConfiguration(
+        allowedMimeTypes: const <String>[
+          'image/*',
+          'image/gif',
+          'image/png',
+          'image/jpeg',
+          'image/webp',
+        ],
+        onContentInserted: widget.onContentInserted,
+      ),
     );
   }
 }

@@ -192,6 +192,20 @@ class WorkoutPlanParser {
               message: 'exerciseId does not exist in plan.exercises.',
             ));
           }
+          if (move.prepTimeSeconds < 0) {
+            issues.add(PlanValidationIssue(
+              path:
+                  '\$.workouts[$workoutIndex].sets[$setIndex].moves[$moveIndex].prepTimeSeconds',
+              message: 'prepTimeSeconds must be >= 0.',
+            ));
+          }
+          if (move.finishTimeSeconds < 0) {
+            issues.add(PlanValidationIssue(
+              path:
+                  '\$.workouts[$workoutIndex].sets[$setIndex].moves[$moveIndex].finishTimeSeconds',
+              message: 'finishTimeSeconds must be >= 0.',
+            ));
+          }
           if (move.type == MoveType.reps &&
               (move.repCount == null || move.repCount! < 1)) {
             issues.add(PlanValidationIssue(

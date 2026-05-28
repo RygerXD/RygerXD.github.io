@@ -25,7 +25,8 @@ class WorkoutStateMachine {
 
   WorkoutState get state => _state;
   Workout get workout => _workout;
-  List<WorkoutTransitionEvent> get events => List<WorkoutTransitionEvent>.unmodifiable(_events);
+  List<WorkoutTransitionEvent> get events =>
+      List<WorkoutTransitionEvent>.unmodifiable(_events);
 
   void start() {
     _assertPhase(<WorkoutPhase>{WorkoutPhase.idle}, 'start');
@@ -50,7 +51,28 @@ class WorkoutStateMachine {
   void completeMove() {
     _assertPhase(<WorkoutPhase>{WorkoutPhase.move}, 'completeMove');
     final _Cursor cursor = _cursor();
-    final bool isLastMoveInSet = cursor.moveIndex == cursor.set.moves.length - 1;
+    final Move move = cursor.set.moves[cursor.moveIndex];
+    if (move.finishTimeSeconds > 0) {
+      _transitionTo(
+        WorkoutPhase.rest,
+        setIndex: cursor.setIndex,
+        loopIndex: cursor.loopIndex,
+        moveIndex: cursor.moveIndex,
+      );
+      return;
+    }
+
+    _advanceAfterMove(cursor);
+  }
+
+  void completeRest() {
+    _assertPhase(<WorkoutPhase>{WorkoutPhase.rest}, 'completeRest');
+    _advanceAfterMove(_cursor());
+  }
+
+  void _advanceAfterMove(_Cursor cursor) {
+    final bool isLastMoveInSet =
+        cursor.moveIndex == cursor.set.moves.length - 1;
     final bool isLastLoopInSet = cursor.loopIndex == cursor.set.loopCount - 1;
     final bool isLastSetInWorkout = cursor.setIndex == _workout.sets.length - 1;
 
@@ -103,42 +125,9 @@ class WorkoutStateMachine {
     );
   }
 
-  void completeRest() {
-    _assertPhase(<WorkoutPhase>{WorkoutPhase.rest}, 'completeRest');
-    final _Cursor cursor = _cursor();
-    final bool isLastMoveInSet = cursor.moveIndex == cursor.set.moves.length - 1;
-
-    if (!isLastMoveInSet) {
-      _transitionTo(
-        WorkoutPhase.prep,
-        setIndex: cursor.setIndex,
-        loopIndex: cursor.loopIndex,
-        moveIndex: cursor.moveIndex + 1,
-      );
-      return;
-    }
-
-    final bool isLastSetInWorkout = cursor.setIndex == _workout.sets.length - 1;
-    if (isLastSetInWorkout) {
-      _transitionTo(
-        WorkoutPhase.completed,
-        setIndex: cursor.setIndex,
-        loopIndex: cursor.loopIndex,
-        moveIndex: cursor.moveIndex,
-      );
-      return;
-    }
-
-    _transitionTo(
-      WorkoutPhase.prep,
-      setIndex: cursor.setIndex + 1,
-      loopIndex: 0,
-      moveIndex: 0,
-    );
-  }
-
   void completeRestBetweenLoops() {
-    _assertPhase(<WorkoutPhase>{WorkoutPhase.restBetweenLoops}, 'completeRestBetweenLoops');
+    _assertPhase(<WorkoutPhase>{WorkoutPhase.restBetweenLoops},
+        'completeRestBetweenLoops');
     final _Cursor cursor = _cursor();
     _transitionTo(
       WorkoutPhase.prep,
@@ -150,7 +139,7 @@ class WorkoutStateMachine {
 
   void skipMove() {
     _assertPhase(<WorkoutPhase>{WorkoutPhase.move}, 'skipMove');
-    completeMove();
+    _advanceAfterMove(_cursor());
   }
 
   void skipRest() {
@@ -188,7 +177,8 @@ class WorkoutStateMachine {
     _assertPhase(<WorkoutPhase>{WorkoutPhase.paused}, 'resume');
     final WorkoutPhase? pausedFrom = _state.pausedFrom;
     if (pausedFrom == null) {
-      throw const InvalidTransitionException('Cannot resume because pausedFrom is null.');
+      throw const InvalidTransitionException(
+          'Cannot resume because pausedFrom is null.');
     }
     _transitionTo(
       pausedFrom,

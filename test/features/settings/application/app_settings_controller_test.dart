@@ -23,6 +23,7 @@ void main() {
 
       expect(settings.themePreference, AppThemePreference.system);
       expect(settings.unitSystem, AppUnitSystem.metric);
+      expect(settings.streakWorkoutsPerWeek, 3);
       expect(settings.audioCuesEnabled, isTrue);
       expect(settings.metronomeClickSound, MetronomeClickSound.classic);
       expect(settings.metronomeVolume, 0.8);
@@ -52,6 +53,7 @@ void main() {
           container.read(appSettingsProvider.notifier);
       await controller.setThemePreference(AppThemePreference.dark);
       await controller.setUnitSystem(AppUnitSystem.imperial);
+      await controller.setStreakWorkoutsPerWeek(4);
       await controller.setAudioCuesEnabled(false);
       await controller.setMetronomeClickSound(MetronomeClickSound.bell);
       await controller.setMetronomeVolume(0.35);
@@ -76,6 +78,7 @@ void main() {
           reloadedContainer.read(appSettingsProvider);
       expect(reloadedSettings.themePreference, AppThemePreference.dark);
       expect(reloadedSettings.unitSystem, AppUnitSystem.imperial);
+      expect(reloadedSettings.streakWorkoutsPerWeek, 4);
       expect(reloadedSettings.audioCuesEnabled, isFalse);
       expect(reloadedSettings.metronomeClickSound, MetronomeClickSound.bell);
       expect(reloadedSettings.metronomeVolume, 0.35);
@@ -145,6 +148,25 @@ void main() {
       expect(settings.getReadyCountdownVolume, 1);
       expect(settings.exerciseCountdownVolume, 0);
       expect(settings.exerciseFinishedDingVolume, 1);
+    });
+
+    test('clamps saved streak workout goal', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final ProviderContainer container = ProviderContainer(
+        overrides: <Override>[
+          sharedPreferencesProvider.overrideWithValue(prefs),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final AppSettingsController controller =
+          container.read(appSettingsProvider.notifier);
+      await controller.setStreakWorkoutsPerWeek(20);
+      expect(container.read(appSettingsProvider).streakWorkoutsPerWeek, 14);
+
+      await controller.setStreakWorkoutsPerWeek(-2);
+      expect(container.read(appSettingsProvider).streakWorkoutsPerWeek, 1);
     });
   });
 }

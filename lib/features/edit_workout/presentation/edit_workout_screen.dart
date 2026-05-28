@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import 'package:workout_app_rewrite/core/media/exercise_media_image.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
+import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
 import 'package:workout_app_rewrite/features/edit_workout/presentation/add_move_dialog.dart';
 import 'package:workout_app_rewrite/features/edit_workout/presentation/existing_move_picker_dialog.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
@@ -93,6 +95,15 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
 
   void _removeMove(int setIndex, int moveIndex) {
     _updateSetMoves(setIndex, (List<Move> moves) => moves..removeAt(moveIndex));
+  }
+
+  void _reorderMove(int setIndex, int oldIndex, int newIndex) {
+    _updateSetMoves(setIndex, (List<Move> moves) {
+      final int insertionIndex = oldIndex < newIndex ? newIndex - 1 : newIndex;
+      final Move moved = moves.removeAt(oldIndex);
+      moves.insert(insertionIndex, moved);
+      return moves;
+    });
   }
 
   void _updateSet(int setIndex, WorkoutSet Function(WorkoutSet set) update) {
@@ -213,10 +224,6 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
       setIndex,
       (WorkoutSet set) => set.copyWith(loopCount: loopCount),
     );
-  }
-
-  String _getExerciseName(String exerciseId) {
-    return _getExercise(exerciseId)?.name ?? 'Unknown Exercise';
   }
 
   Exercise? _getExercise(String exerciseId) {
@@ -356,118 +363,115 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
               ..._sets.asMap().entries.map((MapEntry<int, WorkoutSet> entry) {
                 final int setIndex = entry.key;
                 final WorkoutSet set = entry.value;
-                return Card(
-                  margin: const EdgeInsets.only(bottom: AppSpacing.md),
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSpacing.md),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: <Widget>[
-                        Row(
-                          children: <Widget>[
-                            Expanded(
-                              flex: 3,
-                              child: TextFormField(
-                                key: ValueKey<String>('set-name-${set.setId}'),
-                                initialValue: set.name ?? '',
-                                decoration: InputDecoration(
-                                  labelText: 'Set Name',
-                                  hintText: 'Set ${setIndex + 1}',
-                                  border: const OutlineInputBorder(),
+                return SizedBox(
+                  width: double.infinity,
+                  child: Card(
+                    margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: <Widget>[
+                          Row(
+                            children: <Widget>[
+                              Expanded(
+                                flex: 3,
+                                child: TextFormField(
+                                  key:
+                                      ValueKey<String>('set-name-${set.setId}'),
+                                  initialValue: set.name ?? '',
+                                  decoration: InputDecoration(
+                                    labelText: 'Set Name',
+                                    hintText: 'Set ${setIndex + 1}',
+                                    border: const OutlineInputBorder(),
+                                  ),
+                                  textCapitalization: TextCapitalization.words,
+                                  onChanged: (String value) =>
+                                      _updateSetName(setIndex, value),
                                 ),
-                                textCapitalization: TextCapitalization.words,
-                                onChanged: (String value) =>
-                                    _updateSetName(setIndex, value),
                               ),
-                            ),
-                            const SizedBox(width: AppSpacing.sm),
-                            Expanded(
-                              child: TextFormField(
-                                key: ValueKey<String>('set-loops-${set.setId}'),
-                                initialValue: set.loopCount.toString(),
-                                decoration: const InputDecoration(
-                                  labelText: 'Loops',
-                                  border: OutlineInputBorder(),
+                              const SizedBox(width: AppSpacing.sm),
+                              Expanded(
+                                child: TextFormField(
+                                  key: ValueKey<String>(
+                                      'set-loops-${set.setId}'),
+                                  initialValue: set.loopCount.toString(),
+                                  decoration: const InputDecoration(
+                                    labelText: 'Loops',
+                                    border: OutlineInputBorder(),
+                                  ),
+                                  keyboardType: TextInputType.number,
+                                  onChanged: (String value) =>
+                                      _updateSetLoopCount(setIndex, value),
                                 ),
-                                keyboardType: TextInputType.number,
-                                onChanged: (String value) =>
-                                    _updateSetLoopCount(setIndex, value),
                               ),
-                            ),
-                            const SizedBox(width: AppSpacing.sm),
-                            IconButton(
-                              icon: const Icon(Icons.delete_outline),
-                              onPressed: () => _removeSet(setIndex),
-                            ),
-                          ],
-                        ),
-                        const Divider(),
-                        if (set.moves.isEmpty)
-                          const Padding(
-                            padding:
-                                EdgeInsets.symmetric(vertical: AppSpacing.md),
-                            child: Text('No moves in this set yet.'),
-                          )
-                        else
-                          ListView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: set.moves.length,
-                            itemBuilder: (BuildContext context, int moveIndex) {
-                              final Move move = set.moves[moveIndex];
-                              final String exerciseName =
-                                  _getExerciseName(move.exerciseId);
-
-                              return ListTile(
-                                contentPadding: EdgeInsets.zero,
-                                title: Text(exerciseName),
-                                subtitle: Text(
-                                  _moveSummary(move),
-                                ),
-                                onTap: () =>
-                                    _showEditMoveDialog(setIndex, moveIndex),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: <Widget>[
-                                    IconButton(
-                                      tooltip: 'Edit move',
-                                      icon: const Icon(Icons.edit_outlined),
-                                      onPressed: () => _showEditMoveDialog(
-                                          setIndex, moveIndex),
-                                    ),
-                                    IconButton(
-                                      tooltip: 'Remove move',
-                                      icon: const Icon(Icons.close),
-                                      onPressed: () =>
-                                          _removeMove(setIndex, moveIndex),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
+                              const SizedBox(width: AppSpacing.sm),
+                              IconButton(
+                                icon: const Icon(Icons.delete_outline),
+                                onPressed: () => _removeSet(setIndex),
+                              ),
+                            ],
                           ),
-                        const SizedBox(height: AppSpacing.sm),
-                        Row(
-                          children: <Widget>[
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: () => _showAddMoveDialog(setIndex),
-                                icon: const Icon(Icons.add),
-                                label: const Text('New Move'),
-                              ),
+                          const Divider(),
+                          if (set.moves.isEmpty)
+                            const Padding(
+                              padding:
+                                  EdgeInsets.symmetric(vertical: AppSpacing.md),
+                              child: Text('No moves in this set yet.'),
+                            )
+                          else
+                            ReorderableListView.builder(
+                              shrinkWrap: true,
+                              buildDefaultDragHandles: false,
+                              padding: EdgeInsets.zero,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: set.moves.length,
+                              onReorder: (int oldIndex, int newIndex) =>
+                                  _reorderMove(setIndex, oldIndex, newIndex),
+                              itemBuilder:
+                                  (BuildContext context, int moveIndex) {
+                                final Move move = set.moves[moveIndex];
+                                final Exercise? exercise =
+                                    _getExercise(move.exerciseId);
+                                final String exerciseName =
+                                    exercise?.name ?? 'Unknown Exercise';
+
+                                return _MoveRow(
+                                  key: ValueKey<String>(move.moveId),
+                                  index: moveIndex,
+                                  exerciseName: exerciseName,
+                                  imageUrl: optionalText(exercise?.imageUrl),
+                                  moveSummary: _moveSummary(move),
+                                  onTap: () =>
+                                      _showEditMoveDialog(setIndex, moveIndex),
+                                  onRemove: () =>
+                                      _removeMove(setIndex, moveIndex),
+                                );
+                              },
                             ),
-                            const SizedBox(width: AppSpacing.sm),
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: () =>
-                                    _showExistingMovesPicker(setIndex),
-                                icon: const Icon(Icons.search),
-                                label: const Text('Existing'),
+                          const SizedBox(height: AppSpacing.sm),
+                          Row(
+                            children: <Widget>[
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: () => _showAddMoveDialog(setIndex),
+                                  icon: const Icon(Icons.add),
+                                  label: const Text('New Move'),
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
+                              const SizedBox(width: AppSpacing.sm),
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: () =>
+                                      _showExistingMovesPicker(setIndex),
+                                  icon: const Icon(Icons.search),
+                                  label: const Text('Existing'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );
@@ -490,5 +494,142 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
       return '${move.durationSeconds ?? 0} seconds';
     }
     return '${move.durationSeconds ?? 0} seconds - $bpm BPM';
+  }
+}
+
+class _MoveRow extends StatelessWidget {
+  const _MoveRow({
+    super.key,
+    required this.index,
+    required this.exerciseName,
+    required this.imageUrl,
+    required this.moveSummary,
+    required this.onTap,
+    required this.onRemove,
+  });
+
+  final int index;
+  final String exerciseName;
+  final String? imageUrl;
+  final String moveSummary;
+  final VoidCallback onTap;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
+
+    return SizedBox(
+      width: double.infinity,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(AppRadii.sm),
+            onTap: onTap,
+            child: Semantics(
+              button: true,
+              label: 'Edit $exerciseName',
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: AppSpacing.sm,
+                ),
+                child: LayoutBuilder(
+                  builder: (BuildContext context, BoxConstraints constraints) {
+                    final double summaryWidth =
+                        constraints.maxWidth >= 520 ? 176 : 112;
+
+                    return Row(
+                      children: <Widget>[
+                        _ExerciseThumbnail(imageUrl: imageUrl),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: Text(
+                            exerciseName,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        SizedBox(
+                          width: summaryWidth,
+                          child: Text(
+                            moveSummary,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.end,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: 'Remove move',
+                          icon: const Icon(Icons.close),
+                          onPressed: onRemove,
+                        ),
+                        ReorderableDragStartListener(
+                          index: index,
+                          child: SizedBox.square(
+                            dimension: 40,
+                            child: Icon(
+                              Icons.drag_indicator,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ExerciseThumbnail extends StatelessWidget {
+  const _ExerciseThumbnail({
+    required this.imageUrl,
+  });
+
+  final String? imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppRadii.sm),
+      child: ColoredBox(
+        color: colorScheme.surfaceContainerHighest,
+        child: SizedBox.square(
+          dimension: 52,
+          child: imageUrl == null
+              ? Icon(
+                  Icons.fitness_center,
+                  color: colorScheme.onSurfaceVariant,
+                )
+              : ExerciseMediaImage(
+                  source: imageUrl!,
+                  fit: BoxFit.cover,
+                  errorPlaceholder: Icon(
+                    Icons.fitness_center,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+        ),
+      ),
+    );
   }
 }

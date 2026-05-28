@@ -9,6 +9,7 @@ import 'package:workout_app_rewrite/features/history/presentation/components/ana
 import 'package:workout_app_rewrite/features/history/presentation/components/date_group.dart';
 import 'package:workout_app_rewrite/features/history/presentation/components/empty_history.dart';
 import 'package:workout_app_rewrite/features/history/presentation/components/workout_heatmap.dart';
+import 'package:workout_app_rewrite/features/settings/application/app_settings_controller.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
 
@@ -21,6 +22,7 @@ class AnalysisScreen extends ConsumerWidget {
         ref.watch(allSessionsProvider);
     final AsyncValue<List<WorkoutPlan>> plansAsync =
         ref.watch(loadedWorkoutPlansNotifierProvider);
+    final int streakWorkoutsPerWeek = ref.watch(streakWorkoutsPerWeekProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -66,7 +68,10 @@ class AnalysisScreen extends ConsumerWidget {
               _buildSessionItems(sessions, plans);
           final Map<String, List<AnalysisSessionItem>> groupedSessions =
               _groupSessionsByDate(sessionItems);
-          final _AnalysisSummary summary = _buildSummary(sessionItems);
+          final _AnalysisSummary summary = _buildSummary(
+            sessionItems,
+            streakWorkoutsPerWeek: streakWorkoutsPerWeek,
+          );
           final List<DateTime> workoutDates = sessionItems
               .where((AnalysisSessionItem s) => s.isCompleted)
               .map((AnalysisSessionItem s) => s.startedAt)
@@ -175,10 +180,13 @@ class AnalysisScreen extends ConsumerWidget {
     return grouped;
   }
 
-  _AnalysisSummary _buildSummary(List<AnalysisSessionItem> sessions) {
-    int completedSessions = 0;
+  _AnalysisSummary _buildSummary(
+    List<AnalysisSessionItem> sessions, {
+    required int streakWorkoutsPerWeek,
+  }) {
     int weeklyCompletedSessions = 0;
     int weeklyDurationSeconds = 0;
+    final List<AnalysisSessionItem> completedSessions = <AnalysisSessionItem>[];
 
     final DateTime now = DateTime.now();
     final DateTime today = DateTime(now.year, now.month, now.day);
@@ -189,7 +197,7 @@ class AnalysisScreen extends ConsumerWidget {
       if (!item.isCompleted) {
         continue;
       }
-      completedSessions += 1;
+      completedSessions.add(item);
       if (item.startedAt
           .isAfter(startOfWeek.subtract(const Duration(milliseconds: 1)))) {
         weeklyCompletedSessions += 1;
@@ -197,63 +205,70 @@ class AnalysisScreen extends ConsumerWidget {
       }
     }
 
-    final int streakDays = _calculateCurrentStreakDays(
-      sessions
-          .where((AnalysisSessionItem item) => item.isCompleted)
-          .toList(growable: false),
+    final int streakWeeks = _calculateCurrentStreakWeeks(
+      completedSessions,
+      workoutsPerWeekGoal: streakWorkoutsPerWeek,
     );
 
     return _AnalysisSummary(
-      totalSessions: sessions.length,
-      completedSessions: completedSessions,
       weeklyCompletedSessions: weeklyCompletedSessions,
       weeklyDurationSeconds: weeklyDurationSeconds,
-      streakDays: streakDays,
+      streakWeeks: streakWeeks,
+      streakWorkoutsPerWeek: streakWorkoutsPerWeek,
     );
   }
 
-  int _calculateCurrentStreakDays(List<AnalysisSessionItem> completedSessions) {
-    final Set<DateTime> workoutDays =
-        completedSessions.map((AnalysisSessionItem item) {
-      final DateTime date = item.startedAt;
-      return DateTime(date.year, date.month, date.day);
-    }).toSet();
-
-    if (workoutDays.isEmpty) {
+  int _calculateCurrentStreakWeeks(
+    List<AnalysisSessionItem> completedSessions, {
+    required int workoutsPerWeekGoal,
+  }) {
+    if (completedSessions.isEmpty) {
       return 0;
     }
 
-    DateTime latestDay = workoutDays.first;
-    for (final DateTime day in workoutDays) {
-      if (day.isAfter(latestDay)) {
-        latestDay = day;
-      }
+    final int requiredWorkouts = workoutsPerWeekGoal.clamp(1, 14);
+    final Map<DateTime, int> workoutsByWeek = <DateTime, int>{};
+    for (final AnalysisSessionItem item in completedSessions) {
+      final DateTime weekStart = _weekStart(item.startedAt);
+      workoutsByWeek.update(
+        weekStart,
+        (int count) => count + 1,
+        ifAbsent: () => 1,
+      );
+    }
+
+    final DateTime currentWeekStart = _weekStart(DateTime.now());
+    DateTime cursor = currentWeekStart;
+    if ((workoutsByWeek[currentWeekStart] ?? 0) < requiredWorkouts) {
+      cursor = cursor.subtract(const Duration(days: 7));
     }
 
     int streak = 0;
-    DateTime cursor = latestDay;
-    while (workoutDays.contains(cursor)) {
+    while ((workoutsByWeek[cursor] ?? 0) >= requiredWorkouts) {
       streak += 1;
-      cursor = cursor.subtract(const Duration(days: 1));
+      cursor = cursor.subtract(const Duration(days: 7));
     }
     return streak;
+  }
+
+  DateTime _weekStart(DateTime date) {
+    final DateTime day = DateTime(date.year, date.month, date.day);
+    return day.subtract(Duration(days: day.weekday - 1));
   }
 }
 
 class _AnalysisSummary {
   const _AnalysisSummary({
-    required this.totalSessions,
-    required this.completedSessions,
     required this.weeklyCompletedSessions,
     required this.weeklyDurationSeconds,
-    required this.streakDays,
+    required this.streakWeeks,
+    required this.streakWorkoutsPerWeek,
   });
 
-  final int totalSessions;
-  final int completedSessions;
   final int weeklyCompletedSessions;
   final int weeklyDurationSeconds;
-  final int streakDays;
+  final int streakWeeks;
+  final int streakWorkoutsPerWeek;
 }
 
 class _SummaryGrid extends StatelessWidget {
@@ -263,10 +278,6 @@ class _SummaryGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final int completionPercent = summary.totalSessions == 0
-        ? 0
-        : ((summary.completedSessions / summary.totalSessions) * 100).round();
-
     return Wrap(
       spacing: AppSpacing.md,
       runSpacing: AppSpacing.md,
@@ -289,16 +300,9 @@ class _SummaryGrid extends StatelessWidget {
           icon: Icons.timer_outlined,
         ),
         _SummaryCard(
-          label: 'Completion',
-          value: '$completionPercent%',
-          detail:
-              '${summary.completedSessions}/${summary.totalSessions} sessions',
-          icon: Icons.flag_circle_outlined,
-        ),
-        _SummaryCard(
           label: 'Streak',
-          value: '${summary.streakDays}d',
-          detail: 'Current',
+          value: '${summary.streakWeeks}w',
+          detail: _streakDetail(summary.streakWorkoutsPerWeek),
           icon: Icons.auto_awesome_outlined,
         ),
       ].map((Widget card) {
@@ -311,6 +315,11 @@ class _SummaryGrid extends StatelessWidget {
         );
       }).toList(growable: false),
     );
+  }
+
+  String _streakDetail(int workoutsPerWeek) {
+    final String workoutLabel = workoutsPerWeek == 1 ? 'workout' : 'workouts';
+    return '$workoutsPerWeek $workoutLabel/wk';
   }
 }
 

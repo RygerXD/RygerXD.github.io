@@ -78,6 +78,49 @@ class SettingsScreen extends ConsumerWidget {
           },
         ),
         Divider(),
+        ListTile(
+          title: const Text('Streak goal'),
+          subtitle: Text(_streakGoalLabel(settings.streakWorkoutsPerWeek)),
+          trailing: SizedBox(
+            width: 132,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: <Widget>[
+                IconButton.filledTonal(
+                  tooltip: 'Decrease streak goal',
+                  onPressed: settings.streakWorkoutsPerWeek <= 1
+                      ? null
+                      : () {
+                          controller.setStreakWorkoutsPerWeek(
+                            settings.streakWorkoutsPerWeek - 1,
+                          );
+                        },
+                  icon: const Icon(Icons.remove),
+                ),
+                SizedBox(
+                  width: 36,
+                  child: Text(
+                    '${settings.streakWorkoutsPerWeek}',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                IconButton.filledTonal(
+                  tooltip: 'Increase streak goal',
+                  onPressed: settings.streakWorkoutsPerWeek >= 14
+                      ? null
+                      : () {
+                          controller.setStreakWorkoutsPerWeek(
+                            settings.streakWorkoutsPerWeek + 1,
+                          );
+                        },
+                  icon: const Icon(Icons.add),
+                ),
+              ],
+            ),
+          ),
+        ),
+        Divider(),
         SwitchListTile(
           title: Text('Audio cues'),
           subtitle: Text(settings.audioCuesEnabled ? 'Enabled' : 'Disabled'),
@@ -396,6 +439,11 @@ class SettingsScreen extends ConsumerWidget {
       case AppUnitSystem.imperial:
         return 'Imperial (lb)';
     }
+  }
+
+  static String _streakGoalLabel(int workoutsPerWeek) {
+    final String workoutLabel = workoutsPerWeek == 1 ? 'workout' : 'workouts';
+    return '$workoutsPerWeek $workoutLabel per week';
   }
 
   static String _metronomeClickLabel(MetronomeClickSound sound) {

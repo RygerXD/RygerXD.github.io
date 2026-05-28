@@ -91,6 +91,19 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     final String setLabel =
         optionalText(currentSet.name) ?? 'Set ${state.setIndex + 1}';
     final String? moveMediaUrl = optionalText(currentExercise?.imageUrl);
+    final Move? nextMoveDuringRest = _nextMoveDuringRest(
+      phase: displayPhase,
+      state: state,
+      workout: workout,
+    );
+    final Exercise? nextExerciseDuringRest = nextMoveDuringRest == null
+        ? null
+        : _resolveMoveExercise(nextMoveDuringRest, plan);
+    final String? nextMoveLabelDuringRest = nextMoveDuringRest == null
+        ? null
+        : nextExerciseDuringRest?.name ?? nextMoveDuringRest.exerciseId;
+    final String? nextMoveMediaUrlDuringRest =
+        optionalText(nextExerciseDuringRest?.imageUrl);
     final Color statusColor = _statusColor(displayPhase);
     final String statusLabel = _statusLabel(displayPhase);
     final bool isPaused = state.phase == WorkoutPhase.paused;
@@ -169,8 +182,15 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                       _PhaseChip(label: statusLabel, color: statusColor),
                       const SizedBox(height: 24),
                       if (isPrep || isRest) ...<Widget>[
-                        if (isPrep && moveMediaUrl != null) ...<Widget>[
-                          _MoveMedia(url: moveMediaUrl),
+                        if ((isPrep
+                                ? moveMediaUrl
+                                : nextMoveMediaUrlDuringRest) !=
+                            null) ...<Widget>[
+                          _MoveMedia(
+                            url: isPrep
+                                ? moveMediaUrl!
+                                : nextMoveMediaUrlDuringRest!,
+                          ),
                           const SizedBox(height: 16),
                         ],
                         _TimerDisplay(
@@ -179,6 +199,11 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                         if (isPrep)
                           Text(
                             'Next: $moveLabel',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          )
+                        else if (nextMoveLabelDuringRest != null)
+                          Text(
+                            'Next: $nextMoveLabelDuringRest',
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                       ] else if (isMove) ...<Widget>[
@@ -317,7 +342,11 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                             backgroundColor: Colors.green,
                             foregroundColor: Colors.white,
                           ),
-                          child: const Text('SKIP REST'),
+                          child: Text(
+                            displayPhase == WorkoutPhase.rest
+                                ? 'SKIP COOLDOWN'
+                                : 'SKIP REST',
+                          ),
                         ),
                       )
                     else
@@ -779,7 +808,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       return set.restBetweenLoopsSeconds;
     }
     if (phase == WorkoutPhase.rest) {
-      return set.restBetweenLoopsSeconds;
+      return move.finishTimeSeconds;
     }
     return _timerSeconds;
   }
@@ -940,6 +969,60 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     return null;
   }
 
+  Move? _nextMoveDuringRest({
+    required WorkoutPhase phase,
+    required WorkoutState state,
+    required Workout workout,
+  }) {
+    if (phase == WorkoutPhase.restBetweenLoops) {
+      return _moveAt(
+        workout: workout,
+        setIndex: state.setIndex,
+        moveIndex: state.moveIndex,
+      );
+    }
+    if (phase != WorkoutPhase.rest) {
+      return null;
+    }
+
+    final WorkoutSet? currentSet = _setAt(workout, state.setIndex);
+    if (currentSet == null) {
+      return null;
+    }
+
+    final int nextMoveIndex = state.moveIndex + 1;
+    if (nextMoveIndex < currentSet.moves.length) {
+      return currentSet.moves[nextMoveIndex];
+    }
+    if (state.loopIndex + 1 < currentSet.loopCount) {
+      return currentSet.moves.isEmpty ? null : currentSet.moves.first;
+    }
+    return _moveAt(
+      workout: workout,
+      setIndex: state.setIndex + 1,
+      moveIndex: 0,
+    );
+  }
+
+  WorkoutSet? _setAt(Workout workout, int setIndex) {
+    if (setIndex < 0 || setIndex >= workout.sets.length) {
+      return null;
+    }
+    return workout.sets[setIndex];
+  }
+
+  Move? _moveAt({
+    required Workout workout,
+    required int setIndex,
+    required int moveIndex,
+  }) {
+    final WorkoutSet? set = _setAt(workout, setIndex);
+    if (set == null || moveIndex < 0 || moveIndex >= set.moves.length) {
+      return null;
+    }
+    return set.moves[moveIndex];
+  }
+
   Color _statusColor(WorkoutPhase phase) {
     if (phase == WorkoutPhase.prep) {
       return Colors.orange;
@@ -954,7 +1037,10 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     if (phase == WorkoutPhase.prep) {
       return 'Get Ready';
     }
-    if (phase == WorkoutPhase.restBetweenLoops || phase == WorkoutPhase.rest) {
+    if (phase == WorkoutPhase.rest) {
+      return 'Cooldown';
+    }
+    if (phase == WorkoutPhase.restBetweenLoops) {
       return 'Rest';
     }
     return 'Go!';
