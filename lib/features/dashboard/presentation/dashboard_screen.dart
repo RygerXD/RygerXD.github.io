@@ -1,10 +1,7 @@
-import 'dart:convert';
-
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:workout_app_rewrite/core/media/exercise_media_image.dart';
+import 'package:workout_app_rewrite/core/media/media_thumbnail.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
 import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
 import 'package:workout_app_rewrite/features/history/application/history_providers.dart';
@@ -151,56 +148,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             );
           },
         ),
-        const SizedBox(height: AppSpacing.xxl),
-        Text(
-          'Quick Actions',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        FilledButton.tonalIcon(
-          onPressed: () async {
-            final FilePickerResult? result =
-                await FilePicker.platform.pickFiles(
-              type: FileType.custom,
-              allowedExtensions: ['json'],
-              withData: true,
-            );
-
-            if (result != null && result.files.single.bytes != null) {
-              try {
-                final String jsonString =
-                    utf8.decode(result.files.single.bytes!);
-                final WorkoutPlan plan = await ref
-                    .read(workoutPlanImportServiceProvider)
-                    .importFromJsonString(jsonString);
-
-                // Invalidate the loaded plans so the library re-fetches from the database
-                ref.invalidate(loadedWorkoutPlansNotifierProvider);
-
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                        content: Text('Successfully imported ${plan.name}')),
-                  );
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error importing workout: $e')),
-                  );
-                }
-              }
-            }
-          },
-          icon: const Icon(Icons.download_rounded),
-          label: const Text('Import Workout JSON'),
-          style: FilledButton.styleFrom(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            alignment: Alignment.centerLeft,
-          ),
-        ),
       ],
     );
   }
@@ -307,9 +254,12 @@ class _WorkoutCard extends StatelessWidget {
           padding: const EdgeInsets.all(AppSpacing.md),
           child: Row(
             children: <Widget>[
-              _MediaThumbnail(
+              MediaThumbnail(
                 imageUrl: optionalText(workout.imageUrl),
                 fallbackIcon: Icons.fitness_center,
+                backgroundColor: colors.primaryContainer,
+                iconColor: colors.onPrimaryContainer,
+                dimension: 60,
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
@@ -401,9 +351,12 @@ class _PlanCard extends StatelessWidget {
           padding: const EdgeInsets.all(AppSpacing.md),
           child: Row(
             children: <Widget>[
-              _MediaThumbnail(
+              MediaThumbnail(
                 imageUrl: optionalText(plan.imageUrl),
                 fallbackIcon: Icons.library_books_outlined,
+                backgroundColor: colors.primaryContainer,
+                iconColor: colors.onPrimaryContainer,
+                dimension: 60,
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
@@ -437,44 +390,6 @@ class _PlanCard extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _MediaThumbnail extends StatelessWidget {
-  const _MediaThumbnail({
-    required this.imageUrl,
-    required this.fallbackIcon,
-  });
-
-  final String? imageUrl;
-  final IconData fallbackIcon;
-
-  @override
-  Widget build(BuildContext context) {
-    final ColorScheme colors = Theme.of(context).colorScheme;
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(AppRadii.sm),
-      child: ColoredBox(
-        color: colors.primaryContainer,
-        child: SizedBox.square(
-          dimension: 60,
-          child: imageUrl == null
-              ? Icon(
-                  fallbackIcon,
-                  color: colors.onPrimaryContainer,
-                )
-              : ExerciseMediaImage(
-                  source: imageUrl!,
-                  fit: BoxFit.cover,
-                  errorPlaceholder: Icon(
-                    fallbackIcon,
-                    color: colors.onPrimaryContainer,
-                  ),
-                ),
         ),
       ),
     );

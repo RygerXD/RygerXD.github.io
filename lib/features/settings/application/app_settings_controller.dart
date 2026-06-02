@@ -242,15 +242,35 @@ class AppSettingsController extends Notifier<AppSettings> {
   AppSettings build() {
     final SharedPreferences prefs = ref.read(sharedPreferencesProvider);
     return AppSettings(
-      themePreference: _readThemePreference(prefs),
-      unitSystem: _readUnitSystem(prefs),
+      themePreference: _readEnum(
+        prefs,
+        key: _themePreferenceKey,
+        values: AppThemePreference.values,
+        fallback: AppThemePreference.system,
+      ),
+      unitSystem: _readEnum(
+        prefs,
+        key: _unitSystemKey,
+        values: AppUnitSystem.values,
+        fallback: AppUnitSystem.metric,
+      ),
       streakWorkoutsPerWeek: _readStreakWorkoutsPerWeek(prefs),
       audioCuesEnabled: prefs.getBool(_audioCuesEnabledKey) ?? true,
-      metronomeClickSound: _readMetronomeClickSound(prefs),
-      metronomeVolume: _readMetronomeVolume(prefs),
-      getReadyCountdownSound: _readCountdownSound(
+      metronomeClickSound: _readEnum(
+        prefs,
+        key: _metronomeClickSoundKey,
+        values: MetronomeClickSound.values,
+        fallback: MetronomeClickSound.classic,
+      ),
+      metronomeVolume: _readVolume(
+        prefs,
+        key: _metronomeVolumeKey,
+        fallback: 0.8,
+      ),
+      getReadyCountdownSound: _readEnum(
         prefs,
         key: _getReadyCountdownSoundKey,
+        values: CountdownSound.values,
         fallback: CountdownSound.click,
       ),
       getReadyCountdownVolume: _readVolume(
@@ -258,11 +278,21 @@ class AppSettingsController extends Notifier<AppSettings> {
         key: _getReadyCountdownVolumeKey,
         fallback: 0.8,
       ),
-      getReadyDingSound: _readGetReadyDingSound(prefs),
-      getReadyDingVolume: _readGetReadyDingVolume(prefs),
-      exerciseCountdownSound: _readCountdownSound(
+      getReadyDingSound: _readEnum(
+        prefs,
+        key: _getReadyDingSoundKey,
+        values: GetReadyDingSound.values,
+        fallback: GetReadyDingSound.classic,
+      ),
+      getReadyDingVolume: _readVolume(
+        prefs,
+        key: _getReadyDingVolumeKey,
+        fallback: 0.8,
+      ),
+      exerciseCountdownSound: _readEnum(
         prefs,
         key: _exerciseCountdownSoundKey,
+        values: CountdownSound.values,
         fallback: CountdownSound.pulse,
       ),
       exerciseCountdownVolume: _readVolume(
@@ -270,7 +300,12 @@ class AppSettingsController extends Notifier<AppSettings> {
         key: _exerciseCountdownVolumeKey,
         fallback: 0.8,
       ),
-      exerciseFinishedDingSound: _readExerciseFinishedDingSound(prefs),
+      exerciseFinishedDingSound: _readEnum(
+        prefs,
+        key: _exerciseFinishedDingSoundKey,
+        values: ExerciseFinishedDingSound.values,
+        fallback: ExerciseFinishedDingSound.classic,
+      ),
       exerciseFinishedDingVolume: _readVolume(
         prefs,
         key: _exerciseFinishedDingVolumeKey,
@@ -280,21 +315,22 @@ class AppSettingsController extends Notifier<AppSettings> {
   }
 
   Future<void> setThemePreference(AppThemePreference value) async {
-    if (state.themePreference == value) {
-      return;
-    }
-    state = state.copyWith(themePreference: value);
-    final SharedPreferences prefs = ref.read(sharedPreferencesProvider);
-    await prefs.setString(_themePreferenceKey, value.name);
+    await _setEnum(
+      currentValue: state.themePreference,
+      value: value,
+      key: _themePreferenceKey,
+      update: (AppThemePreference value) =>
+          state.copyWith(themePreference: value),
+    );
   }
 
   Future<void> setUnitSystem(AppUnitSystem value) async {
-    if (state.unitSystem == value) {
-      return;
-    }
-    state = state.copyWith(unitSystem: value);
-    final SharedPreferences prefs = ref.read(sharedPreferencesProvider);
-    await prefs.setString(_unitSystemKey, value.name);
+    await _setEnum(
+      currentValue: state.unitSystem,
+      value: value,
+      key: _unitSystemKey,
+      update: (AppUnitSystem value) => state.copyWith(unitSystem: value),
+    );
   }
 
   Future<void> setStreakWorkoutsPerWeek(int value) async {
@@ -303,8 +339,7 @@ class AppSettingsController extends Notifier<AppSettings> {
       return;
     }
     state = state.copyWith(streakWorkoutsPerWeek: clamped);
-    final SharedPreferences prefs = ref.read(sharedPreferencesProvider);
-    await prefs.setInt(_streakWorkoutsPerWeekKey, clamped);
+    await _prefs.setInt(_streakWorkoutsPerWeekKey, clamped);
   }
 
   Future<void> setAudioCuesEnabled(bool value) async {
@@ -312,130 +347,104 @@ class AppSettingsController extends Notifier<AppSettings> {
       return;
     }
     state = state.copyWith(audioCuesEnabled: value);
-    final SharedPreferences prefs = ref.read(sharedPreferencesProvider);
-    await prefs.setBool(_audioCuesEnabledKey, value);
+    await _prefs.setBool(_audioCuesEnabledKey, value);
   }
 
   Future<void> setMetronomeClickSound(MetronomeClickSound value) async {
-    if (state.metronomeClickSound == value) {
-      return;
-    }
-    state = state.copyWith(metronomeClickSound: value);
-    final SharedPreferences prefs = ref.read(sharedPreferencesProvider);
-    await prefs.setString(_metronomeClickSoundKey, value.name);
+    await _setEnum(
+      currentValue: state.metronomeClickSound,
+      value: value,
+      key: _metronomeClickSoundKey,
+      update: (MetronomeClickSound value) =>
+          state.copyWith(metronomeClickSound: value),
+    );
   }
 
   Future<void> setMetronomeVolume(double value) async {
-    final double clamped = value.clamp(0, 1).toDouble();
-    if (state.metronomeVolume == clamped) {
-      return;
-    }
-    state = state.copyWith(metronomeVolume: clamped);
-    final SharedPreferences prefs = ref.read(sharedPreferencesProvider);
-    await prefs.setDouble(_metronomeVolumeKey, clamped);
+    await _setVolume(
+      currentValue: state.metronomeVolume,
+      value: value,
+      key: _metronomeVolumeKey,
+      update: (double value) => state.copyWith(metronomeVolume: value),
+    );
   }
 
   Future<void> setGetReadyCountdownSound(CountdownSound value) async {
-    if (state.getReadyCountdownSound == value) {
-      return;
-    }
-    state = state.copyWith(getReadyCountdownSound: value);
-    final SharedPreferences prefs = ref.read(sharedPreferencesProvider);
-    await prefs.setString(_getReadyCountdownSoundKey, value.name);
+    await _setEnum(
+      currentValue: state.getReadyCountdownSound,
+      value: value,
+      key: _getReadyCountdownSoundKey,
+      update: (CountdownSound value) =>
+          state.copyWith(getReadyCountdownSound: value),
+    );
   }
 
   Future<void> setGetReadyCountdownVolume(double value) async {
-    final double clamped = value.clamp(0, 1).toDouble();
-    if (state.getReadyCountdownVolume == clamped) {
-      return;
-    }
-    state = state.copyWith(getReadyCountdownVolume: clamped);
-    final SharedPreferences prefs = ref.read(sharedPreferencesProvider);
-    await prefs.setDouble(_getReadyCountdownVolumeKey, clamped);
+    await _setVolume(
+      currentValue: state.getReadyCountdownVolume,
+      value: value,
+      key: _getReadyCountdownVolumeKey,
+      update: (double value) => state.copyWith(getReadyCountdownVolume: value),
+    );
   }
 
   Future<void> setGetReadyDingSound(GetReadyDingSound value) async {
-    if (state.getReadyDingSound == value) {
-      return;
-    }
-    state = state.copyWith(getReadyDingSound: value);
-    final SharedPreferences prefs = ref.read(sharedPreferencesProvider);
-    await prefs.setString(_getReadyDingSoundKey, value.name);
+    await _setEnum(
+      currentValue: state.getReadyDingSound,
+      value: value,
+      key: _getReadyDingSoundKey,
+      update: (GetReadyDingSound value) =>
+          state.copyWith(getReadyDingSound: value),
+    );
   }
 
   Future<void> setGetReadyDingVolume(double value) async {
-    final double clamped = value.clamp(0, 1).toDouble();
-    if (state.getReadyDingVolume == clamped) {
-      return;
-    }
-    state = state.copyWith(getReadyDingVolume: clamped);
-    final SharedPreferences prefs = ref.read(sharedPreferencesProvider);
-    await prefs.setDouble(_getReadyDingVolumeKey, clamped);
+    await _setVolume(
+      currentValue: state.getReadyDingVolume,
+      value: value,
+      key: _getReadyDingVolumeKey,
+      update: (double value) => state.copyWith(getReadyDingVolume: value),
+    );
   }
 
   Future<void> setExerciseCountdownSound(CountdownSound value) async {
-    if (state.exerciseCountdownSound == value) {
-      return;
-    }
-    state = state.copyWith(exerciseCountdownSound: value);
-    final SharedPreferences prefs = ref.read(sharedPreferencesProvider);
-    await prefs.setString(_exerciseCountdownSoundKey, value.name);
+    await _setEnum(
+      currentValue: state.exerciseCountdownSound,
+      value: value,
+      key: _exerciseCountdownSoundKey,
+      update: (CountdownSound value) =>
+          state.copyWith(exerciseCountdownSound: value),
+    );
   }
 
   Future<void> setExerciseCountdownVolume(double value) async {
-    final double clamped = value.clamp(0, 1).toDouble();
-    if (state.exerciseCountdownVolume == clamped) {
-      return;
-    }
-    state = state.copyWith(exerciseCountdownVolume: clamped);
-    final SharedPreferences prefs = ref.read(sharedPreferencesProvider);
-    await prefs.setDouble(_exerciseCountdownVolumeKey, clamped);
+    await _setVolume(
+      currentValue: state.exerciseCountdownVolume,
+      value: value,
+      key: _exerciseCountdownVolumeKey,
+      update: (double value) => state.copyWith(exerciseCountdownVolume: value),
+    );
   }
 
   Future<void> setExerciseFinishedDingSound(
       ExerciseFinishedDingSound value) async {
-    if (state.exerciseFinishedDingSound == value) {
-      return;
-    }
-    state = state.copyWith(exerciseFinishedDingSound: value);
-    final SharedPreferences prefs = ref.read(sharedPreferencesProvider);
-    await prefs.setString(_exerciseFinishedDingSoundKey, value.name);
+    await _setEnum(
+      currentValue: state.exerciseFinishedDingSound,
+      value: value,
+      key: _exerciseFinishedDingSoundKey,
+      update: (ExerciseFinishedDingSound value) =>
+          state.copyWith(exerciseFinishedDingSound: value),
+    );
   }
 
   Future<void> setExerciseFinishedDingVolume(double value) async {
-    final double clamped = value.clamp(0, 1).toDouble();
-    if (state.exerciseFinishedDingVolume == clamped) {
-      return;
-    }
-    state = state.copyWith(exerciseFinishedDingVolume: clamped);
-    final SharedPreferences prefs = ref.read(sharedPreferencesProvider);
-    await prefs.setDouble(_exerciseFinishedDingVolumeKey, clamped);
-  }
-
-  AppThemePreference _readThemePreference(SharedPreferences prefs) {
-    final String? raw = prefs.getString(_themePreferenceKey);
-    if (raw == null) {
-      return AppThemePreference.system;
-    }
-    for (final AppThemePreference value in AppThemePreference.values) {
-      if (value.name == raw) {
-        return value;
-      }
-    }
-    return AppThemePreference.system;
-  }
-
-  AppUnitSystem _readUnitSystem(SharedPreferences prefs) {
-    final String? raw = prefs.getString(_unitSystemKey);
-    if (raw == null) {
-      return AppUnitSystem.metric;
-    }
-    for (final AppUnitSystem value in AppUnitSystem.values) {
-      if (value.name == raw) {
-        return value;
-      }
-    }
-    return AppUnitSystem.metric;
+    await _setVolume(
+      currentValue: state.exerciseFinishedDingVolume,
+      value: value,
+      key: _exerciseFinishedDingVolumeKey,
+      update: (double value) =>
+          state.copyWith(exerciseFinishedDingVolume: value),
+    );
   }
 
   int _readStreakWorkoutsPerWeek(SharedPreferences prefs) {
@@ -443,70 +452,22 @@ class AppSettingsController extends Notifier<AppSettings> {
     return raw.clamp(1, 14);
   }
 
-  MetronomeClickSound _readMetronomeClickSound(SharedPreferences prefs) {
-    final String? raw = prefs.getString(_metronomeClickSoundKey);
-    if (raw == null) {
-      return MetronomeClickSound.classic;
-    }
-    for (final MetronomeClickSound value in MetronomeClickSound.values) {
-      if (value.name == raw) {
-        return value;
-      }
-    }
-    return MetronomeClickSound.classic;
-  }
-
-  double _readMetronomeVolume(SharedPreferences prefs) {
-    return _readVolume(prefs, key: _metronomeVolumeKey, fallback: 0.8);
-  }
-
-  GetReadyDingSound _readGetReadyDingSound(SharedPreferences prefs) {
-    final String? raw = prefs.getString(_getReadyDingSoundKey);
-    if (raw == null) {
-      return GetReadyDingSound.classic;
-    }
-    for (final GetReadyDingSound value in GetReadyDingSound.values) {
-      if (value.name == raw) {
-        return value;
-      }
-    }
-    return GetReadyDingSound.classic;
-  }
-
-  double _readGetReadyDingVolume(SharedPreferences prefs) {
-    return _readVolume(prefs, key: _getReadyDingVolumeKey, fallback: 0.8);
-  }
-
-  CountdownSound _readCountdownSound(
+  T _readEnum<T extends Enum>(
     SharedPreferences prefs, {
     required String key,
-    required CountdownSound fallback,
+    required List<T> values,
+    required T fallback,
   }) {
     final String? raw = prefs.getString(key);
     if (raw == null) {
       return fallback;
     }
-    for (final CountdownSound value in CountdownSound.values) {
+    for (final T value in values) {
       if (value.name == raw) {
         return value;
       }
     }
     return fallback;
-  }
-
-  ExerciseFinishedDingSound _readExerciseFinishedDingSound(
-      SharedPreferences prefs) {
-    final String? raw = prefs.getString(_exerciseFinishedDingSoundKey);
-    if (raw == null) {
-      return ExerciseFinishedDingSound.classic;
-    }
-    for (final ExerciseFinishedDingSound value
-        in ExerciseFinishedDingSound.values) {
-      if (value.name == raw) {
-        return value;
-      }
-    }
-    return ExerciseFinishedDingSound.classic;
   }
 
   double _readVolume(
@@ -516,5 +477,34 @@ class AppSettingsController extends Notifier<AppSettings> {
   }) {
     final double? raw = prefs.getDouble(key);
     return (raw ?? fallback).clamp(0, 1).toDouble();
+  }
+
+  SharedPreferences get _prefs => ref.read(sharedPreferencesProvider);
+
+  Future<void> _setEnum<T extends Enum>({
+    required T currentValue,
+    required T value,
+    required String key,
+    required AppSettings Function(T value) update,
+  }) async {
+    if (currentValue == value) {
+      return;
+    }
+    state = update(value);
+    await _prefs.setString(key, value.name);
+  }
+
+  Future<void> _setVolume({
+    required double currentValue,
+    required double value,
+    required String key,
+    required AppSettings Function(double value) update,
+  }) async {
+    final double clamped = value.clamp(0, 1).toDouble();
+    if (currentValue == clamped) {
+      return;
+    }
+    state = update(clamped);
+    await _prefs.setDouble(key, clamped);
   }
 }

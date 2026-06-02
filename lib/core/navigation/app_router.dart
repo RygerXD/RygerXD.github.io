@@ -70,6 +70,13 @@ final Provider<GoRouter> appRouterProvider =
                         },
                       ),
                       GoRoute(
+                        path: 'edit',
+                        builder: (BuildContext context, GoRouterState state) {
+                          final String planId = state.pathParameters['planId']!;
+                          return CreatePlanScreen(planId: planId);
+                        },
+                      ),
+                      GoRoute(
                         path: 'edit-workout',
                         builder: (BuildContext context, GoRouterState state) {
                           final String planId = state.pathParameters['planId']!;

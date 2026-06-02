@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:workout_app_rewrite/core/media/exercise_media_image.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
+import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
 
@@ -48,6 +50,12 @@ class WorkoutDetailScreen extends ConsumerWidget {
             ),
             actions: <Widget>[
               IconButton(
+                tooltip: 'Edit plan',
+                icon: const Icon(Icons.edit_outlined),
+                onPressed: () => context.go('/library/detail/$planId/edit'),
+              ),
+              IconButton(
+                tooltip: 'Delete plan',
                 icon: const Icon(Icons.delete_outline),
                 onPressed: () async {
                   final bool shouldDelete =
@@ -73,6 +81,19 @@ class WorkoutDetailScreen extends ConsumerWidget {
           body: ListView(
             padding: const EdgeInsets.all(AppSpacing.lg),
             children: <Widget>[
+              if (optionalText(plan.imageUrl) case final String imageUrl) ...[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(AppRadii.md),
+                  child: SizedBox(
+                    height: 180,
+                    child: ExerciseMediaImage(
+                      source: imageUrl,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xl),
+              ],
               if (plan.description != null) ...[
                 Text(
                   plan.description!,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:workout_app_rewrite/core/media/exercise_media_image.dart';
+import 'package:workout_app_rewrite/core/media/media_thumbnail.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
 import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/active_workout_controller.dart';
@@ -356,27 +357,12 @@ class _MovePreviewRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
       child: Row(
         children: <Widget>[
-          ClipRRect(
-            borderRadius: BorderRadius.circular(AppRadii.sm),
-            child: ColoredBox(
-              color: colors.surfaceContainerHighest,
-              child: SizedBox.square(
-                dimension: 56,
-                child: imageUrl == null
-                    ? Icon(
-                        Icons.fitness_center,
-                        color: colors.onSurfaceVariant,
-                      )
-                    : ExerciseMediaImage(
-                        source: imageUrl,
-                        fit: BoxFit.cover,
-                        errorPlaceholder: Icon(
-                          Icons.fitness_center,
-                          color: colors.onSurfaceVariant,
-                        ),
-                      ),
-              ),
-            ),
+          MediaThumbnail(
+            imageUrl: imageUrl,
+            fallbackIcon: Icons.fitness_center,
+            backgroundColor: colors.surfaceContainerHighest,
+            iconColor: colors.onSurfaceVariant,
+            dimension: 56,
           ),
           const SizedBox(width: AppSpacing.md),
           Expanded(

@@ -1,19 +1,18 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:workout_app_rewrite/core/media/keyboard_media_saver.dart';
 
 class ImageOrGifUrlField extends StatefulWidget {
   const ImageOrGifUrlField({
     super.key,
     required this.controller,
-    required this.onContentInserted,
-    required this.onNativeKeyboardMediaInserted,
     this.hintText = 'https://example.com/move.gif',
   });
 
   final TextEditingController controller;
-  final ValueChanged<KeyboardInsertedContent> onContentInserted;
-  final ValueChanged<String?> onNativeKeyboardMediaInserted;
   final String hintText;
 
   @override
@@ -75,8 +74,30 @@ class _ImageOrGifUrlFieldState extends State<ImageOrGifUrlField> {
           widget.controller.text = text;
         }
       case 'onKeyboardMediaInserted':
-        widget.onNativeKeyboardMediaInserted(rawArguments['path'] as String?);
+        _setMediaPath(rawArguments['path'] as String?);
     }
+  }
+
+  Future<void> _handleKeyboardMediaInserted(
+    KeyboardInsertedContent content,
+  ) async {
+    _setMediaPath(await saveKeyboardInsertedMedia(content));
+  }
+
+  void _setMediaPath(String? savedPath) {
+    if (!mounted) {
+      return;
+    }
+
+    final bool didSave = savedPath != null && savedPath.isNotEmpty;
+    if (didSave) {
+      widget.controller.text = savedPath;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(didSave ? 'Image added.' : 'Could not add that image.'),
+      ),
+    );
   }
 
   @override
@@ -125,7 +146,9 @@ class _ImageOrGifUrlFieldState extends State<ImageOrGifUrlField> {
           'image/jpeg',
           'image/webp',
         ],
-        onContentInserted: widget.onContentInserted,
+        onContentInserted: (KeyboardInsertedContent content) {
+          unawaited(_handleKeyboardMediaInserted(content));
+        },
       ),
     );
   }

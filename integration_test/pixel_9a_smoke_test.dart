@@ -5,16 +5,17 @@ import 'package:workout_app_rewrite/main.dart' as app;
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('Pixel 9a smoke test: launch and navigate core tabs', (WidgetTester tester) async {
+  testWidgets('Pixel 9a smoke test: launch and navigate core tabs',
+      (WidgetTester tester) async {
     await app.main();
     await tester.pumpAndSettle();
 
-    expect(find.text('Quick Actions'), findsOneWidget);
-    expect(find.text('Import Workout JSON'), findsOneWidget);
+    expect(find.text('Import Workout JSON'), findsNothing);
 
     await tester.tap(find.text('Library'));
     await tester.pumpAndSettle();
     expect(find.text('All Plans'), findsOneWidget);
+    expect(find.text('Import Workout JSON'), findsOneWidget);
 
     await tester.tap(find.text('Analysis'));
     await tester.pumpAndSettle();

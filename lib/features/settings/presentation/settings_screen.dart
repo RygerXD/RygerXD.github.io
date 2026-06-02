@@ -14,15 +14,6 @@ class SettingsScreen extends ConsumerWidget {
     final AppSettings settings = ref.watch(appSettingsProvider);
     final AppSettingsController controller =
         ref.read(appSettingsProvider.notifier);
-    final int metronomeVolumePercent = (settings.metronomeVolume * 100).round();
-    final int getReadyCountdownVolumePercent =
-        (settings.getReadyCountdownVolume * 100).round();
-    final int getReadyVolumePercent =
-        (settings.getReadyDingVolume * 100).round();
-    final int exerciseCountdownVolumePercent =
-        (settings.exerciseCountdownVolume * 100).round();
-    final int exerciseFinishedVolumePercent =
-        (settings.exerciseFinishedDingVolume * 100).round();
 
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -128,294 +119,104 @@ class SettingsScreen extends ConsumerWidget {
           onChanged: controller.setAudioCuesEnabled,
         ),
         const SizedBox(height: AppSpacing.md),
-        ListTile(
-          title: const Text('Metronome click'),
-          subtitle: Text(_metronomeClickLabel(settings.metronomeClickSound)),
-          trailing: FilledButton.icon(
-            onPressed: () {
-              unawaited(
-                WorkoutAudio.playMetronomeClick(
-                  sound: settings.metronomeClickSound,
-                  volume: settings.metronomeVolume,
-                ),
-              );
-            },
-            icon: const Icon(Icons.volume_up),
-            label: const Text('Test'),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        DropdownButtonFormField<MetronomeClickSound>(
-          initialValue: settings.metronomeClickSound,
-          decoration: const InputDecoration(
-            labelText: 'Click sound',
-            border: OutlineInputBorder(),
-          ),
-          items: MetronomeClickSound.values
-              .map(
-                (MetronomeClickSound sound) =>
-                    DropdownMenuItem<MetronomeClickSound>(
-                  value: sound,
-                  child: Text(_metronomeClickLabel(sound)),
-                ),
-              )
-              .toList(growable: false),
-          onChanged: (MetronomeClickSound? value) {
-            if (value != null) {
-              controller.setMetronomeClickSound(value);
-            }
-          },
-        ),
-        const SizedBox(height: AppSpacing.md),
-        ListTile(
-          title: const Text('Metronome volume'),
-          subtitle: Slider(
-            value: settings.metronomeVolume,
-            min: 0,
-            max: 1,
-            divisions: 20,
-            label: '$metronomeVolumePercent%',
-            onChanged: controller.setMetronomeVolume,
-          ),
-          trailing: SizedBox(
-            width: 48,
-            child: Text(
-              '$metronomeVolumePercent%',
-              textAlign: TextAlign.end,
+        _SoundSetting<MetronomeClickSound>(
+          title: 'Metronome click',
+          dropdownLabel: 'Click sound',
+          value: settings.metronomeClickSound,
+          values: MetronomeClickSound.values,
+          labelFor: _metronomeClickLabel,
+          onChanged: controller.setMetronomeClickSound,
+          onTest: () => unawaited(
+            WorkoutAudio.playMetronomeClick(
+              sound: settings.metronomeClickSound,
+              volume: settings.metronomeVolume,
             ),
           ),
         ),
-        const SizedBox(height: AppSpacing.md),
-        ListTile(
-          title: const Text('Get ready countdown'),
-          subtitle: Text(_countdownLabel(settings.getReadyCountdownSound)),
-          trailing: FilledButton.icon(
-            onPressed: () {
-              unawaited(
-                WorkoutAudio.playGetReadyCountdown(
-                  sound: settings.getReadyCountdownSound,
-                  volume: settings.getReadyCountdownVolume,
-                ),
-              );
-            },
-            icon: const Icon(Icons.volume_up),
-            label: const Text('Test'),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        DropdownButtonFormField<CountdownSound>(
-          initialValue: settings.getReadyCountdownSound,
-          decoration: const InputDecoration(
-            labelText: 'Countdown sound',
-            border: OutlineInputBorder(),
-          ),
-          items: CountdownSound.values
-              .map(
-                (CountdownSound sound) => DropdownMenuItem<CountdownSound>(
-                  value: sound,
-                  child: Text(_countdownLabel(sound)),
-                ),
-              )
-              .toList(growable: false),
-          onChanged: (CountdownSound? value) {
-            if (value != null) {
-              controller.setGetReadyCountdownSound(value);
-            }
-          },
+        _VolumeSetting(
+          title: 'Metronome volume',
+          value: settings.metronomeVolume,
+          onChanged: controller.setMetronomeVolume,
         ),
         const SizedBox(height: AppSpacing.md),
-        ListTile(
-          title: const Text('Get ready countdown volume'),
-          subtitle: Slider(
-            value: settings.getReadyCountdownVolume,
-            min: 0,
-            max: 1,
-            divisions: 20,
-            label: '$getReadyCountdownVolumePercent%',
-            onChanged: controller.setGetReadyCountdownVolume,
-          ),
-          trailing: SizedBox(
-            width: 48,
-            child: Text(
-              '$getReadyCountdownVolumePercent%',
-              textAlign: TextAlign.end,
+        _SoundSetting<CountdownSound>(
+          title: 'Get ready countdown',
+          dropdownLabel: 'Countdown sound',
+          value: settings.getReadyCountdownSound,
+          values: CountdownSound.values,
+          labelFor: _countdownLabel,
+          onChanged: controller.setGetReadyCountdownSound,
+          onTest: () => unawaited(
+            WorkoutAudio.playGetReadyCountdown(
+              sound: settings.getReadyCountdownSound,
+              volume: settings.getReadyCountdownVolume,
             ),
           ),
         ),
-        const SizedBox(height: AppSpacing.md),
-        ListTile(
-          title: const Text('Get ready ding'),
-          subtitle: Text(_getReadyDingLabel(settings.getReadyDingSound)),
-          trailing: FilledButton.icon(
-            onPressed: () {
-              unawaited(
-                WorkoutAudio.playGetReadyDing(
-                  sound: settings.getReadyDingSound,
-                  volume: settings.getReadyDingVolume,
-                ),
-              );
-            },
-            icon: const Icon(Icons.volume_up),
-            label: const Text('Test'),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        DropdownButtonFormField<GetReadyDingSound>(
-          initialValue: settings.getReadyDingSound,
-          decoration: const InputDecoration(
-            labelText: 'Ding sound',
-            border: OutlineInputBorder(),
-          ),
-          items: GetReadyDingSound.values
-              .map(
-                (GetReadyDingSound sound) =>
-                    DropdownMenuItem<GetReadyDingSound>(
-                  value: sound,
-                  child: Text(_getReadyDingLabel(sound)),
-                ),
-              )
-              .toList(growable: false),
-          onChanged: (GetReadyDingSound? value) {
-            if (value != null) {
-              controller.setGetReadyDingSound(value);
-            }
-          },
+        _VolumeSetting(
+          title: 'Get ready countdown volume',
+          value: settings.getReadyCountdownVolume,
+          onChanged: controller.setGetReadyCountdownVolume,
         ),
         const SizedBox(height: AppSpacing.md),
-        ListTile(
-          title: const Text('Get ready volume'),
-          subtitle: Slider(
-            value: settings.getReadyDingVolume,
-            min: 0,
-            max: 1,
-            divisions: 20,
-            label: '$getReadyVolumePercent%',
-            onChanged: controller.setGetReadyDingVolume,
-          ),
-          trailing: SizedBox(
-            width: 48,
-            child: Text(
-              '$getReadyVolumePercent%',
-              textAlign: TextAlign.end,
+        _SoundSetting<GetReadyDingSound>(
+          title: 'Get ready ding',
+          dropdownLabel: 'Ding sound',
+          value: settings.getReadyDingSound,
+          values: GetReadyDingSound.values,
+          labelFor: _getReadyDingLabel,
+          onChanged: controller.setGetReadyDingSound,
+          onTest: () => unawaited(
+            WorkoutAudio.playGetReadyDing(
+              sound: settings.getReadyDingSound,
+              volume: settings.getReadyDingVolume,
             ),
           ),
         ),
-        const SizedBox(height: AppSpacing.md),
-        ListTile(
-          title: const Text('Exercise countdown'),
-          subtitle: Text(_countdownLabel(settings.exerciseCountdownSound)),
-          trailing: FilledButton.icon(
-            onPressed: () {
-              unawaited(
-                WorkoutAudio.playExerciseCountdown(
-                  sound: settings.exerciseCountdownSound,
-                  volume: settings.exerciseCountdownVolume,
-                ),
-              );
-            },
-            icon: const Icon(Icons.volume_up),
-            label: const Text('Test'),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        DropdownButtonFormField<CountdownSound>(
-          initialValue: settings.exerciseCountdownSound,
-          decoration: const InputDecoration(
-            labelText: 'Exercise countdown sound',
-            border: OutlineInputBorder(),
-          ),
-          items: CountdownSound.values
-              .map(
-                (CountdownSound sound) => DropdownMenuItem<CountdownSound>(
-                  value: sound,
-                  child: Text(_countdownLabel(sound)),
-                ),
-              )
-              .toList(growable: false),
-          onChanged: (CountdownSound? value) {
-            if (value != null) {
-              controller.setExerciseCountdownSound(value);
-            }
-          },
+        _VolumeSetting(
+          title: 'Get ready volume',
+          value: settings.getReadyDingVolume,
+          onChanged: controller.setGetReadyDingVolume,
         ),
         const SizedBox(height: AppSpacing.md),
-        ListTile(
-          title: const Text('Exercise countdown volume'),
-          subtitle: Slider(
-            value: settings.exerciseCountdownVolume,
-            min: 0,
-            max: 1,
-            divisions: 20,
-            label: '$exerciseCountdownVolumePercent%',
-            onChanged: controller.setExerciseCountdownVolume,
-          ),
-          trailing: SizedBox(
-            width: 48,
-            child: Text(
-              '$exerciseCountdownVolumePercent%',
-              textAlign: TextAlign.end,
+        _SoundSetting<CountdownSound>(
+          title: 'Exercise countdown',
+          dropdownLabel: 'Exercise countdown sound',
+          value: settings.exerciseCountdownSound,
+          values: CountdownSound.values,
+          labelFor: _countdownLabel,
+          onChanged: controller.setExerciseCountdownSound,
+          onTest: () => unawaited(
+            WorkoutAudio.playExerciseCountdown(
+              sound: settings.exerciseCountdownSound,
+              volume: settings.exerciseCountdownVolume,
             ),
           ),
         ),
-        const SizedBox(height: AppSpacing.md),
-        ListTile(
-          title: const Text('Exercise finished ding'),
-          subtitle: Text(
-            _exerciseFinishedDingLabel(settings.exerciseFinishedDingSound),
-          ),
-          trailing: FilledButton.icon(
-            onPressed: () {
-              unawaited(
-                WorkoutAudio.playExerciseFinishedDing(
-                  sound: settings.exerciseFinishedDingSound,
-                  volume: settings.exerciseFinishedDingVolume,
-                ),
-              );
-            },
-            icon: const Icon(Icons.volume_up),
-            label: const Text('Test'),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        DropdownButtonFormField<ExerciseFinishedDingSound>(
-          initialValue: settings.exerciseFinishedDingSound,
-          decoration: const InputDecoration(
-            labelText: 'Finished ding sound',
-            border: OutlineInputBorder(),
-          ),
-          items: ExerciseFinishedDingSound.values
-              .map(
-                (ExerciseFinishedDingSound sound) =>
-                    DropdownMenuItem<ExerciseFinishedDingSound>(
-                  value: sound,
-                  child: Text(_exerciseFinishedDingLabel(sound)),
-                ),
-              )
-              .toList(growable: false),
-          onChanged: (ExerciseFinishedDingSound? value) {
-            if (value != null) {
-              controller.setExerciseFinishedDingSound(value);
-            }
-          },
+        _VolumeSetting(
+          title: 'Exercise countdown volume',
+          value: settings.exerciseCountdownVolume,
+          onChanged: controller.setExerciseCountdownVolume,
         ),
         const SizedBox(height: AppSpacing.md),
-        ListTile(
-          title: const Text('Exercise finished volume'),
-          subtitle: Slider(
-            value: settings.exerciseFinishedDingVolume,
-            min: 0,
-            max: 1,
-            divisions: 20,
-            label: '$exerciseFinishedVolumePercent%',
-            onChanged: controller.setExerciseFinishedDingVolume,
-          ),
-          trailing: SizedBox(
-            width: 48,
-            child: Text(
-              '$exerciseFinishedVolumePercent%',
-              textAlign: TextAlign.end,
+        _SoundSetting<ExerciseFinishedDingSound>(
+          title: 'Exercise finished ding',
+          dropdownLabel: 'Finished ding sound',
+          value: settings.exerciseFinishedDingSound,
+          values: ExerciseFinishedDingSound.values,
+          labelFor: _exerciseFinishedDingLabel,
+          onChanged: controller.setExerciseFinishedDingSound,
+          onTest: () => unawaited(
+            WorkoutAudio.playExerciseFinishedDing(
+              sound: settings.exerciseFinishedDingSound,
+              volume: settings.exerciseFinishedDingVolume,
             ),
           ),
+        ),
+        _VolumeSetting(
+          title: 'Exercise finished volume',
+          value: settings.exerciseFinishedDingVolume,
+          onChanged: controller.setExerciseFinishedDingVolume,
         ),
       ],
     );
@@ -496,5 +297,101 @@ class SettingsScreen extends ConsumerWidget {
       case ExerciseFinishedDingSound.bell:
         return 'Bell';
     }
+  }
+}
+
+class _SoundSetting<T> extends StatelessWidget {
+  const _SoundSetting({
+    required this.title,
+    required this.dropdownLabel,
+    required this.value,
+    required this.values,
+    required this.labelFor,
+    required this.onChanged,
+    required this.onTest,
+  });
+
+  final String title;
+  final String dropdownLabel;
+  final T value;
+  final List<T> values;
+  final String Function(T value) labelFor;
+  final ValueChanged<T> onChanged;
+  final VoidCallback onTest;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        ListTile(
+          title: Text(title),
+          subtitle: Text(labelFor(value)),
+          trailing: FilledButton.icon(
+            onPressed: onTest,
+            icon: const Icon(Icons.volume_up),
+            label: const Text('Test'),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        DropdownButtonFormField<T>(
+          initialValue: value,
+          decoration: InputDecoration(
+            labelText: dropdownLabel,
+            border: const OutlineInputBorder(),
+          ),
+          items: values
+              .map(
+                (T value) => DropdownMenuItem<T>(
+                  value: value,
+                  child: Text(labelFor(value)),
+                ),
+              )
+              .toList(growable: false),
+          onChanged: (T? value) {
+            if (value != null) {
+              onChanged(value);
+            }
+          },
+        ),
+        const SizedBox(height: AppSpacing.md),
+      ],
+    );
+  }
+}
+
+class _VolumeSetting extends StatelessWidget {
+  const _VolumeSetting({
+    required this.title,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String title;
+  final double value;
+  final ValueChanged<double> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final int percent = (value * 100).round();
+
+    return ListTile(
+      title: Text(title),
+      subtitle: Slider(
+        value: value,
+        min: 0,
+        max: 1,
+        divisions: 20,
+        label: '$percent%',
+        onChanged: onChanged,
+      ),
+      trailing: SizedBox(
+        width: 48,
+        child: Text(
+          '$percent%',
+          textAlign: TextAlign.end,
+        ),
+      ),
+    );
   }
 }

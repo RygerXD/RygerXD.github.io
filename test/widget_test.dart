@@ -36,11 +36,10 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
-    expect(find.text('Quick Actions'), findsOneWidget);
-    expect(find.text('Import Workout JSON'), findsOneWidget);
+    expect(find.text('Import Workout JSON'), findsNothing);
     final Iterable<SafeArea> shellSafeAreas = tester.widgetList<SafeArea>(
       find.ancestor(
-        of: find.text('Quick Actions'),
+        of: find.text('My Workouts'),
         matching: find.byType(SafeArea),
       ),
     );
@@ -53,6 +52,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('All Plans'), findsOneWidget);
+    expect(find.text('Import Workout JSON'), findsOneWidget);
 
     await tester.tap(find.text('Settings'));
     await tester.pump();

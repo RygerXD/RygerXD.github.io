@@ -1,9 +1,6 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workout_app_rewrite/core/media/image_or_gif_url_field.dart';
-import 'package:workout_app_rewrite/core/media/keyboard_media_saver.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
 import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
@@ -164,43 +161,6 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
     return weight;
   }
 
-  Future<void> _handleKeyboardMediaInserted(
-    KeyboardInsertedContent content,
-  ) async {
-    final String? savedPath = await saveKeyboardInsertedMedia(content);
-    if (!mounted) {
-      return;
-    }
-    if (savedPath == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not add that image.')),
-      );
-      return;
-    }
-
-    _mediaUrlController.text = savedPath;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Image added.')),
-    );
-  }
-
-  void _handleNativeKeyboardMediaInserted(String? savedPath) {
-    if (!mounted) {
-      return;
-    }
-    if (savedPath == null || savedPath.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not add that image.')),
-      );
-      return;
-    }
-
-    _mediaUrlController.text = savedPath;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Image added.')),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final Size screenSize = MediaQuery.sizeOf(context);
@@ -233,11 +193,6 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
               const SizedBox(height: AppSpacing.md),
               ImageOrGifUrlField(
                 controller: _mediaUrlController,
-                onContentInserted: (KeyboardInsertedContent content) {
-                  unawaited(_handleKeyboardMediaInserted(content));
-                },
-                onNativeKeyboardMediaInserted:
-                    _handleNativeKeyboardMediaInserted,
               ),
               const SizedBox(height: AppSpacing.md),
               SegmentedButton<MoveType>(

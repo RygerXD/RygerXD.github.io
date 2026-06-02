@@ -11,6 +11,7 @@ void main() {
         'schemaVersion': 1,
         'planId': 'plan-1',
         'name': 'Plan 1',
+        'imageUrl': 'https://example.com/plan.gif',
         'exercises': <Map<String, dynamic>>[
           <String, dynamic>{
             'exerciseId': 'ex-1',
@@ -43,6 +44,7 @@ void main() {
 
       final WorkoutPlan parsed = parser.parseFromJson(json);
       expect(parsed.planId, 'plan-1');
+      expect(parsed.imageUrl, 'https://example.com/plan.gif');
       expect(
           parsed.workouts.single.imageUrl, 'https://example.com/workout.gif');
       expect(parsed.workouts.single.sets.single.moves.single.repCount, 10);

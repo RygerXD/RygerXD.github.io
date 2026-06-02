@@ -1,11 +1,8 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
-import 'package:workout_app_rewrite/core/media/exercise_media_image.dart';
 import 'package:workout_app_rewrite/core/media/image_or_gif_url_field.dart';
-import 'package:workout_app_rewrite/core/media/keyboard_media_saver.dart';
+import 'package:workout_app_rewrite/core/media/media_thumbnail.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
 import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
 import 'package:workout_app_rewrite/features/edit_workout/presentation/add_move_dialog.dart';
@@ -35,6 +32,14 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
 
   bool _isInit = true;
 
+  WorkoutPlan? get _currentPlan {
+    final List<WorkoutPlan> plans =
+        ref.read(loadedWorkoutPlansNotifierProvider).value ?? <WorkoutPlan>[];
+    return plans
+        .where((WorkoutPlan plan) => plan.planId == widget.planId)
+        .firstOrNull;
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -51,10 +56,7 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
       return;
     }
 
-    final List<WorkoutPlan> plans =
-        ref.read(loadedWorkoutPlansNotifierProvider).value ?? <WorkoutPlan>[];
-    final WorkoutPlan? plan =
-        plans.where((WorkoutPlan p) => p.planId == widget.planId).firstOrNull;
+    final WorkoutPlan? plan = _currentPlan;
 
     if (plan != null) {
       _cacheExercises(plan.exercises);
@@ -182,10 +184,7 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
   void _upsertExerciseInPlan(Exercise exercise) {
     _exercisesById[exercise.exerciseId] = exercise;
 
-    final List<WorkoutPlan> plans =
-        ref.read(loadedWorkoutPlansNotifierProvider).value ?? <WorkoutPlan>[];
-    final WorkoutPlan? plan =
-        plans.where((WorkoutPlan p) => p.planId == widget.planId).firstOrNull;
+    final WorkoutPlan? plan = _currentPlan;
     if (plan != null) {
       final List<Exercise> updatedExercises =
           List<Exercise>.from(plan.exercises);
@@ -204,43 +203,6 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
           .read(loadedWorkoutPlansNotifierProvider.notifier)
           .loadPlan(updatedPlan);
     }
-  }
-
-  Future<void> _handleWorkoutKeyboardMediaInserted(
-    KeyboardInsertedContent content,
-  ) async {
-    final String? savedPath = await saveKeyboardInsertedMedia(content);
-    if (!mounted) {
-      return;
-    }
-    if (savedPath == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not add that image.')),
-      );
-      return;
-    }
-
-    _imageUrlController.text = savedPath;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Image added.')),
-    );
-  }
-
-  void _handleWorkoutNativeKeyboardMediaInserted(String? savedPath) {
-    if (!mounted) {
-      return;
-    }
-    if (savedPath == null || savedPath.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not add that image.')),
-      );
-      return;
-    }
-
-    _imageUrlController.text = savedPath;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Image added.')),
-    );
   }
 
   void _cacheExercises(List<Exercise> exercises) {
@@ -276,10 +238,7 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
       return cachedExercise;
     }
 
-    final List<WorkoutPlan> plans =
-        ref.read(loadedWorkoutPlansNotifierProvider).value ?? <WorkoutPlan>[];
-    final WorkoutPlan? plan =
-        plans.where((WorkoutPlan p) => p.planId == widget.planId).firstOrNull;
+    final WorkoutPlan? plan = _currentPlan;
     if (plan != null) {
       _cacheExercises(plan.exercises);
       final Exercise? exercise = plan.exercises
@@ -301,10 +260,7 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
       return;
     }
 
-    final List<WorkoutPlan> plans =
-        ref.read(loadedWorkoutPlansNotifierProvider).value ?? <WorkoutPlan>[];
-    final WorkoutPlan? plan =
-        plans.where((WorkoutPlan p) => p.planId == widget.planId).firstOrNull;
+    final WorkoutPlan? plan = _currentPlan;
 
     if (plan == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -385,11 +341,6 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
             ImageOrGifUrlField(
               controller: _imageUrlController,
               hintText: 'https://example.com/workout.gif',
-              onContentInserted: (KeyboardInsertedContent content) {
-                unawaited(_handleWorkoutKeyboardMediaInserted(content));
-              },
-              onNativeKeyboardMediaInserted:
-                  _handleWorkoutNativeKeyboardMediaInserted,
             ),
             const SizedBox(height: AppSpacing.xxl),
             Row(
@@ -598,7 +549,13 @@ class _MoveRow extends StatelessWidget {
 
                     return Row(
                       children: <Widget>[
-                        _ExerciseThumbnail(imageUrl: imageUrl),
+                        MediaThumbnail(
+                          imageUrl: imageUrl,
+                          fallbackIcon: Icons.fitness_center,
+                          backgroundColor: colorScheme.surfaceContainerHighest,
+                          iconColor: colorScheme.onSurfaceVariant,
+                          dimension: 52,
+                        ),
                         const SizedBox(width: AppSpacing.md),
                         Expanded(
                           child: Text(
@@ -647,42 +604,6 @@ class _MoveRow extends StatelessWidget {
               ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ExerciseThumbnail extends StatelessWidget {
-  const _ExerciseThumbnail({
-    required this.imageUrl,
-  });
-
-  final String? imageUrl;
-
-  @override
-  Widget build(BuildContext context) {
-    final ColorScheme colorScheme = Theme.of(context).colorScheme;
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(AppRadii.sm),
-      child: ColoredBox(
-        color: colorScheme.surfaceContainerHighest,
-        child: SizedBox.square(
-          dimension: 52,
-          child: imageUrl == null
-              ? Icon(
-                  Icons.fitness_center,
-                  color: colorScheme.onSurfaceVariant,
-                )
-              : ExerciseMediaImage(
-                  source: imageUrl!,
-                  fit: BoxFit.cover,
-                  errorPlaceholder: Icon(
-                    Icons.fitness_center,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
         ),
       ),
     );
