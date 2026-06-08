@@ -15,6 +15,7 @@ import 'package:workout_app_rewrite/features/active_workout/domain/workout_state
 import 'package:workout_app_rewrite/features/history/application/history_providers.dart';
 import 'package:workout_app_rewrite/features/settings/application/app_settings_controller.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
+import 'package:workout_app_rewrite/features/workout_plan/domain/workout_metrics.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
 
 class ActiveWorkoutScreen extends ConsumerStatefulWidget {
@@ -175,124 +176,156 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
               ),
               Expanded(
                 flex: 4,
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      _PhaseChip(label: statusLabel, color: statusColor),
-                      const SizedBox(height: 24),
-                      if (isPrep || isRest) ...<Widget>[
-                        if ((isPrep
-                                ? moveMediaUrl
-                                : nextMoveMediaUrlDuringRest) !=
-                            null) ...<Widget>[
-                          _MoveMedia(
-                            url: isPrep
-                                ? moveMediaUrl!
-                                : nextMoveMediaUrlDuringRest!,
+                child: LayoutBuilder(
+                  builder: (BuildContext context, BoxConstraints constraints) {
+                    final double minHeight = constraints.maxHeight.isFinite
+                        ? (constraints.maxHeight - 24)
+                            .clamp(0.0, constraints.maxHeight)
+                            .toDouble()
+                        : 0;
+
+                    return SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(minHeight: minHeight),
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: <Widget>[
+                              _PhaseChip(
+                                  label: statusLabel, color: statusColor),
+                              const SizedBox(height: 24),
+                              if (isPrep || isRest) ...<Widget>[
+                                if ((isPrep
+                                        ? moveMediaUrl
+                                        : nextMoveMediaUrlDuringRest) !=
+                                    null) ...<Widget>[
+                                  _MoveMedia(
+                                    url: isPrep
+                                        ? moveMediaUrl!
+                                        : nextMoveMediaUrlDuringRest!,
+                                  ),
+                                  const SizedBox(height: 16),
+                                ],
+                                _TimerDisplay(
+                                    seconds: _timerSeconds, color: statusColor),
+                                const SizedBox(height: 16),
+                                if (isPrep)
+                                  Text(
+                                    'Next: $moveLabel',
+                                    style:
+                                        Theme.of(context).textTheme.titleMedium,
+                                  )
+                                else if (nextMoveLabelDuringRest != null)
+                                  Text(
+                                    'Next: $nextMoveLabelDuringRest',
+                                    style:
+                                        Theme.of(context).textTheme.titleMedium,
+                                  ),
+                              ] else if (isMove) ...<Widget>[
+                                if (moveMediaUrl != null) ...<Widget>[
+                                  _MoveMedia(url: moveMediaUrl),
+                                  const SizedBox(height: 16),
+                                ],
+                                Text(
+                                  moveLabel,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineMedium
+                                      ?.copyWith(fontWeight: FontWeight.bold),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 24),
+                                if (currentMove.type ==
+                                    MoveType.duration) ...<Widget>[
+                                  _TimerDisplay(
+                                      seconds: _timerSeconds,
+                                      color: statusColor),
+                                  if (currentMove.metronomeSpeed !=
+                                      null) ...<Widget>[
+                                    const SizedBox(height: 8),
+                                    _MetronomeSummary(
+                                      bpm: currentMove.metronomeSpeed!,
+                                      estimatedReps:
+                                          metronomeRepsForElapsedTime(
+                                                move: currentMove,
+                                                elapsedSeconds:
+                                                    effectiveMoveDurationSeconds(
+                                                  currentMove,
+                                                ),
+                                              ) ??
+                                              0,
+                                    ),
+                                  ],
+                                  if (hasTrackedWeight) ...<Widget>[
+                                    const SizedBox(height: 16),
+                                    _AdjustableWeightDisplay(
+                                      move: currentMove,
+                                      currentWeight: _currentWeight,
+                                      onWeightChanged: (double value) =>
+                                          setState(() => _currentWeight =
+                                              value.clamp(0, 9999).toDouble()),
+                                      lastWeight: _lastWeightForCurrentMove,
+                                    ),
+                                  ],
+                                ] else if (currentMove.type ==
+                                    MoveType.stopwatch)
+                                  Column(
+                                    children: <Widget>[
+                                      _StopwatchDisplay(
+                                        seconds: _timerSeconds,
+                                        color: statusColor,
+                                        lastDuration:
+                                            _lastDurationForCurrentMove,
+                                      ),
+                                      if (hasTrackedWeight) ...<Widget>[
+                                        const SizedBox(height: 18),
+                                        _AdjustableWeightDisplay(
+                                          move: currentMove,
+                                          currentWeight: _currentWeight,
+                                          onWeightChanged: (double value) =>
+                                              setState(() => _currentWeight =
+                                                  value
+                                                      .clamp(0, 9999)
+                                                      .toDouble()),
+                                          lastWeight: _lastWeightForCurrentMove,
+                                        ),
+                                      ],
+                                    ],
+                                  )
+                                else
+                                  Column(
+                                    children: <Widget>[
+                                      _AdjustableRepDisplay(
+                                        move: currentMove,
+                                        currentReps: _currentReps,
+                                        onRepsChanged: (int value) => setState(
+                                            () => _currentReps = value),
+                                        lastReps: _lastRepsForCurrentMove,
+                                      ),
+                                      if (hasTrackedWeight) ...<Widget>[
+                                        const SizedBox(height: 18),
+                                        _AdjustableWeightDisplay(
+                                          move: currentMove,
+                                          currentWeight: _currentWeight,
+                                          onWeightChanged: (double value) =>
+                                              setState(() => _currentWeight =
+                                                  value
+                                                      .clamp(0, 9999)
+                                                      .toDouble()),
+                                          lastWeight: _lastWeightForCurrentMove,
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                              ],
+                            ],
                           ),
-                          const SizedBox(height: 16),
-                        ],
-                        _TimerDisplay(
-                            seconds: _timerSeconds, color: statusColor),
-                        const SizedBox(height: 16),
-                        if (isPrep)
-                          Text(
-                            'Next: $moveLabel',
-                            style: Theme.of(context).textTheme.titleMedium,
-                          )
-                        else if (nextMoveLabelDuringRest != null)
-                          Text(
-                            'Next: $nextMoveLabelDuringRest',
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                      ] else if (isMove) ...<Widget>[
-                        if (moveMediaUrl != null) ...<Widget>[
-                          _MoveMedia(url: moveMediaUrl),
-                          const SizedBox(height: 16),
-                        ],
-                        Text(
-                          moveLabel,
-                          style: Theme.of(context)
-                              .textTheme
-                              .headlineMedium
-                              ?.copyWith(fontWeight: FontWeight.bold),
-                          textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 32),
-                        if (currentMove.type == MoveType.duration) ...<Widget>[
-                          _TimerDisplay(
-                              seconds: _timerSeconds, color: statusColor),
-                          if (currentMove.metronomeSpeed != null) ...<Widget>[
-                            const SizedBox(height: 8),
-                            _MetronomeSummary(
-                              bpm: currentMove.metronomeSpeed!,
-                              estimatedReps: metronomeRepsForElapsedTime(
-                                    move: currentMove,
-                                    elapsedSeconds:
-                                        currentMove.durationSeconds ?? 0,
-                                  ) ??
-                                  0,
-                            ),
-                          ],
-                          if (hasTrackedWeight) ...<Widget>[
-                            const SizedBox(height: 16),
-                            _AdjustableWeightDisplay(
-                              move: currentMove,
-                              currentWeight: _currentWeight,
-                              onWeightChanged: (double value) => setState(() =>
-                                  _currentWeight =
-                                      value.clamp(0, 9999).toDouble()),
-                              lastWeight: _lastWeightForCurrentMove,
-                            ),
-                          ],
-                        ] else if (currentMove.type == MoveType.stopwatch)
-                          Column(
-                            children: <Widget>[
-                              _StopwatchDisplay(
-                                seconds: _timerSeconds,
-                                color: statusColor,
-                                lastDuration: _lastDurationForCurrentMove,
-                              ),
-                              if (hasTrackedWeight) ...<Widget>[
-                                const SizedBox(height: 18),
-                                _AdjustableWeightDisplay(
-                                  move: currentMove,
-                                  currentWeight: _currentWeight,
-                                  onWeightChanged: (double value) => setState(
-                                      () => _currentWeight =
-                                          value.clamp(0, 9999).toDouble()),
-                                  lastWeight: _lastWeightForCurrentMove,
-                                ),
-                              ],
-                            ],
-                          )
-                        else
-                          Column(
-                            children: <Widget>[
-                              _AdjustableRepDisplay(
-                                move: currentMove,
-                                currentReps: _currentReps,
-                                onRepsChanged: (int value) =>
-                                    setState(() => _currentReps = value),
-                                lastReps: _lastRepsForCurrentMove,
-                              ),
-                              if (hasTrackedWeight) ...<Widget>[
-                                const SizedBox(height: 18),
-                                _AdjustableWeightDisplay(
-                                  move: currentMove,
-                                  currentWeight: _currentWeight,
-                                  onWeightChanged: (double value) => setState(
-                                      () => _currentWeight =
-                                          value.clamp(0, 9999).toDouble()),
-                                  lastWeight: _lastWeightForCurrentMove,
-                                ),
-                              ],
-                            ],
-                          ),
-                      ],
-                    ],
-                  ),
+                      ),
+                    );
+                  },
                 ),
               ),
               Padding(
@@ -802,7 +835,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       return move.prepTimeSeconds;
     }
     if (phase == WorkoutPhase.move) {
-      return move.type == MoveType.duration ? (move.durationSeconds ?? 0) : 0;
+      return effectiveMoveDurationSeconds(move);
     }
     if (phase == WorkoutPhase.restBetweenLoops) {
       return set.restBetweenLoopsSeconds;
@@ -814,7 +847,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   }
 
   int _elapsedSecondsForMove(Move move) {
-    final int durationSeconds = move.durationSeconds ?? 0;
+    final int durationSeconds = effectiveMoveDurationSeconds(move);
     if (move.type != MoveType.duration || durationSeconds <= 0) {
       return _moveStopwatch.elapsed.inSeconds;
     }
@@ -1327,31 +1360,31 @@ class _AdjustableWeightDisplay extends StatelessWidget {
           runSpacing: 12,
           children: <Widget>[
             _RepButton(
-              label: '-10',
-              icon: Icons.keyboard_double_arrow_left,
-              onPressed: currentWeight >= 10
-                  ? () => onWeightChanged(currentWeight - 10)
-                  : null,
-              color: Colors.teal,
-            ),
-            _RepButton(
               label: '-5',
-              icon: Icons.remove,
+              icon: Icons.keyboard_double_arrow_left,
               onPressed: currentWeight >= 5
                   ? () => onWeightChanged(currentWeight - 5)
                   : null,
               color: Colors.teal,
             ),
             _RepButton(
-              label: '+5',
-              icon: Icons.add,
-              onPressed: () => onWeightChanged(currentWeight + 5),
+              label: '-1',
+              icon: Icons.remove,
+              onPressed: currentWeight >= 1
+                  ? () => onWeightChanged(currentWeight - 1)
+                  : null,
               color: Colors.teal,
             ),
             _RepButton(
-              label: '+10',
+              label: '+1',
+              icon: Icons.add,
+              onPressed: () => onWeightChanged(currentWeight + 1),
+              color: Colors.teal,
+            ),
+            _RepButton(
+              label: '+5',
               icon: Icons.keyboard_double_arrow_right,
-              onPressed: () => onWeightChanged(currentWeight + 10),
+              onPressed: () => onWeightChanged(currentWeight + 5),
               color: Colors.teal,
             ),
           ],

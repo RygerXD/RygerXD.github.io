@@ -496,10 +496,13 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
       return 'Max time';
     }
     final int? bpm = move.metronomeSpeed;
+    final String durationSummary = move.repeatEachSide
+        ? '${move.durationSeconds ?? 0} seconds / side'
+        : '${move.durationSeconds ?? 0} seconds';
     if (bpm == null) {
-      return '${move.durationSeconds ?? 0} seconds';
+      return durationSummary;
     }
-    return '${move.durationSeconds ?? 0} seconds - $bpm BPM';
+    return '$durationSummary - $bpm BPM';
   }
 }
 

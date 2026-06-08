@@ -146,6 +146,49 @@ void main() {
           parsed.workouts.single.sets.single.moves.single.metronomeSpeed, 60);
     });
 
+    test('parses each-side duration moves', () {
+      final Map<String, dynamic> json = <String, dynamic>{
+        'schemaVersion': 1,
+        'planId': 'plan-1',
+        'name': 'Plan 1',
+        'exercises': <Map<String, dynamic>>[
+          <String, dynamic>{
+            'exerciseId': 'ex-1',
+            'name': 'Lunge',
+          },
+        ],
+        'workouts': <Map<String, dynamic>>[
+          <String, dynamic>{
+            'workoutId': 'w-1',
+            'title': 'Workout A',
+            'sets': <Map<String, dynamic>>[
+              <String, dynamic>{
+                'setId': 's-1',
+                'loopCount': 1,
+                'restBetweenLoopsSeconds': 30,
+                'moves': <Map<String, dynamic>>[
+                  <String, dynamic>{
+                    'moveId': 'm-1',
+                    'exerciseId': 'ex-1',
+                    'type': 'duration',
+                    'durationSeconds': 30,
+                    'repeatEachSide': true,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      final WorkoutPlan parsed = parser.parseFromJson(json);
+      final Move move = parsed.workouts.single.sets.single.moves.single;
+
+      expect(move.durationSeconds, 30);
+      expect(move.repeatEachSide, true);
+      expect(move.toJson()['repeatEachSide'], true);
+    });
+
     test('parses stopwatch moves', () {
       final Map<String, dynamic> json = <String, dynamic>{
         'schemaVersion': 1,
@@ -214,6 +257,47 @@ void main() {
                     'type': 'reps',
                     'repCount': 10,
                     'metronomeSpeed': 60,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      expect(
+        () => parser.parseFromJson(json),
+        throwsA(isA<WorkoutPlanParseException>()),
+      );
+    });
+
+    test('throws when repeatEachSide is set on a rep move', () {
+      final Map<String, dynamic> json = <String, dynamic>{
+        'schemaVersion': 1,
+        'planId': 'plan-1',
+        'name': 'Plan 1',
+        'exercises': <Map<String, dynamic>>[
+          <String, dynamic>{
+            'exerciseId': 'ex-1',
+            'name': 'Squat',
+          },
+        ],
+        'workouts': <Map<String, dynamic>>[
+          <String, dynamic>{
+            'workoutId': 'w-1',
+            'title': 'Workout A',
+            'sets': <Map<String, dynamic>>[
+              <String, dynamic>{
+                'setId': 's-1',
+                'loopCount': 1,
+                'restBetweenLoopsSeconds': 30,
+                'moves': <Map<String, dynamic>>[
+                  <String, dynamic>{
+                    'moveId': 'm-1',
+                    'exerciseId': 'ex-1',
+                    'type': 'reps',
+                    'repCount': 10,
+                    'repeatEachSide': true,
                   },
                 ],
               },

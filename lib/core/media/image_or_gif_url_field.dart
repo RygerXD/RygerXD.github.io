@@ -107,6 +107,7 @@ class _ImageOrGifUrlFieldState extends State<ImageOrGifUrlField> {
         isEmpty: widget.controller.text.isEmpty,
         decoration: const InputDecoration(
           labelText: 'Image or GIF URL',
+          floatingLabelBehavior: FloatingLabelBehavior.always,
           border: OutlineInputBorder(),
           prefixIcon: Icon(Icons.image_outlined),
         ),
@@ -116,6 +117,7 @@ class _ImageOrGifUrlFieldState extends State<ImageOrGifUrlField> {
             viewType: _viewType,
             creationParams: <String, String>{
               'initialText': widget.controller.text,
+              'hintText': widget.hintText,
             },
             creationParamsCodec: const StandardMessageCodec(),
             onPlatformViewCreated: (int id) {

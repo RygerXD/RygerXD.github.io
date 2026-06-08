@@ -39,6 +39,7 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
   final TextEditingController _weightController = TextEditingController();
   MoveType _moveType = MoveType.reps;
   bool _useMetronome = false;
+  bool _repeatEachSide = false;
   bool _hasWeight = false;
   WeightUnit _weightUnit = WeightUnit.lb;
   bool get _isEditing => widget.initialMove != null;
@@ -55,6 +56,7 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
     if (initialMove != null) {
       _moveType = initialMove.type;
       _useMetronome = initialMove.metronomeSpeed != null;
+      _repeatEachSide = initialMove.repeatEachSide;
       _prepController.text = initialMove.prepTimeSeconds.toString();
       _cooldownController.text = initialMove.finishTimeSeconds.toString();
       _repsController.text = (initialMove.repCount ?? 10).toString();
@@ -122,6 +124,7 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
           ? (int.tryParse(_durationController.text) ?? 30)
           : null,
       finishTimeSeconds: _parseNonNegativeSeconds(_cooldownController.text, 0),
+      repeatEachSide: _moveType == MoveType.duration && _repeatEachSide,
       targetWeight: _hasWeight ? targetWeight : null,
       targetWeightUnit: _hasWeight ? _weightUnit : null,
       metronomeSpeed: metronomeSpeed,
@@ -217,6 +220,9 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
                 onSelectionChanged: (Set<MoveType> selected) {
                   setState(() {
                     _moveType = selected.first;
+                    if (_moveType != MoveType.duration) {
+                      _repeatEachSide = false;
+                    }
                   });
                 },
               ),
@@ -253,11 +259,26 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
                   children: <Widget>[
                     TextField(
                       controller: _durationController,
-                      decoration: const InputDecoration(
-                        labelText: 'Duration (sec)',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: _repeatEachSide
+                            ? 'Duration per side (sec)'
+                            : 'Duration (sec)',
+                        border: const OutlineInputBorder(),
                       ),
                       keyboardType: TextInputType.number,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Left and right sides'),
+                      subtitle:
+                          const Text('Repeat this duration for each side'),
+                      value: _repeatEachSide,
+                      onChanged: (bool value) {
+                        setState(() {
+                          _repeatEachSide = value;
+                        });
+                      },
                     ),
                     const SizedBox(height: AppSpacing.md),
                     SwitchListTile(

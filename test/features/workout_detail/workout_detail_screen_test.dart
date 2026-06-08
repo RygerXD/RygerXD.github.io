@@ -1,12 +1,76 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:workout_app_rewrite/core/media/media_thumbnail.dart';
 import 'package:workout_app_rewrite/features/workout_detail/presentation/workout_detail_screen.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
 import 'package:workout_app_rewrite/features/workout_plan/data/in_memory_workout_repository.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
 
 void main() {
+  testWidgets('shows workout image thumbnails inside a plan',
+      (WidgetTester tester) async {
+    final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
+    await repository.savePlan(
+      const WorkoutPlan(
+        schemaVersion: 1,
+        planId: 'plan-1',
+        name: 'Plan 1',
+        workouts: <Workout>[
+          Workout(
+            workoutId: 'workout-1',
+            title: 'Leg Day',
+            imageUrl: 'workout.gif',
+            sets: <WorkoutSet>[
+              WorkoutSet(
+                setId: 'set-1',
+                loopCount: 1,
+                restBetweenLoopsSeconds: 0,
+                moves: <Move>[
+                  Move(
+                    moveId: 'move-1',
+                    exerciseId: 'exercise-1',
+                    type: MoveType.duration,
+                    durationSeconds: 60,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+        exercises: <Exercise>[
+          Exercise(exerciseId: 'exercise-1', name: 'Squat'),
+        ],
+      ),
+    );
+
+    final ProviderContainer container = ProviderContainer(
+      overrides: <Override>[
+        workoutRepositoryProvider.overrideWithValue(repository),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container.read(loadedWorkoutPlansNotifierProvider.future);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(
+          home: WorkoutDetailScreen(planId: 'plan-1'),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final MediaThumbnail thumbnail =
+        tester.widget<MediaThumbnail>(find.byType(MediaThumbnail));
+    expect(thumbnail.imageUrl, 'workout.gif');
+    expect(thumbnail.dimension, 60);
+    expect(find.text('Leg Day'), findsOneWidget);
+    expect(find.text('1mins'), findsOneWidget);
+    expect(find.text('1 Set'), findsOneWidget);
+  });
+
   testWidgets('confirms before deleting workout plan',
       (WidgetTester tester) async {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();

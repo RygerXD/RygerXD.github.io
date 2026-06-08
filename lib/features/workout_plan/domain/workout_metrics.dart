@@ -22,10 +22,18 @@ int estimateSetSeconds(WorkoutSet set) {
 
 int estimateMoveSeconds(Move move) {
   final int activeSeconds = switch (move.type) {
-    MoveType.duration => move.durationSeconds ?? 0,
+    MoveType.duration => effectiveMoveDurationSeconds(move),
     MoveType.reps || MoveType.stopwatch => 0,
   };
   return move.prepTimeSeconds + activeSeconds + move.finishTimeSeconds;
+}
+
+int effectiveMoveDurationSeconds(Move move) {
+  final int durationSeconds = move.durationSeconds ?? 0;
+  if (move.type != MoveType.duration) {
+    return 0;
+  }
+  return move.repeatEachSide ? durationSeconds * 2 : durationSeconds;
 }
 
 int countWorkoutMoves(Workout workout) {
@@ -73,7 +81,9 @@ String formatClockDuration(int seconds) {
 String formatMoveTarget(Move move) {
   return switch (move.type) {
     MoveType.reps => '${move.repCount ?? 0} reps',
-    MoveType.duration => formatShortClockDuration(move.durationSeconds ?? 0),
+    MoveType.duration => move.repeatEachSide
+        ? '${formatShortClockDuration(move.durationSeconds ?? 0)} / side'
+        : formatShortClockDuration(move.durationSeconds ?? 0),
     MoveType.stopwatch => 'Max time',
   };
 }

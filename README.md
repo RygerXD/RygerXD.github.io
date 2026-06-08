@@ -14,6 +14,8 @@ Initial scaffold for the rebuild defined in `app-rebuild-spec.md`.
   - `docs/schemas/workout-plan.schema.json`
   - `docs/schemas/examples/valid.plan.json`
   - `docs/schemas/examples/invalid.plan.json`
+- AI workout conversion guide:
+  - `docs/ai-workout-json-guide.md`
 - Unit tests for parser and state machine transitions.
 
 ## Run locally

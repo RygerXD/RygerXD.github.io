@@ -120,6 +120,65 @@ void main() {
     expect(find.text('30 seconds - 72 BPM'), findsOneWidget);
   });
 
+  testWidgets('add move dialog saves each-side duration moves',
+      (WidgetTester tester) async {
+    Move? capturedMove;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (BuildContext context) {
+              return TextButton(
+                onPressed: () {
+                  showDialog<void>(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AddMoveDialog(
+                        onAdd: (Move move, Exercise exercise) {
+                          capturedMove = move;
+                        },
+                      );
+                    },
+                  );
+                },
+                child: const Text('Open'),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+
+    Finder dialogFields = find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.byType(TextField),
+    );
+    await tester.enterText(dialogFields.at(0), 'Lunge');
+    await tester.tap(find.text('Time'));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('Left and right sides'));
+    await tester.tap(find.text('Left and right sides'));
+    await tester.pumpAndSettle();
+
+    dialogFields = find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.byType(TextField),
+    );
+    await tester.enterText(dialogFields.at(4), '30');
+    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Add'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Add'));
+    await tester.pumpAndSettle();
+
+    expect(capturedMove?.type, MoveType.duration);
+    expect(capturedMove?.durationSeconds, 30);
+    expect(capturedMove?.repeatEachSide, true);
+  });
+
   testWidgets('saves image or GIF URL for new moves',
       (WidgetTester tester) async {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();

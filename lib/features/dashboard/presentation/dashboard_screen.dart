@@ -28,11 +28,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final DateTime now = DateTime.now();
-    final String greeting = switch (now.hour) {
-      >= 5 && < 12 => 'Good Morning,',
-      >= 12 && < 17 => 'Good Afternoon,',
-      _ => 'Good Evening,',
-    };
 
     // Compute weekly stats from live session data
     final AsyncValue<List<WorkoutSessionEntity>> sessionsAsync =
@@ -61,22 +56,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.xl, vertical: AppSpacing.xxl),
       children: <Widget>[
-        Text(
-          greeting,
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: Theme.of(context).colorScheme.primary,
-                letterSpacing: -1.0,
-              ),
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        Text(
-          'Ready to crush your goals today?',
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-        ),
-        const SizedBox(height: AppSpacing.xxl),
         Row(
           children: <Widget>[
             Expanded(

@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:workout_app_rewrite/core/media/exercise_media_image.dart';
+import 'package:workout_app_rewrite/core/media/media_thumbnail.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
 import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
+import 'package:workout_app_rewrite/features/workout_plan/domain/workout_metrics.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
 
 class WorkoutDetailScreen extends ConsumerWidget {
@@ -107,50 +109,13 @@ class WorkoutDetailScreen extends ConsumerWidget {
               ),
               const SizedBox(height: AppSpacing.md),
               ...plan.workouts.map((Workout workout) {
-                return Card(
-                  margin: const EdgeInsets.only(bottom: AppSpacing.md),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(AppRadii.md),
-                    onTap: () => context.go(
-                      '/library/detail/$planId/workout/${workout.workoutId}',
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(AppSpacing.md),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: <Widget>[
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              Expanded(
-                                child: Text(
-                                  workout.title,
-                                  style:
-                                      Theme.of(context).textTheme.titleMedium,
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.edit_outlined),
-                                onPressed: () => context.go(
-                                    '/library/detail/$planId/edit-workout?workoutId=${workout.workoutId}'),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: AppSpacing.sm),
-                          Text('${workout.sets.length} Sets'),
-                          const SizedBox(height: AppSpacing.sm),
-                          Text(
-                            'Tap to preview',
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant,
-                                    ),
-                          ),
-                        ],
-                      ),
-                    ),
+                return _PlanWorkoutCard(
+                  workout: workout,
+                  onTap: () => context.go(
+                    '/library/detail/$planId/workout/${workout.workoutId}',
+                  ),
+                  onEdit: () => context.go(
+                    '/library/detail/$planId/edit-workout?workoutId=${workout.workoutId}',
                   ),
                 );
               }),
@@ -158,6 +123,106 @@ class WorkoutDetailScreen extends ConsumerWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _PlanWorkoutCard extends StatelessWidget {
+  const _PlanWorkoutCard({
+    required this.workout,
+    required this.onTap,
+    required this.onEdit,
+  });
+
+  final Workout workout;
+  final VoidCallback onTap;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    final String setCount =
+        '${workout.sets.length} ${workout.sets.length == 1 ? 'Set' : 'Sets'}';
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadii.md),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Row(
+            children: <Widget>[
+              MediaThumbnail(
+                imageUrl: optionalText(workout.imageUrl),
+                fallbackIcon: Icons.fitness_center,
+                backgroundColor: colors.primaryContainer,
+                iconColor: colors.onPrimaryContainer,
+                dimension: 60,
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      workout.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Row(
+                      children: <Widget>[
+                        Icon(
+                          Icons.timer_outlined,
+                          size: 18,
+                          color: colors.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                        Flexible(
+                          child: Text(
+                            formatWorkoutEstimate(
+                              estimateWorkoutSeconds(workout),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  color: colors.onSurfaceVariant,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      setCount,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: colors.onSurfaceVariant,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              IconButton(
+                tooltip: 'Edit workout',
+                icon: const Icon(Icons.edit_outlined),
+                color: colors.primary,
+                onPressed: onEdit,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

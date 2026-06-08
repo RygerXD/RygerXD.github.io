@@ -408,6 +408,7 @@ private class KeyboardMediaEditTextFactory(
             channel,
             copyKeyboardContent,
             creationParams?.get("initialText") as? String ?: "",
+            creationParams?.get("hintText") as? String ?: "",
         )
     }
 }
@@ -418,6 +419,7 @@ private class KeyboardMediaEditTextView(
     private val channel: MethodChannel,
     private val copyKeyboardContent: (String, String) -> String,
     initialText: String,
+    hintText: String,
 ) : PlatformView {
     private val allowedMimeTypes = arrayOf(
         "image/gif",
@@ -442,7 +444,7 @@ private class KeyboardMediaEditTextView(
         editText.setSingleLine(false)
         editText.minLines = 1
         editText.maxLines = 3
-        editText.hint = "https://example.com/move.gif"
+        editText.hint = hintText
         editText.background = null
         editText.setPadding(0, 0, 0, 0)
         editText.inputType = InputType.TYPE_CLASS_TEXT or
