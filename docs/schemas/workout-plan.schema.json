@@ -189,6 +189,9 @@
           "type": "integer",
           "minimum": 0
         },
+        "repeatEachSide": {
+          "type": "boolean"
+        },
         "targetWeight": {
           "type": "number",
           "exclusiveMinimum": 0
@@ -220,8 +223,17 @@
               "repCount"
             ],
             "not": {
-              "required": [
-                "metronomeSpeed"
+              "anyOf": [
+                {
+                  "required": [
+                    "metronomeSpeed"
+                  ]
+                },
+                {
+                  "required": [
+                    "repeatEachSide"
+                  ]
+                }
               ]
             }
           }
@@ -259,6 +271,11 @@
                 {
                   "required": [
                     "metronomeSpeed"
+                  ]
+                },
+                {
+                  "required": [
+                    "repeatEachSide"
                   ]
                 }
               ]

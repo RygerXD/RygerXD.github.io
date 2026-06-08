@@ -1,10 +1,7 @@
 # Workout App Rewrite
 
-Initial scaffold for the rebuild defined in `app-rebuild-spec.md`.
-
 ## Current status
 
-- Flutter app scaffold with feature-first folder layout.
 - GoRouter shell navigation (`Home`, `Library`, `Settings`).
 - Design tokenized theme setup.
 - Core workout plan domain models and parser/validator with `schemaVersion` enforcement.
@@ -26,7 +23,3 @@ Initial scaffold for the rebuild defined in `app-rebuild-spec.md`.
    - `flutter analyze`
    - `flutter test`
    - `flutter run -d chrome --web-port 7357`
-
-## Test on Pixel 9a
-
-See `docs/pixel-9a-testing.md` for Android SDK setup, USB debugging steps, and the physical-device smoke test command.

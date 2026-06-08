@@ -101,7 +101,7 @@ Plan metadata:
 
 Optional fields can be omitted when they do not apply: `description`, `author`,
 `imageUrl`, `tags`, set `name`, `prepTimeSeconds`, `finishTimeSeconds`,
-`targetWeight`, `targetWeightUnit`, and `metronomeSpeed`.
+`repeatEachSide`, `targetWeight`, `targetWeightUnit`, and `metronomeSpeed`.
 
 ## Move types
 
@@ -112,6 +112,12 @@ Use exactly one of these `type` values for every move:
 - `stopwatch`: A count-up movement. Do not include `durationSeconds`.
 
 `prepTimeSeconds` and `finishTimeSeconds` default to `0` when omitted.
+
+Use `repeatEachSide: true` on `duration` moves where the listed
+`durationSeconds` should run once for the left side and once for the right
+side. For example, a 30-second lunge with `repeatEachSide: true` counts as 60
+active seconds. Do not create separate left and right exercise entries for the
+same sided movement unless they need different names or settings.
 
 `metronomeSpeed` is only for `duration` moves and must be between `20` and
 `300`.
@@ -130,6 +136,7 @@ Before importing, check that:
 - Every `move.exerciseId` exists in the top-level `exercises` list.
 - Reps moves have `repCount` of at least `1`.
 - Duration moves have `durationSeconds` of at least `1`.
+- `repeatEachSide` is only used on duration moves.
 - Stopwatch moves do not have `durationSeconds`.
 
 The canonical schema is in `docs/schemas/workout-plan.schema.json`, and a
