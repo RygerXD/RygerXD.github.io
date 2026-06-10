@@ -94,10 +94,29 @@ class HistoryDatabase extends _$HistoryDatabase {
   Stream<List<WorkoutMovePerformanceEntity>> watchAllMovePerformances() =>
       select(workoutMovePerformances).watch();
 
+  Future<List<WorkoutMovePerformanceEntity>> getAllMovePerformances() =>
+      select(workoutMovePerformances).get();
+
   Future<void> insertMovePerformance(
           WorkoutMovePerformanceEntity performance) =>
       into(workoutMovePerformances)
           .insert(performance, mode: InsertMode.insertOrReplace);
+
+  Future<void> replaceHistory({
+    required List<WorkoutSessionEntity> sessions,
+    required List<WorkoutMovePerformanceEntity> movePerformances,
+  }) async {
+    await transaction(() async {
+      await delete(workoutMovePerformances).go();
+      await delete(workoutSessions).go();
+      for (final WorkoutSessionEntity session in sessions) {
+        await insertSession(session);
+      }
+      for (final WorkoutMovePerformanceEntity performance in movePerformances) {
+        await insertMovePerformance(performance);
+      }
+    });
+  }
 
   Future<List<WorkoutPlanEntity>> getAllWorkoutPlans() =>
       select(workoutPlansTable).get();

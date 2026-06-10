@@ -115,6 +115,131 @@ class AppSettings {
           exerciseFinishedDingVolume ?? this.exerciseFinishedDingVolume,
     );
   }
+
+  factory AppSettings.fromJson(Map<String, dynamic> json) {
+    return AppSettings(
+      themePreference: _readEnum(
+        json,
+        key: 'themePreference',
+        values: AppThemePreference.values,
+        fallback: AppThemePreference.system,
+      ),
+      unitSystem: _readEnum(
+        json,
+        key: 'unitSystem',
+        values: AppUnitSystem.values,
+        fallback: AppUnitSystem.metric,
+      ),
+      streakWorkoutsPerWeek:
+          _readInt(json, key: 'streakWorkoutsPerWeek', fallback: 3)
+              .clamp(1, 14),
+      audioCuesEnabled:
+          _readBool(json, key: 'audioCuesEnabled', fallback: true),
+      metronomeClickSound: _readEnum(
+        json,
+        key: 'metronomeClickSound',
+        values: MetronomeClickSound.values,
+        fallback: MetronomeClickSound.classic,
+      ),
+      metronomeVolume: _readDouble(json, key: 'metronomeVolume', fallback: 0.8),
+      getReadyCountdownSound: _readEnum(
+        json,
+        key: 'getReadyCountdownSound',
+        values: CountdownSound.values,
+        fallback: CountdownSound.click,
+      ),
+      getReadyCountdownVolume:
+          _readDouble(json, key: 'getReadyCountdownVolume', fallback: 0.8),
+      getReadyDingSound: _readEnum(
+        json,
+        key: 'getReadyDingSound',
+        values: GetReadyDingSound.values,
+        fallback: GetReadyDingSound.classic,
+      ),
+      getReadyDingVolume:
+          _readDouble(json, key: 'getReadyDingVolume', fallback: 0.8),
+      exerciseCountdownSound: _readEnum(
+        json,
+        key: 'exerciseCountdownSound',
+        values: CountdownSound.values,
+        fallback: CountdownSound.pulse,
+      ),
+      exerciseCountdownVolume:
+          _readDouble(json, key: 'exerciseCountdownVolume', fallback: 0.8),
+      exerciseFinishedDingSound: _readEnum(
+        json,
+        key: 'exerciseFinishedDingSound',
+        values: ExerciseFinishedDingSound.values,
+        fallback: ExerciseFinishedDingSound.classic,
+      ),
+      exerciseFinishedDingVolume:
+          _readDouble(json, key: 'exerciseFinishedDingVolume', fallback: 0.8),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'themePreference': themePreference.name,
+      'unitSystem': unitSystem.name,
+      'streakWorkoutsPerWeek': streakWorkoutsPerWeek,
+      'audioCuesEnabled': audioCuesEnabled,
+      'metronomeClickSound': metronomeClickSound.name,
+      'metronomeVolume': metronomeVolume,
+      'getReadyCountdownSound': getReadyCountdownSound.name,
+      'getReadyCountdownVolume': getReadyCountdownVolume,
+      'getReadyDingSound': getReadyDingSound.name,
+      'getReadyDingVolume': getReadyDingVolume,
+      'exerciseCountdownSound': exerciseCountdownSound.name,
+      'exerciseCountdownVolume': exerciseCountdownVolume,
+      'exerciseFinishedDingSound': exerciseFinishedDingSound.name,
+      'exerciseFinishedDingVolume': exerciseFinishedDingVolume,
+    };
+  }
+
+  static T _readEnum<T extends Enum>(
+    Map<String, dynamic> json, {
+    required String key,
+    required List<T> values,
+    required T fallback,
+  }) {
+    final Object? raw = json[key];
+    if (raw is String) {
+      for (final T value in values) {
+        if (value.name == raw) {
+          return value;
+        }
+      }
+    }
+    return fallback;
+  }
+
+  static int _readInt(
+    Map<String, dynamic> json, {
+    required String key,
+    required int fallback,
+  }) {
+    final Object? raw = json[key];
+    return raw is num ? raw.toInt() : fallback;
+  }
+
+  static double _readDouble(
+    Map<String, dynamic> json, {
+    required String key,
+    required double fallback,
+  }) {
+    final Object? raw = json[key];
+    final double value = raw is num ? raw.toDouble() : fallback;
+    return value.clamp(0, 1).toDouble();
+  }
+
+  static bool _readBool(
+    Map<String, dynamic> json, {
+    required String key,
+    required bool fallback,
+  }) {
+    final Object? raw = json[key];
+    return raw is bool ? raw : fallback;
+  }
 }
 
 final NotifierProvider<AppSettingsController, AppSettings> appSettingsProvider =
@@ -445,6 +570,23 @@ class AppSettingsController extends Notifier<AppSettings> {
       update: (double value) =>
           state.copyWith(exerciseFinishedDingVolume: value),
     );
+  }
+
+  Future<void> applySettings(AppSettings settings) async {
+    await setThemePreference(settings.themePreference);
+    await setUnitSystem(settings.unitSystem);
+    await setStreakWorkoutsPerWeek(settings.streakWorkoutsPerWeek);
+    await setAudioCuesEnabled(settings.audioCuesEnabled);
+    await setMetronomeClickSound(settings.metronomeClickSound);
+    await setMetronomeVolume(settings.metronomeVolume);
+    await setGetReadyCountdownSound(settings.getReadyCountdownSound);
+    await setGetReadyCountdownVolume(settings.getReadyCountdownVolume);
+    await setGetReadyDingSound(settings.getReadyDingSound);
+    await setGetReadyDingVolume(settings.getReadyDingVolume);
+    await setExerciseCountdownSound(settings.exerciseCountdownSound);
+    await setExerciseCountdownVolume(settings.exerciseCountdownVolume);
+    await setExerciseFinishedDingSound(settings.exerciseFinishedDingSound);
+    await setExerciseFinishedDingVolume(settings.exerciseFinishedDingVolume);
   }
 
   int _readStreakWorkoutsPerWeek(SharedPreferences prefs) {

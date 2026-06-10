@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/metronome_audio.dart';
 import 'package:workout_app_rewrite/features/settings/application/app_settings_controller.dart';
+import 'package:workout_app_rewrite/features/settings/application/data_backup_service.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -117,6 +118,27 @@ class SettingsScreen extends ConsumerWidget {
           subtitle: Text(settings.audioCuesEnabled ? 'Enabled' : 'Disabled'),
           value: settings.audioCuesEnabled,
           onChanged: controller.setAudioCuesEnabled,
+        ),
+        Divider(),
+        ListTile(
+          title: const Text('Backup and restore'),
+          subtitle: const Text('Plans, history, and settings'),
+        ),
+        Wrap(
+          spacing: AppSpacing.md,
+          runSpacing: AppSpacing.sm,
+          children: <Widget>[
+            FilledButton.icon(
+              onPressed: () => unawaited(_backUpData(context, ref)),
+              icon: const Icon(Icons.backup_outlined),
+              label: const Text('Back up data'),
+            ),
+            OutlinedButton.icon(
+              onPressed: () => unawaited(_restoreData(context, ref)),
+              icon: const Icon(Icons.restore_outlined),
+              label: const Text('Restore backup'),
+            ),
+          ],
         ),
         const SizedBox(height: AppSpacing.md),
         _SoundSetting<MetronomeClickSound>(
@@ -297,6 +319,100 @@ class SettingsScreen extends ConsumerWidget {
       case ExerciseFinishedDingSound.bell:
         return 'Bell';
     }
+  }
+
+  static Future<void> _backUpData(BuildContext context, WidgetRef ref) async {
+    try {
+      final BackupExportResult? result =
+          await ref.read(dataBackupServiceProvider).exportBackup();
+      if (!context.mounted) {
+        return;
+      }
+      final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+      if (result == null) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Backup canceled.')),
+        );
+        return;
+      }
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            'Backup saved: ${result.planCount} plans, '
+            '${result.sessionCount} sessions.',
+          ),
+        ),
+      );
+    } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Backup failed: $error')),
+      );
+    }
+  }
+
+  static Future<void> _restoreData(BuildContext context, WidgetRef ref) async {
+    final bool confirmed = await _confirmRestore(context);
+    if (!confirmed || !context.mounted) {
+      return;
+    }
+
+    try {
+      final BackupRestoreResult? result =
+          await ref.read(dataBackupServiceProvider).restoreBackup();
+      if (!context.mounted) {
+        return;
+      }
+      final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+      if (result == null) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Restore canceled.')),
+        );
+        return;
+      }
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            'Backup restored: ${result.planCount} plans, '
+            '${result.sessionCount} sessions.',
+          ),
+        ),
+      );
+    } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Restore failed: $error')),
+      );
+    }
+  }
+
+  static Future<bool> _confirmRestore(BuildContext context) async {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Restore backup?'),
+          content: const Text(
+            'This will replace current plans, workout history, and settings.',
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Restore'),
+            ),
+          ],
+        );
+      },
+    );
+    return confirmed ?? false;
   }
 }
 
