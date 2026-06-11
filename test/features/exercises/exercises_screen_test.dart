@@ -52,6 +52,10 @@ void main() {
             exerciseId: 'exercise-2',
             name: 'Squat',
           ),
+          Exercise(
+            exerciseId: 'unused-exercise',
+            name: 'Old Deleted Workout Exercise',
+          ),
         ],
       ),
     );
@@ -73,19 +77,23 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Push Up'), findsOneWidget);
-    expect(find.text('1 move across 1 plan'), findsNWidgets(2));
+    expect(find.text('1 move'), findsNWidgets(2));
+    expect(find.text('1 move across 1 plan'), findsNothing);
     expect(find.text('Squat'), findsOneWidget);
+    expect(find.text('Old Deleted Workout Exercise'), findsNothing);
 
     await tester.enterText(
         find.widgetWithText(TextField, 'Search exercises'), 'psh');
     await tester.pumpAndSettle();
 
     expect(find.text('Push Up'), findsOneWidget);
-    expect(find.text('1 move across 1 plan'), findsOneWidget);
+    expect(find.text('1 move'), findsOneWidget);
     expect(find.text('Squat'), findsNothing);
 
     await tester.tap(find.text('Push Up'));
     await tester.pumpAndSettle();
+
+    expect(find.text('From: Plan 1'), findsOneWidget);
 
     final Finder fields = find.byType(TextField);
     await tester.enterText(fields.at(1), 'Incline Push Up');
@@ -107,5 +115,99 @@ void main() {
       contains('exercise-1'),
     );
     expect(find.text('Incline Push Up'), findsOneWidget);
+  });
+
+  testWidgets('removes exercises from deleted plans',
+      (WidgetTester tester) async {
+    final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
+    await repository.savePlan(
+      const WorkoutPlan(
+        schemaVersion: 1,
+        planId: 'plan-1',
+        name: 'Deleted Plan',
+        workouts: <Workout>[
+          Workout(
+            workoutId: 'workout-1',
+            title: 'Workout 1',
+            sets: <WorkoutSet>[
+              WorkoutSet(
+                setId: 'set-1',
+                loopCount: 1,
+                restBetweenLoopsSeconds: 0,
+                moves: <Move>[
+                  Move(
+                    moveId: 'move-1',
+                    exerciseId: 'exercise-1',
+                    type: MoveType.reps,
+                    repCount: 10,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+        exercises: <Exercise>[
+          Exercise(exerciseId: 'exercise-1', name: 'Push Up'),
+        ],
+      ),
+    );
+    await repository.savePlan(
+      const WorkoutPlan(
+        schemaVersion: 1,
+        planId: 'plan-2',
+        name: 'Remaining Plan',
+        workouts: <Workout>[
+          Workout(
+            workoutId: 'workout-2',
+            title: 'Workout 2',
+            sets: <WorkoutSet>[
+              WorkoutSet(
+                setId: 'set-2',
+                loopCount: 1,
+                restBetweenLoopsSeconds: 0,
+                moves: <Move>[
+                  Move(
+                    moveId: 'move-2',
+                    exerciseId: 'exercise-2',
+                    type: MoveType.reps,
+                    repCount: 12,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+        exercises: <Exercise>[
+          Exercise(exerciseId: 'exercise-2', name: 'Squat'),
+        ],
+      ),
+    );
+
+    final ProviderContainer container = ProviderContainer(
+      overrides: <Override>[
+        workoutRepositoryProvider.overrideWithValue(repository),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container.read(loadedWorkoutPlansNotifierProvider.future);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(home: ExercisesScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Push Up'), findsOneWidget);
+    expect(find.text('Squat'), findsOneWidget);
+
+    await container
+        .read(loadedWorkoutPlansNotifierProvider.notifier)
+        .removePlan('plan-1');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Push Up'), findsNothing);
+    expect(find.text('Squat'), findsOneWidget);
   });
 }

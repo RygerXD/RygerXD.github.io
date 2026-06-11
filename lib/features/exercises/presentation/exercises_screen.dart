@@ -99,12 +99,16 @@ class _ExercisesScreenState extends ConsumerState<ExercisesScreen> {
       }
 
       for (final Exercise exercise in plan.exercises) {
+        final int moveCount = moveCountsByExerciseId[exercise.exerciseId] ?? 0;
+        if (moveCount == 0) {
+          continue;
+        }
         final _MutableExerciseEntry entry = entries.putIfAbsent(
           exercise.exerciseId,
           () => _MutableExerciseEntry(exercise: exercise),
         );
         entry.planNames.add(plan.name);
-        entry.moveCount += moveCountsByExerciseId[exercise.exerciseId] ?? 0;
+        entry.moveCount += moveCount;
       }
     }
 
@@ -154,8 +158,10 @@ class _ExercisesScreenState extends ConsumerState<ExercisesScreen> {
   ) async {
     final Exercise? updatedExercise = await showDialog<Exercise>(
       context: context,
-      builder: (BuildContext context) =>
-          _EditExerciseDialog(exercise: entry.exercise),
+      builder: (BuildContext context) => _EditExerciseDialog(
+        exercise: entry.exercise,
+        sourcePlanNames: entry.planNames,
+      ),
     );
 
     if (updatedExercise == null) {
@@ -208,8 +214,6 @@ class _ExerciseCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final Exercise exercise = entry.exercise;
     final ColorScheme colors = Theme.of(context).colorScheme;
-    final String planCount =
-        '${entry.planNames.length} ${entry.planNames.length == 1 ? 'plan' : 'plans'}';
     final String moveCount =
         '${entry.moveCount} ${entry.moveCount == 1 ? 'move' : 'moves'}';
 
@@ -244,7 +248,7 @@ class _ExerciseCard extends StatelessWidget {
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
-                      '$moveCount across $planCount',
+                      moveCount,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -283,9 +287,11 @@ class _ExerciseCard extends StatelessWidget {
 class _EditExerciseDialog extends StatefulWidget {
   const _EditExerciseDialog({
     required this.exercise,
+    required this.sourcePlanNames,
   });
 
   final Exercise exercise;
+  final List<String> sourcePlanNames;
 
   @override
   State<_EditExerciseDialog> createState() => _EditExerciseDialogState();
@@ -310,6 +316,7 @@ class _EditExerciseDialogState extends State<_EditExerciseDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme colors = Theme.of(context).colorScheme;
     return AlertDialog(
       title: const Text('Edit Exercise'),
       content: SizedBox(
@@ -320,6 +327,17 @@ class _EditExerciseDialogState extends State<_EditExerciseDialog> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'From: ${widget.sourcePlanNames.join(', ')}',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: colors.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
                 TextFormField(
                   controller: _nameController,
                   decoration: const InputDecoration(

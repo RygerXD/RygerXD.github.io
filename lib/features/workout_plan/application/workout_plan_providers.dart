@@ -81,10 +81,37 @@ class LoadedWorkoutPlansNotifier extends AsyncNotifier<List<WorkoutPlan>> {
       return;
     }
 
-    await repository.savePlan(plan.copyWith(workouts: updatedWorkouts));
+    await repository.savePlan(
+      plan.copyWith(
+        workouts: updatedWorkouts,
+        exercises: _referencedExercises(
+          exercises: plan.exercises,
+          workouts: updatedWorkouts,
+        ),
+      ),
+    );
     ref.invalidateSelf();
     await future;
   }
+}
+
+List<Exercise> _referencedExercises({
+  required List<Exercise> exercises,
+  required List<Workout> workouts,
+}) {
+  final Set<String> referencedExerciseIds = <String>{};
+  for (final Workout workout in workouts) {
+    for (final WorkoutSet set in workout.sets) {
+      for (final Move move in set.moves) {
+        referencedExerciseIds.add(move.exerciseId);
+      }
+    }
+  }
+
+  return exercises
+      .where((Exercise exercise) =>
+          referencedExerciseIds.contains(exercise.exerciseId))
+      .toList(growable: false);
 }
 
 final AsyncNotifierProvider<LoadedWorkoutPlansNotifier, List<WorkoutPlan>>

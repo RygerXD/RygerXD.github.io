@@ -106,15 +106,46 @@ void main() {
           Workout(
             workoutId: 'workout-a',
             title: 'Workout A',
-            sets: <WorkoutSet>[],
+            sets: <WorkoutSet>[
+              WorkoutSet(
+                setId: 'set-a',
+                loopCount: 1,
+                restBetweenLoopsSeconds: 0,
+                moves: <Move>[
+                  Move(
+                    moveId: 'move-a',
+                    exerciseId: 'push-up',
+                    type: MoveType.reps,
+                    repCount: 10,
+                  ),
+                ],
+              ),
+            ],
           ),
           Workout(
             workoutId: 'workout-b',
             title: 'Workout B',
-            sets: <WorkoutSet>[],
+            sets: <WorkoutSet>[
+              WorkoutSet(
+                setId: 'set-b',
+                loopCount: 1,
+                restBetweenLoopsSeconds: 0,
+                moves: <Move>[
+                  Move(
+                    moveId: 'move-b',
+                    exerciseId: 'squat',
+                    type: MoveType.reps,
+                    repCount: 12,
+                  ),
+                ],
+              ),
+            ],
           ),
         ],
-        exercises: <Exercise>[],
+        exercises: <Exercise>[
+          Exercise(exerciseId: 'push-up', name: 'Push Up'),
+          Exercise(exerciseId: 'squat', name: 'Squat'),
+        ],
       ),
     );
 
@@ -173,6 +204,10 @@ void main() {
     expect(
       updatedPlan?.workouts.map((Workout workout) => workout.workoutId),
       <String>['workout-b'],
+    );
+    expect(
+      updatedPlan?.exercises.map((Exercise exercise) => exercise.exerciseId),
+      <String>['squat'],
     );
     expect(find.text('Plan detail plan-1'), findsOneWidget);
   });

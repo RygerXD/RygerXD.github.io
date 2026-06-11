@@ -145,8 +145,10 @@ void main() {
     await tester.tap(find.text('Exercises'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Search exercises'), findsOneWidget);
-    expect(find.text('Squat'), findsOneWidget);
+    expect(
+      find.text('No exercises yet. Import or create a plan to add some.'),
+      findsOneWidget,
+    );
     expect(find.text('Workout not found'), findsNothing);
   });
 }
