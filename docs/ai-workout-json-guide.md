@@ -34,6 +34,8 @@ Output rules:
   include durationSeconds for stopwatch moves.
 - For each set, set loopCount to the number of rounds and
   restBetweenLoopsSeconds to the rest between repeated rounds.
+- If a single move should be performed for multiple sets before advancing, add
+  setCount with the number of sets for that move.
 - Include prepTimeSeconds and finishTimeSeconds on moves only when the workout
   specifies setup or transition time.
 - If weights are prescribed, use targetWeight with targetWeightUnit "kg" or
@@ -86,6 +88,7 @@ Plan metadata:
               "exerciseId": "exercise-id",
               "type": "reps",
               "repCount": 12,
+              "setCount": 3,
               "prepTimeSeconds": 10,
               "finishTimeSeconds": 5,
               "targetWeight": 20,
@@ -101,7 +104,8 @@ Plan metadata:
 
 Optional fields can be omitted when they do not apply: `description`, `author`,
 `imageUrl`, `tags`, set `name`, `prepTimeSeconds`, `finishTimeSeconds`,
-`repeatEachSide`, `targetWeight`, `targetWeightUnit`, and `metronomeSpeed`.
+`setCount`, `repeatEachSide`, `targetWeight`, `targetWeightUnit`, and
+`metronomeSpeed`.
 
 ## Move types
 
@@ -112,6 +116,8 @@ Use exactly one of these `type` values for every move:
 - `stopwatch`: A count-up movement. Do not include `durationSeconds`.
 
 `prepTimeSeconds` and `finishTimeSeconds` default to `0` when omitted.
+`setCount` defaults to `1`; use a larger value when one exercise should be
+completed for multiple sets before moving to the next exercise.
 
 Use `repeatEachSide: true` on `duration` moves where the listed
 `durationSeconds` should run once for the left side and once for the right
@@ -134,6 +140,7 @@ Before importing, check that:
 - Every workout has at least one set.
 - Every set has `loopCount` of at least `1` and at least one move.
 - Every `move.exerciseId` exists in the top-level `exercises` list.
+- If present, move `setCount` is at least `1`.
 - Reps moves have `repCount` of at least `1`.
 - Duration moves have `durationSeconds` of at least `1`.
 - `repeatEachSide` is only used on duration moves.

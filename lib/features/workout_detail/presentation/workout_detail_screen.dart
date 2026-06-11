@@ -46,7 +46,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
                 if (context.canPop()) {
                   context.pop();
                 } else {
-                  context.go('/library');
+                  context.go('/dashboard');
                 }
               },
             ),
@@ -74,7 +74,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
                       .read(loadedWorkoutPlansNotifierProvider.notifier)
                       .removePlan(planId);
                   if (context.mounted) {
-                    context.go('/library');
+                    context.go('/dashboard');
                   }
                 },
               ),

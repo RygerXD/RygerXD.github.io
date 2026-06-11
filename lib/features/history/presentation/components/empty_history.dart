@@ -52,7 +52,7 @@ class EmptyHistory extends StatelessWidget {
             FilledButton.icon(
               onPressed: onStartWorkout,
               icon: const Icon(Icons.fitness_center),
-              label: const Text('Go to Library'),
+              label: const Text('Go to Home'),
             ),
           ],
         ),

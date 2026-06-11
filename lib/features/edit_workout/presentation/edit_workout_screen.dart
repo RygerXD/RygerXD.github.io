@@ -106,6 +106,16 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
     _updateSetMoves(setIndex, (List<Move> moves) => moves..removeAt(moveIndex));
   }
 
+  void _updateMoveSetCount(int setIndex, int moveIndex, int setCount) {
+    final int clampedSetCount = setCount.clamp(1, 99).toInt();
+    _updateSetMoves(setIndex, (List<Move> moves) {
+      moves[moveIndex] = moves[moveIndex].copyWith(
+        setCount: clampedSetCount,
+      );
+      return moves;
+    });
+  }
+
   void _reorderMove(int setIndex, int oldIndex, int newIndex) {
     _updateSetMoves(setIndex, (List<Move> moves) {
       final int insertionIndex = oldIndex < newIndex ? newIndex - 1 : newIndex;
@@ -448,6 +458,13 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
                                   exerciseName: exerciseName,
                                   imageUrl: optionalText(exercise?.imageUrl),
                                   moveSummary: _moveSummary(move),
+                                  setCount: move.setCount,
+                                  onSetCountChanged: (int setCount) =>
+                                      _updateMoveSetCount(
+                                    setIndex,
+                                    moveIndex,
+                                    setCount,
+                                  ),
                                   onTap: () =>
                                       _showEditMoveDialog(setIndex, moveIndex),
                                   onRemove: () =>
@@ -513,6 +530,8 @@ class _MoveRow extends StatelessWidget {
     required this.exerciseName,
     required this.imageUrl,
     required this.moveSummary,
+    required this.setCount,
+    required this.onSetCountChanged,
     required this.onTap,
     required this.onRemove,
   });
@@ -521,6 +540,8 @@ class _MoveRow extends StatelessWidget {
   final String exerciseName;
   final String? imageUrl;
   final String moveSummary;
+  final int setCount;
+  final ValueChanged<int> onSetCountChanged;
   final VoidCallback onTap;
   final VoidCallback onRemove;
 
@@ -545,37 +566,31 @@ class _MoveRow extends StatelessWidget {
                   horizontal: AppSpacing.sm,
                   vertical: AppSpacing.sm,
                 ),
-                child: LayoutBuilder(
-                  builder: (BuildContext context, BoxConstraints constraints) {
-                    final double summaryWidth =
-                        constraints.maxWidth >= 520 ? 176 : 112;
-
-                    return Row(
-                      children: <Widget>[
-                        MediaThumbnail(
-                          imageUrl: imageUrl,
-                          fallbackIcon: Icons.fitness_center,
-                          backgroundColor: colorScheme.surfaceContainerHighest,
-                          iconColor: colorScheme.onSurfaceVariant,
-                          dimension: 52,
-                        ),
-                        const SizedBox(width: AppSpacing.md),
-                        Expanded(
-                          child: Text(
+                child: Row(
+                  children: <Widget>[
+                    MediaThumbnail(
+                      imageUrl: imageUrl,
+                      fallbackIcon: Icons.fitness_center,
+                      backgroundColor: colorScheme.surfaceContainerHighest,
+                      iconColor: colorScheme.onSurfaceVariant,
+                      dimension: 52,
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
                             exerciseName,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
-                        ),
-                        const SizedBox(width: AppSpacing.sm),
-                        SizedBox(
-                          width: summaryWidth,
-                          child: Text(
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
                             moveSummary,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.end,
                             style: Theme.of(context)
                                 .textTheme
                                 .bodyMedium
@@ -584,30 +599,113 @@ class _MoveRow extends StatelessWidget {
                                   fontWeight: FontWeight.w600,
                                 ),
                           ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    _MoveSetCountControl(
+                      setCount: setCount,
+                      onChanged: onSetCountChanged,
+                    ),
+                    IconButton(
+                      tooltip: 'Remove move',
+                      icon: const Icon(Icons.close),
+                      onPressed: onRemove,
+                    ),
+                    ReorderableDragStartListener(
+                      index: index,
+                      child: SizedBox.square(
+                        dimension: 40,
+                        child: Icon(
+                          Icons.drag_indicator,
+                          color: colorScheme.onSurfaceVariant,
                         ),
-                        IconButton(
-                          tooltip: 'Remove move',
-                          icon: const Icon(Icons.close),
-                          onPressed: onRemove,
-                        ),
-                        ReorderableDragStartListener(
-                          index: index,
-                          child: SizedBox.square(
-                            dimension: 40,
-                            child: Icon(
-                              Icons.drag_indicator,
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _MoveSetCountControl extends StatelessWidget {
+  const _MoveSetCountControl({
+    required this.setCount,
+    required this.onChanged,
+  });
+
+  final int setCount;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
+    final TextStyle? labelStyle = Theme.of(context)
+        .textTheme
+        .labelLarge
+        ?.copyWith(fontWeight: FontWeight.w800);
+
+    return SizedBox(
+      width: 112,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: <Widget>[
+          SizedBox.square(
+            dimension: 36,
+            child: IconButton(
+              tooltip: 'Decrease sets',
+              icon: const Icon(Icons.remove),
+              iconSize: 20,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints.tightFor(
+                width: 36,
+                height: 36,
+              ),
+              onPressed: setCount > 1 ? () => onChanged(setCount - 1) : null,
+            ),
+          ),
+          SizedBox(
+            width: 32,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  setCount.toString(),
+                  style: labelStyle,
+                  textAlign: TextAlign.center,
+                ),
+                Text(
+                  setCount == 1 ? 'set' : 'sets',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+          SizedBox.square(
+            dimension: 36,
+            child: IconButton(
+              tooltip: 'Increase sets',
+              icon: const Icon(Icons.add),
+              iconSize: 20,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints.tightFor(
+                width: 36,
+                height: 36,
+              ),
+              onPressed: setCount < 99 ? () => onChanged(setCount + 1) : null,
+            ),
+          ),
+        ],
       ),
     );
   }

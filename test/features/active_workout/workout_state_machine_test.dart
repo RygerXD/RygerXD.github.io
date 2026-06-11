@@ -134,6 +134,23 @@ void main() {
       expect(machine.state.moveIndex, 1);
     });
 
+    test('expands a move set count into repeated move executions', () {
+      final WorkoutStateMachine machine = WorkoutStateMachine(
+        workout: _singleSetWorkout(loopCount: 1, setCount: 2),
+      );
+      machine.start();
+      expect(machine.workout.sets.single.moves, hasLength(2));
+
+      machine.startPrepNow();
+      machine.completeMove();
+      expect(machine.state.phase, WorkoutPhase.prep);
+      expect(machine.state.moveIndex, 1);
+
+      machine.startPrepNow();
+      machine.completeMove();
+      expect(machine.state.phase, WorkoutPhase.completed);
+    });
+
     test('uses move cooldown before advancing to the next move', () {
       final Workout workout = Workout(
         workoutId: 'w4',
@@ -194,6 +211,7 @@ void main() {
 Workout _singleSetWorkout({
   required int loopCount,
   int finishTimeSeconds = 0,
+  int setCount = 1,
 }) {
   return Workout(
     workoutId: 'w1',
@@ -210,6 +228,7 @@ Workout _singleSetWorkout({
             type: MoveType.reps,
             repCount: 10,
             finishTimeSeconds: finishTimeSeconds,
+            setCount: setCount,
           ),
         ],
       ),

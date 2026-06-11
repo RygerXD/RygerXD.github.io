@@ -1127,7 +1127,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       context.go('/library/detail/$planId');
       return;
     }
-    context.go('/library');
+    context.go('/dashboard');
   }
 }
 

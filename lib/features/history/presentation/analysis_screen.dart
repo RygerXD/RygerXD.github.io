@@ -58,7 +58,7 @@ class AnalysisScreen extends ConsumerWidget {
           if (sessions.isEmpty) {
             return EmptyHistory(
               onStartWorkout: () {
-                context.go('/library');
+                context.go('/dashboard');
               },
             );
           }

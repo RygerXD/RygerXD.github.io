@@ -1,0 +1,372 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:workout_app_rewrite/core/media/image_or_gif_url_field.dart';
+import 'package:workout_app_rewrite/core/media/media_thumbnail.dart';
+import 'package:workout_app_rewrite/core/theme/tokens.dart';
+import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
+import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
+import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
+
+class ExercisesScreen extends ConsumerWidget {
+  const ExercisesScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final AsyncValue<List<WorkoutPlan>> plansState =
+        ref.watch(loadedWorkoutPlansNotifierProvider);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Exercises'),
+      ),
+      body: plansState.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (Object error, StackTrace stack) =>
+            Center(child: Text('Error loading exercises: $error')),
+        data: (List<WorkoutPlan> plans) {
+          final List<_ExerciseEntry> exercises = _collectExercises(plans);
+          if (exercises.isEmpty) {
+            return const _EmptyState(
+              message: 'No exercises yet. Import or create a plan to add some.',
+            );
+          }
+
+          return ListView(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            children: <Widget>[
+              for (final _ExerciseEntry entry in exercises)
+                _ExerciseCard(
+                  entry: entry,
+                  onTap: () => _editExercise(context, ref, plans, entry),
+                ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  List<_ExerciseEntry> _collectExercises(List<WorkoutPlan> plans) {
+    final Map<String, _MutableExerciseEntry> entries =
+        <String, _MutableExerciseEntry>{};
+
+    for (final WorkoutPlan plan in plans) {
+      final Map<String, int> moveCountsByExerciseId = <String, int>{};
+      for (final Workout workout in plan.workouts) {
+        for (final WorkoutSet set in workout.sets) {
+          for (final Move move in set.moves) {
+            moveCountsByExerciseId.update(
+              move.exerciseId,
+              (int count) => count + 1,
+              ifAbsent: () => 1,
+            );
+          }
+        }
+      }
+
+      for (final Exercise exercise in plan.exercises) {
+        final _MutableExerciseEntry entry = entries.putIfAbsent(
+          exercise.exerciseId,
+          () => _MutableExerciseEntry(exercise: exercise),
+        );
+        entry.planNames.add(plan.name);
+        entry.moveCount += moveCountsByExerciseId[exercise.exerciseId] ?? 0;
+      }
+    }
+
+    final List<_ExerciseEntry> result = entries.values
+        .map((_MutableExerciseEntry entry) => entry.toEntry())
+        .toList(growable: false);
+    result.sort(
+      (_ExerciseEntry a, _ExerciseEntry b) => a.exercise.name
+          .toLowerCase()
+          .compareTo(b.exercise.name.toLowerCase()),
+    );
+    return result;
+  }
+
+  Future<void> _editExercise(
+    BuildContext context,
+    WidgetRef ref,
+    List<WorkoutPlan> plans,
+    _ExerciseEntry entry,
+  ) async {
+    final Exercise? updatedExercise = await showDialog<Exercise>(
+      context: context,
+      builder: (BuildContext context) =>
+          _EditExerciseDialog(exercise: entry.exercise),
+    );
+
+    if (updatedExercise == null) {
+      return;
+    }
+
+    try {
+      for (final WorkoutPlan plan in plans) {
+        final int exerciseIndex = plan.exercises.indexWhere(
+          (Exercise exercise) =>
+              exercise.exerciseId == updatedExercise.exerciseId,
+        );
+        if (exerciseIndex < 0) {
+          continue;
+        }
+
+        final List<Exercise> updatedExercises =
+            List<Exercise>.from(plan.exercises);
+        updatedExercises[exerciseIndex] = updatedExercise;
+        await ref
+            .read(loadedWorkoutPlansNotifierProvider.notifier)
+            .loadPlan(plan.copyWith(exercises: updatedExercises));
+      }
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Updated ${updatedExercise.name}')),
+        );
+      }
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error updating exercise: $error')),
+        );
+      }
+    }
+  }
+}
+
+class _ExerciseCard extends StatelessWidget {
+  const _ExerciseCard({
+    required this.entry,
+    required this.onTap,
+  });
+
+  final _ExerciseEntry entry;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final Exercise exercise = entry.exercise;
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    final String planCount =
+        '${entry.planNames.length} ${entry.planNames.length == 1 ? 'plan' : 'plans'}';
+    final String moveCount =
+        '${entry.moveCount} ${entry.moveCount == 1 ? 'move' : 'moves'}';
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadii.md),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Row(
+            children: <Widget>[
+              MediaThumbnail(
+                imageUrl: optionalText(exercise.imageUrl),
+                fallbackIcon: Icons.fitness_center,
+                backgroundColor: colors.primaryContainer,
+                iconColor: colors.onPrimaryContainer,
+                dimension: 56,
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      exercise.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      '$moveCount across $planCount',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: colors.onSurfaceVariant,
+                          ),
+                    ),
+                    if (exercise.description != null) ...<Widget>[
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        exercise.description!,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: colors.onSurfaceVariant,
+                            ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              IconButton(
+                tooltip: 'Edit exercise',
+                icon: const Icon(Icons.edit_outlined),
+                color: colors.primary,
+                onPressed: onTap,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EditExerciseDialog extends StatefulWidget {
+  const _EditExerciseDialog({
+    required this.exercise,
+  });
+
+  final Exercise exercise;
+
+  @override
+  State<_EditExerciseDialog> createState() => _EditExerciseDialogState();
+}
+
+class _EditExerciseDialogState extends State<_EditExerciseDialog> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  late final TextEditingController _nameController =
+      TextEditingController(text: widget.exercise.name);
+  late final TextEditingController _imageUrlController =
+      TextEditingController(text: widget.exercise.imageUrl ?? '');
+  late final TextEditingController _descriptionController =
+      TextEditingController(text: widget.exercise.description ?? '');
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _imageUrlController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Edit Exercise'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                TextFormField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Exercise Name *',
+                    border: OutlineInputBorder(),
+                  ),
+                  textCapitalization: TextCapitalization.words,
+                  validator: (String? value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter an exercise name';
+                    }
+                    return null;
+                  },
+                  autofocus: true,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                ImageOrGifUrlField(
+                  controller: _imageUrlController,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                TextFormField(
+                  controller: _descriptionController,
+                  decoration: const InputDecoration(
+                    labelText: 'Description',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 3,
+                  textCapitalization: TextCapitalization.sentences,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () {
+            if (!_formKey.currentState!.validate()) {
+              return;
+            }
+            Navigator.of(context).pop(
+              widget.exercise.copyWith(
+                name: _nameController.text.trim(),
+                imageUrl: optionalText(_imageUrlController.text),
+                description: optionalText(_descriptionController.text),
+              ),
+            );
+          },
+          child: const Text('Save'),
+        ),
+      ],
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({
+    required this.message,
+  });
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xxl),
+        child: Text(
+          message,
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+}
+
+class _ExerciseEntry {
+  const _ExerciseEntry({
+    required this.exercise,
+    required this.planNames,
+    required this.moveCount,
+  });
+
+  final Exercise exercise;
+  final List<String> planNames;
+  final int moveCount;
+}
+
+class _MutableExerciseEntry {
+  _MutableExerciseEntry({
+    required this.exercise,
+  });
+
+  final Exercise exercise;
+  final Set<String> planNames = <String>{};
+  int moveCount = 0;
+
+  _ExerciseEntry toEntry() {
+    final List<String> sortedPlanNames = planNames.toList(growable: false)
+      ..sort();
+    return _ExerciseEntry(
+      exercise: exercise,
+      planNames: sortedPlanNames,
+      moveCount: moveCount,
+    );
+  }
+}

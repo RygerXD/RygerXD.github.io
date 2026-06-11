@@ -591,6 +591,72 @@ void main() {
     expect(updatedPlan?.workouts.single.sets.single.moves.single.repCount, 15);
   });
 
+  testWidgets('updates move set count from the exercise card',
+      (WidgetTester tester) async {
+    final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
+    await repository.savePlan(
+      const WorkoutPlan(
+        schemaVersion: 1,
+        planId: 'plan-1',
+        name: 'Plan 1',
+        workouts: <Workout>[
+          Workout(
+            workoutId: 'workout-1',
+            title: 'Workout A',
+            sets: <WorkoutSet>[
+              WorkoutSet(
+                setId: 'set-1',
+                loopCount: 1,
+                restBetweenLoopsSeconds: 30,
+                moves: <Move>[
+                  Move(
+                    moveId: 'move-1',
+                    exerciseId: 'push-up',
+                    type: MoveType.reps,
+                    repCount: 10,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+        exercises: <Exercise>[
+          Exercise(exerciseId: 'push-up', name: 'Push Up'),
+        ],
+      ),
+    );
+
+    final ProviderContainer container = ProviderContainer(
+      overrides: <Override>[
+        workoutRepositoryProvider.overrideWithValue(repository),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container.read(loadedWorkoutPlansNotifierProvider.future);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(
+          home: EditWorkoutScreen(planId: 'plan-1', workoutId: 'workout-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Increase sets'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('2'), findsOneWidget);
+    expect(find.text('sets'), findsOneWidget);
+
+    await tester.tap(find.text('SAVE'));
+    await tester.pumpAndSettle();
+
+    final WorkoutPlan updatedPlan = (await repository.getPlanById('plan-1'))!;
+    expect(updatedPlan.workouts.single.sets.single.moves.single.setCount, 2);
+  });
+
   testWidgets('existing picker searches exercises and resets move settings',
       (WidgetTester tester) async {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();

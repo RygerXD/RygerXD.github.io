@@ -70,6 +70,7 @@ class Move {
     this.durationSeconds,
     this.prepTimeSeconds = 0,
     this.finishTimeSeconds = 0,
+    this.setCount = 1,
     this.repeatEachSide = false,
     this.targetWeight,
     this.targetWeightUnit,
@@ -83,6 +84,7 @@ class Move {
   final int? durationSeconds;
   final int prepTimeSeconds;
   final int finishTimeSeconds;
+  final int setCount;
   final bool repeatEachSide;
   final double? targetWeight;
   final WeightUnit? targetWeightUnit;
@@ -96,6 +98,7 @@ class Move {
     Object? durationSeconds = _copyWithUnset,
     int? prepTimeSeconds,
     int? finishTimeSeconds,
+    int? setCount,
     bool? repeatEachSide,
     Object? targetWeight = _copyWithUnset,
     Object? targetWeightUnit = _copyWithUnset,
@@ -113,6 +116,7 @@ class Move {
           : durationSeconds as int?,
       prepTimeSeconds: prepTimeSeconds ?? this.prepTimeSeconds,
       finishTimeSeconds: finishTimeSeconds ?? this.finishTimeSeconds,
+      setCount: setCount ?? this.setCount,
       repeatEachSide: repeatEachSide ?? this.repeatEachSide,
       targetWeight: identical(targetWeight, _copyWithUnset)
           ? this.targetWeight
@@ -135,6 +139,7 @@ class Move {
       durationSeconds: json['durationSeconds'] as int?,
       prepTimeSeconds: (json['prepTimeSeconds'] as int?) ?? 0,
       finishTimeSeconds: (json['finishTimeSeconds'] as int?) ?? 0,
+      setCount: (json['setCount'] as int?) ?? 1,
       repeatEachSide: (json['repeatEachSide'] as bool?) ?? false,
       targetWeight: (json['targetWeight'] as num?)?.toDouble(),
       targetWeightUnit: json['targetWeightUnit'] == null
@@ -153,6 +158,7 @@ class Move {
       'durationSeconds': durationSeconds,
       'prepTimeSeconds': prepTimeSeconds,
       'finishTimeSeconds': finishTimeSeconds,
+      'setCount': setCount,
       'repeatEachSide': repeatEachSide,
       'targetWeight': targetWeight,
       'targetWeightUnit': targetWeightUnit?.name,

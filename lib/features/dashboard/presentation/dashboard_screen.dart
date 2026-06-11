@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -76,6 +79,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ),
             ),
           ],
+        ),
+        const SizedBox(height: AppSpacing.xxl),
+        _HomePlanActions(
+          onImport: () => _importWorkoutJson(context),
+          onCreate: () => context.go('/library/create'),
         ),
         const SizedBox(height: AppSpacing.xxl),
         _HomeModeToggle(
@@ -165,6 +173,88 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       return a.workout.title.compareTo(b.workout.title);
     });
     return items;
+  }
+
+  Future<void> _importWorkoutJson(BuildContext context) async {
+    final FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: <String>['json'],
+      withData: true,
+    );
+
+    if (result == null || result.files.single.bytes == null) {
+      return;
+    }
+
+    try {
+      final String jsonString = utf8.decode(result.files.single.bytes!);
+      final WorkoutPlan plan = await ref
+          .read(workoutPlanImportServiceProvider)
+          .importFromJsonString(jsonString);
+
+      ref.invalidate(loadedWorkoutPlansNotifierProvider);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Successfully imported ${plan.name}')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error importing workout: $e')),
+        );
+      }
+    }
+  }
+}
+
+class _HomePlanActions extends StatelessWidget {
+  const _HomePlanActions({
+    required this.onImport,
+    required this.onCreate,
+  });
+
+  final VoidCallback onImport;
+  final VoidCallback onCreate;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        final List<Widget> buttons = <Widget>[
+          FilledButton.tonalIcon(
+            onPressed: onImport,
+            icon: const Icon(Icons.download_rounded),
+            label: const Text('Import Plan JSON'),
+          ),
+          FilledButton.icon(
+            onPressed: onCreate,
+            icon: const Icon(Icons.add),
+            label: const Text('Create Plan'),
+          ),
+        ];
+
+        if (constraints.maxWidth < 420) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              buttons[0],
+              const SizedBox(height: AppSpacing.sm),
+              buttons[1],
+            ],
+          );
+        }
+
+        return Row(
+          children: <Widget>[
+            Expanded(child: buttons[0]),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(child: buttons[1]),
+          ],
+        );
+      },
+    );
   }
 }
 

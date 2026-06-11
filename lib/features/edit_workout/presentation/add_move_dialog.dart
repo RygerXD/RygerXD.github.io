@@ -124,6 +124,7 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
           ? (int.tryParse(_durationController.text) ?? 30)
           : null,
       finishTimeSeconds: _parseNonNegativeSeconds(_cooldownController.text, 0),
+      setCount: widget.initialMove?.setCount ?? 1,
       repeatEachSide: _moveType == MoveType.duration && _repeatEachSide,
       targetWeight: _hasWeight ? targetWeight : null,
       targetWeightUnit: _hasWeight ? _weightUnit : null,

@@ -206,6 +206,13 @@ class WorkoutPlanParser {
               message: 'finishTimeSeconds must be >= 0.',
             ));
           }
+          if (move.setCount < 1) {
+            issues.add(PlanValidationIssue(
+              path:
+                  '\$.workouts[$workoutIndex].sets[$setIndex].moves[$moveIndex].setCount',
+              message: 'setCount must be >= 1.',
+            ));
+          }
           if (move.type == MoveType.reps &&
               (move.repCount == null || move.repCount! < 1)) {
             issues.add(PlanValidationIssue(

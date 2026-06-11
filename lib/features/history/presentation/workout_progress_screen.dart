@@ -8,6 +8,7 @@ import 'package:workout_app_rewrite/features/history/application/history_provide
 import 'package:workout_app_rewrite/features/history/data/history_db.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
+import 'package:workout_app_rewrite/features/workout_plan/domain/workout_runtime_expansion.dart';
 
 class WorkoutProgressScreen extends ConsumerWidget {
   const WorkoutProgressScreen({
@@ -225,8 +226,11 @@ List<_MoveSeries> _buildMoveSeries({
   }
 
   final List<_MoveSeries> series = <_MoveSeries>[];
-  for (int setIndex = 0; setIndex < workout.sets.length; setIndex += 1) {
-    final WorkoutSet set = workout.sets[setIndex];
+  final Workout expandedWorkout = expandRepeatedMoveSets(workout);
+  for (int setIndex = 0;
+      setIndex < expandedWorkout.sets.length;
+      setIndex += 1) {
+    final WorkoutSet set = expandedWorkout.sets[setIndex];
     for (int loopIndex = 0; loopIndex < set.loopCount; loopIndex += 1) {
       for (int moveIndex = 0; moveIndex < set.moves.length; moveIndex += 1) {
         final Move move = set.moves[moveIndex];

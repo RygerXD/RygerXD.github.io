@@ -36,7 +36,8 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
-    expect(find.text('Import Plan JSON'), findsNothing);
+    expect(find.text('Import Plan JSON'), findsOneWidget);
+    expect(find.text('Create Plan'), findsOneWidget);
     final Iterable<SafeArea> shellSafeAreas = tester.widgetList<SafeArea>(
       find.ancestor(
         of: find.text('My Workouts'),
@@ -48,11 +49,11 @@ void main() {
             .any((SafeArea safeArea) => safeArea.top && !safeArea.bottom),
         isTrue);
 
-    await tester.tap(find.text('Library'));
+    await tester.tap(find.text('Exercises'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
-    expect(find.text('All Plans'), findsOneWidget);
-    expect(find.text('Import Plan JSON'), findsOneWidget);
+    expect(find.text('No exercises yet. Import or create a plan to add some.'),
+        findsOneWidget);
 
     await tester.tap(find.text('Settings'));
     await tester.pump();

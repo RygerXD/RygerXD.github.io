@@ -2,6 +2,7 @@ import 'package:workout_app_rewrite/features/active_workout/application/workout_
 import 'package:workout_app_rewrite/features/active_workout/domain/workout_phase.dart';
 import 'package:workout_app_rewrite/features/active_workout/domain/workout_state.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
+import 'package:workout_app_rewrite/features/workout_plan/domain/workout_runtime_expansion.dart';
 
 class InvalidTransitionException implements Exception {
   const InvalidTransitionException(this.message);
@@ -17,7 +18,7 @@ class InvalidTransitionException implements Exception {
 class WorkoutStateMachine {
   WorkoutStateMachine({
     required Workout workout,
-  }) : _workout = workout;
+  }) : _workout = expandRepeatedMoveSets(workout);
 
   final Workout _workout;
   WorkoutState _state = const WorkoutState.idle();

@@ -5,9 +5,9 @@ import 'package:workout_app_rewrite/features/active_workout/presentation/active_
 import 'package:workout_app_rewrite/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:workout_app_rewrite/features/edit_workout/presentation/create_plan_screen.dart';
 import 'package:workout_app_rewrite/features/edit_workout/presentation/edit_workout_screen.dart';
+import 'package:workout_app_rewrite/features/exercises/presentation/exercises_screen.dart';
 import 'package:workout_app_rewrite/features/history/presentation/analysis_screen.dart';
 import 'package:workout_app_rewrite/features/history/presentation/workout_progress_screen.dart';
-import 'package:workout_app_rewrite/features/library/presentation/library_screen.dart';
 import 'package:workout_app_rewrite/features/settings/presentation/settings_screen.dart';
 import 'package:workout_app_rewrite/features/workout_detail/presentation/workout_detail_screen.dart';
 import 'package:workout_app_rewrite/features/workout_summary/presentation/workout_summary_screen.dart';
@@ -39,56 +39,54 @@ final Provider<GoRouter> appRouterProvider =
           StatefulShellBranch(
             routes: <RouteBase>[
               GoRoute(
-                path: '/library',
+                path: '/exercises',
                 builder: (BuildContext context, GoRouterState state) {
-                  return const LibraryScreen();
+                  return const ExercisesScreen();
+                },
+              ),
+              GoRoute(
+                path: '/library/create',
+                builder: (BuildContext context, GoRouterState state) {
+                  return const CreatePlanScreen();
+                },
+              ),
+              GoRoute(
+                path: '/library/detail/:planId',
+                builder: (BuildContext context, GoRouterState state) {
+                  final String planId = state.pathParameters['planId']!;
+                  return WorkoutDetailScreen(planId: planId);
                 },
                 routes: <RouteBase>[
                   GoRoute(
-                    path: 'create',
+                    path: 'workout/:workoutId',
                     builder: (BuildContext context, GoRouterState state) {
-                      return const CreatePlanScreen();
+                      final String planId = state.pathParameters['planId']!;
+                      final String workoutId =
+                          state.pathParameters['workoutId']!;
+                      return WorkoutSummaryScreen(
+                        planId: planId,
+                        workoutId: workoutId,
+                      );
                     },
                   ),
                   GoRoute(
-                    path: 'detail/:planId',
+                    path: 'edit',
                     builder: (BuildContext context, GoRouterState state) {
                       final String planId = state.pathParameters['planId']!;
-                      return WorkoutDetailScreen(planId: planId);
+                      return CreatePlanScreen(planId: planId);
                     },
-                    routes: <RouteBase>[
-                      GoRoute(
-                        path: 'workout/:workoutId',
-                        builder: (BuildContext context, GoRouterState state) {
-                          final String planId = state.pathParameters['planId']!;
-                          final String workoutId =
-                              state.pathParameters['workoutId']!;
-                          return WorkoutSummaryScreen(
-                            planId: planId,
-                            workoutId: workoutId,
-                          );
-                        },
-                      ),
-                      GoRoute(
-                        path: 'edit',
-                        builder: (BuildContext context, GoRouterState state) {
-                          final String planId = state.pathParameters['planId']!;
-                          return CreatePlanScreen(planId: planId);
-                        },
-                      ),
-                      GoRoute(
-                        path: 'edit-workout',
-                        builder: (BuildContext context, GoRouterState state) {
-                          final String planId = state.pathParameters['planId']!;
-                          final String? workoutId =
-                              state.uri.queryParameters['workoutId'];
-                          return EditWorkoutScreen(
-                            planId: planId,
-                            workoutId: workoutId,
-                          );
-                        },
-                      ),
-                    ],
+                  ),
+                  GoRoute(
+                    path: 'edit-workout',
+                    builder: (BuildContext context, GoRouterState state) {
+                      final String planId = state.pathParameters['planId']!;
+                      final String? workoutId =
+                          state.uri.queryParameters['workoutId'];
+                      return EditWorkoutScreen(
+                        planId: planId,
+                        workoutId: workoutId,
+                      );
+                    },
                   ),
                 ],
               ),
@@ -153,7 +151,7 @@ class AppScaffold extends StatelessWidget {
         destinations: const <Widget>[
           NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Home'),
           NavigationDestination(
-              icon: Icon(Icons.fitness_center), label: 'Library'),
+              icon: Icon(Icons.fitness_center), label: 'Exercises'),
           NavigationDestination(
               icon: Icon(Icons.insights_outlined), label: 'Analysis'),
           NavigationDestination(

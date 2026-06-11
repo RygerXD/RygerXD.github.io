@@ -189,6 +189,10 @@
           "type": "integer",
           "minimum": 0
         },
+        "setCount": {
+          "type": "integer",
+          "minimum": 1
+        },
         "repeatEachSide": {
           "type": "boolean"
         },

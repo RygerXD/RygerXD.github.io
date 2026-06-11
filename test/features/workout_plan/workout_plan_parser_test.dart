@@ -34,6 +34,7 @@ void main() {
                     'exerciseId': 'ex-1',
                     'type': 'reps',
                     'repCount': 10,
+                    'setCount': 2,
                   },
                 ],
               },
@@ -48,6 +49,7 @@ void main() {
       expect(
           parsed.workouts.single.imageUrl, 'https://example.com/workout.gif');
       expect(parsed.workouts.single.sets.single.moves.single.repCount, 10);
+      expect(parsed.workouts.single.sets.single.moves.single.setCount, 2);
     });
 
     test('throws on unsupported schemaVersion', () {
@@ -298,6 +300,47 @@ void main() {
                     'type': 'reps',
                     'repCount': 10,
                     'repeatEachSide': true,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      expect(
+        () => parser.parseFromJson(json),
+        throwsA(isA<WorkoutPlanParseException>()),
+      );
+    });
+
+    test('throws when move setCount is less than one', () {
+      final Map<String, dynamic> json = <String, dynamic>{
+        'schemaVersion': 1,
+        'planId': 'plan-1',
+        'name': 'Plan 1',
+        'exercises': <Map<String, dynamic>>[
+          <String, dynamic>{
+            'exerciseId': 'ex-1',
+            'name': 'Squat',
+          },
+        ],
+        'workouts': <Map<String, dynamic>>[
+          <String, dynamic>{
+            'workoutId': 'w-1',
+            'title': 'Workout A',
+            'sets': <Map<String, dynamic>>[
+              <String, dynamic>{
+                'setId': 's-1',
+                'loopCount': 1,
+                'restBetweenLoopsSeconds': 30,
+                'moves': <Map<String, dynamic>>[
+                  <String, dynamic>{
+                    'moveId': 'm-1',
+                    'exerciseId': 'ex-1',
+                    'type': 'reps',
+                    'repCount': 10,
+                    'setCount': 0,
                   },
                 ],
               },
