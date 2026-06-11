@@ -35,7 +35,7 @@ class LibraryScreen extends ConsumerWidget {
               FilledButton.tonalIcon(
                 onPressed: () => _importWorkoutJson(context, ref),
                 icon: const Icon(Icons.download_rounded),
-                label: const Text('Import Workout JSON'),
+                label: const Text('Import Plan JSON'),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.all(AppSpacing.lg),
                   alignment: Alignment.centerLeft,
@@ -73,7 +73,21 @@ class LibraryScreen extends ConsumerWidget {
                       title: Text(plan.name),
                       subtitle:
                           Text(plan.description ?? 'No description provided'),
-                      trailing: const Icon(Icons.chevron_right),
+                      trailing: SizedBox(
+                        width: 96,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: <Widget>[
+                            IconButton(
+                              tooltip: 'Export plan',
+                              icon: const Icon(Icons.upload_file_outlined),
+                              onPressed: () =>
+                                  _exportWorkoutPlan(context, ref, plan),
+                            ),
+                            const Icon(Icons.chevron_right),
+                          ],
+                        ),
+                      ),
                       onTap: () {
                         context.go('/library/detail/${plan.planId}');
                       },
@@ -115,6 +129,35 @@ class LibraryScreen extends ConsumerWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error importing workout: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _exportWorkoutPlan(
+    BuildContext context,
+    WidgetRef ref,
+    WorkoutPlan plan,
+  ) async {
+    try {
+      final result =
+          await ref.read(workoutPlanExportServiceProvider).exportPlan(plan);
+      if (!context.mounted) {
+        return;
+      }
+      if (result == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Export canceled.')),
+        );
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Exported ${plan.name}')),
+      );
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error exporting workout: $error')),
         );
       }
     }

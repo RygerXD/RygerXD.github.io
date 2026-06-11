@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workout_app_rewrite/features/history/application/history_providers.dart';
+import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_export_service.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_import_service.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_parser.dart';
 import 'package:workout_app_rewrite/features/workout_plan/data/drift_workout_repository.dart';
@@ -14,14 +15,18 @@ final Provider<WorkoutPlanParser> workoutPlanParserProvider =
   return const WorkoutPlanParser();
 });
 
-final Provider<SharedPreferences> sharedPreferencesProvider = Provider<SharedPreferences>((Ref<SharedPreferences> ref) {
-  throw UnimplementedError('sharedPreferencesProvider must be overridden in main.dart');
+final Provider<SharedPreferences> sharedPreferencesProvider =
+    Provider<SharedPreferences>((Ref<SharedPreferences> ref) {
+  throw UnimplementedError(
+      'sharedPreferencesProvider must be overridden in main.dart');
 });
 
 final Provider<WorkoutRepository> workoutRepositoryProvider =
     Provider<WorkoutRepository>((Ref<WorkoutRepository> ref) {
-  final WorkoutRepository primary = SharedPrefsWorkoutRepository(ref.watch(sharedPreferencesProvider));
-  final WorkoutRepository secondary = DriftWorkoutRepository(ref.watch(historyDatabaseProvider));
+  final WorkoutRepository primary =
+      SharedPrefsWorkoutRepository(ref.watch(sharedPreferencesProvider));
+  final WorkoutRepository secondary =
+      DriftWorkoutRepository(ref.watch(historyDatabaseProvider));
   return MirroredWorkoutRepository(primary: primary, secondary: secondary);
 });
 
@@ -31,6 +36,11 @@ final Provider<WorkoutPlanImportService> workoutPlanImportServiceProvider =
     parser: ref.read(workoutPlanParserProvider),
     repository: ref.read(workoutRepositoryProvider),
   );
+});
+
+final Provider<WorkoutPlanExportService> workoutPlanExportServiceProvider =
+    Provider<WorkoutPlanExportService>((Ref<WorkoutPlanExportService> ref) {
+  return const WorkoutPlanExportService();
 });
 
 class LoadedWorkoutPlansNotifier extends AsyncNotifier<List<WorkoutPlan>> {
@@ -46,7 +56,7 @@ class LoadedWorkoutPlansNotifier extends AsyncNotifier<List<WorkoutPlan>> {
     ref.invalidateSelf();
     await future;
   }
-  
+
   Future<void> removePlan(String planId) async {
     final WorkoutRepository repository = ref.read(workoutRepositoryProvider);
     await repository.deletePlan(planId);
@@ -55,7 +65,8 @@ class LoadedWorkoutPlansNotifier extends AsyncNotifier<List<WorkoutPlan>> {
   }
 }
 
-final AsyncNotifierProvider<LoadedWorkoutPlansNotifier, List<WorkoutPlan>> loadedWorkoutPlansNotifierProvider =
+final AsyncNotifierProvider<LoadedWorkoutPlansNotifier, List<WorkoutPlan>>
+    loadedWorkoutPlansNotifierProvider =
     AsyncNotifierProvider<LoadedWorkoutPlansNotifier, List<WorkoutPlan>>(() {
   return LoadedWorkoutPlansNotifier();
 });

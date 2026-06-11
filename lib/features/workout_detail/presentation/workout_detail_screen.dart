@@ -52,6 +52,11 @@ class WorkoutDetailScreen extends ConsumerWidget {
             ),
             actions: <Widget>[
               IconButton(
+                tooltip: 'Export plan',
+                icon: const Icon(Icons.upload_file_outlined),
+                onPressed: () => _exportWorkoutPlan(context, ref, plan),
+              ),
+              IconButton(
                 tooltip: 'Edit plan',
                 icon: const Icon(Icons.edit_outlined),
                 onPressed: () => context.go('/library/detail/$planId/edit'),
@@ -253,4 +258,34 @@ Future<bool> _confirmDeleteWorkout(
     },
   );
   return shouldDelete ?? false;
+}
+
+Future<void> _exportWorkoutPlan(
+  BuildContext context,
+  WidgetRef ref,
+  WorkoutPlan plan,
+) async {
+  try {
+    final result = await ref.read(workoutPlanExportServiceProvider).exportPlan(
+          plan,
+        );
+    if (!context.mounted) {
+      return;
+    }
+    if (result == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Export canceled.')),
+      );
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Exported ${plan.name}')),
+    );
+  } catch (error) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error exporting workout: $error')),
+      );
+    }
+  }
 }

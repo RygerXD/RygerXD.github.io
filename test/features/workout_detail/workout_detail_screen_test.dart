@@ -69,6 +69,7 @@ void main() {
     expect(find.text('Leg Day'), findsOneWidget);
     expect(find.text('1mins'), findsOneWidget);
     expect(find.text('1 Set'), findsOneWidget);
+    expect(find.byTooltip('Export plan'), findsOneWidget);
   });
 
   testWidgets('confirms before deleting workout plan',
