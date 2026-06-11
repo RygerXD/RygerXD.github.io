@@ -31,6 +31,12 @@ void main() {
                     type: MoveType.reps,
                     repCount: 10,
                   ),
+                  Move(
+                    moveId: 'move-2',
+                    exerciseId: 'exercise-2',
+                    type: MoveType.reps,
+                    repCount: 12,
+                  ),
                 ],
               ),
             ],
@@ -41,6 +47,10 @@ void main() {
             exerciseId: 'exercise-1',
             name: 'Push Up',
             imageUrl: 'https://example.com/push-up.gif',
+          ),
+          Exercise(
+            exerciseId: 'exercise-2',
+            name: 'Squat',
           ),
         ],
       ),
@@ -63,25 +73,39 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Push Up'), findsOneWidget);
+    expect(find.text('1 move across 1 plan'), findsNWidgets(2));
+    expect(find.text('Squat'), findsOneWidget);
+
+    await tester.enterText(
+        find.widgetWithText(TextField, 'Search exercises'), 'psh');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Push Up'), findsOneWidget);
     expect(find.text('1 move across 1 plan'), findsOneWidget);
+    expect(find.text('Squat'), findsNothing);
 
     await tester.tap(find.text('Push Up'));
     await tester.pumpAndSettle();
 
     final Finder fields = find.byType(TextField);
-    await tester.enterText(fields.at(0), 'Incline Push Up');
-    await tester.enterText(fields.at(1), 'https://example.com/incline.gif');
-    await tester.enterText(fields.at(2), 'Hands elevated.');
+    await tester.enterText(fields.at(1), 'Incline Push Up');
+    await tester.enterText(fields.at(2), 'https://example.com/incline.gif');
+    await tester.enterText(fields.at(3), 'Hands elevated.');
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
 
     final WorkoutPlan savedPlan = (await repository.getPlanById('plan-1'))!;
-    final Exercise savedExercise = savedPlan.exercises.single;
+    final Exercise savedExercise = savedPlan.exercises.firstWhere(
+      (Exercise exercise) => exercise.exerciseId == 'exercise-1',
+    );
     expect(savedExercise.name, 'Incline Push Up');
     expect(savedExercise.imageUrl, 'https://example.com/incline.gif');
     expect(savedExercise.description, 'Hands elevated.');
-    expect(savedPlan.workouts.single.sets.single.moves.single.exerciseId,
-        'exercise-1');
+    expect(
+      savedPlan.workouts.single.sets.single.moves
+          .map((Move move) => move.exerciseId),
+      contains('exercise-1'),
+    );
     expect(find.text('Incline Push Up'), findsOneWidget);
   });
 }

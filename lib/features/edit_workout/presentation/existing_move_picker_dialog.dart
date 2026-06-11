@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:workout_app_rewrite/core/media/exercise_media_image.dart';
 import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
+import 'package:workout_app_rewrite/core/utils/fuzzy_search.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
 
 class ExistingMovePickerDialog extends StatefulWidget {
@@ -120,7 +121,7 @@ class _ExistingMovePickerDialogState extends State<ExistingMovePickerDialog> {
 
     final List<_ScoredExercise> matches = <_ScoredExercise>[];
     for (final Exercise exercise in _exercises) {
-      final int? score = _fuzzyScore(exercise.name.toLowerCase(), query);
+      final int? score = fuzzyScore(exercise.name.toLowerCase(), query);
       if (score != null) {
         matches.add(_ScoredExercise(exercise: exercise, score: score));
       }
@@ -137,25 +138,6 @@ class _ExistingMovePickerDialogState extends State<ExistingMovePickerDialog> {
     return matches
         .map((_ScoredExercise match) => match.exercise)
         .toList(growable: false);
-  }
-
-  int? _fuzzyScore(String candidate, String query) {
-    if (candidate.contains(query)) {
-      return candidate.indexOf(query);
-    }
-
-    int candidateIndex = 0;
-    int score = 0;
-    for (final int queryCodeUnit in query.codeUnits) {
-      final int matchIndex =
-          candidate.indexOf(String.fromCharCode(queryCodeUnit), candidateIndex);
-      if (matchIndex < 0) {
-        return null;
-      }
-      score += matchIndex - candidateIndex + 1;
-      candidateIndex = matchIndex + 1;
-    }
-    return score + candidate.length;
   }
 }
 

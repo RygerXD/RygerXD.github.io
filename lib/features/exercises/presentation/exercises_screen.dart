@@ -4,14 +4,29 @@ import 'package:workout_app_rewrite/core/media/image_or_gif_url_field.dart';
 import 'package:workout_app_rewrite/core/media/media_thumbnail.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
 import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
+import 'package:workout_app_rewrite/core/utils/fuzzy_search.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
 
-class ExercisesScreen extends ConsumerWidget {
+class ExercisesScreen extends ConsumerStatefulWidget {
   const ExercisesScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ExercisesScreen> createState() => _ExercisesScreenState();
+}
+
+class _ExercisesScreenState extends ConsumerState<ExercisesScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final AsyncValue<List<WorkoutPlan>> plansState =
         ref.watch(loadedWorkoutPlansNotifierProvider);
 
@@ -25,6 +40,8 @@ class ExercisesScreen extends ConsumerWidget {
             Center(child: Text('Error loading exercises: $error')),
         data: (List<WorkoutPlan> plans) {
           final List<_ExerciseEntry> exercises = _collectExercises(plans);
+          final List<_ExerciseEntry> filteredExercises =
+              _filteredExercises(exercises);
           if (exercises.isEmpty) {
             return const _EmptyState(
               message: 'No exercises yet. Import or create a plan to add some.',
@@ -34,11 +51,28 @@ class ExercisesScreen extends ConsumerWidget {
           return ListView(
             padding: const EdgeInsets.all(AppSpacing.lg),
             children: <Widget>[
-              for (final _ExerciseEntry entry in exercises)
-                _ExerciseCard(
-                  entry: entry,
-                  onTap: () => _editExercise(context, ref, plans, entry),
+              TextField(
+                controller: _searchController,
+                decoration: const InputDecoration(
+                  labelText: 'Search exercises',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.search),
                 ),
+                onChanged: (String value) {
+                  setState(() {
+                    _query = value;
+                  });
+                },
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              if (filteredExercises.isEmpty)
+                const _EmptyState(message: 'No matching exercises.')
+              else
+                for (final _ExerciseEntry entry in filteredExercises)
+                  _ExerciseCard(
+                    entry: entry,
+                    onTap: () => _editExercise(context, ref, plans, entry),
+                  ),
             ],
           );
         },
@@ -83,6 +117,33 @@ class ExercisesScreen extends ConsumerWidget {
           .compareTo(b.exercise.name.toLowerCase()),
     );
     return result;
+  }
+
+  List<_ExerciseEntry> _filteredExercises(List<_ExerciseEntry> exercises) {
+    final String query = _query.trim().toLowerCase();
+    if (query.isEmpty) {
+      return exercises;
+    }
+
+    final List<_ScoredExerciseEntry> matches = <_ScoredExerciseEntry>[];
+    for (final _ExerciseEntry entry in exercises) {
+      final int? score = fuzzyScore(entry.exercise.name.toLowerCase(), query);
+      if (score != null) {
+        matches.add(_ScoredExerciseEntry(entry: entry, score: score));
+      }
+    }
+
+    matches.sort((_ScoredExerciseEntry a, _ScoredExerciseEntry b) {
+      final int scoreCompare = a.score.compareTo(b.score);
+      if (scoreCompare != 0) {
+        return scoreCompare;
+      }
+      return a.entry.exercise.name.compareTo(b.entry.exercise.name);
+    });
+
+    return matches
+        .map((_ScoredExerciseEntry match) => match.entry)
+        .toList(growable: false);
   }
 
   Future<void> _editExercise(
@@ -369,4 +430,14 @@ class _MutableExerciseEntry {
       moveCount: moveCount,
     );
   }
+}
+
+class _ScoredExerciseEntry {
+  const _ScoredExerciseEntry({
+    required this.entry,
+    required this.score,
+  });
+
+  final _ExerciseEntry entry;
+  final int score;
 }
