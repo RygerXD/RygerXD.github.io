@@ -93,4 +93,9 @@ class HistoryService {
       ),
     );
   }
+
+  Future<void> deleteSession(String sessionId) async {
+    await _db.deleteWorkoutSession(sessionId);
+    debugPrint('[HistoryService] Session deleted: $sessionId');
+  }
 }

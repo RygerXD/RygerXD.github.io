@@ -91,6 +91,17 @@ class HistoryDatabase extends _$HistoryDatabase {
     });
   }
 
+  Future<void> deleteWorkoutSession(String sessionId) async {
+    await transaction(() async {
+      await (delete(workoutMovePerformances)
+            ..where((t) => t.sessionId.equals(sessionId)))
+          .go();
+      await (delete(workoutSessions)
+            ..where((t) => t.sessionId.equals(sessionId)))
+          .go();
+    });
+  }
+
   Stream<List<WorkoutMovePerformanceEntity>> watchAllMovePerformances() =>
       select(workoutMovePerformances).watch();
 

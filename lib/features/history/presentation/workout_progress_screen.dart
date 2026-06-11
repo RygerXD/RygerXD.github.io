@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
 import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
 import 'package:workout_app_rewrite/features/history/application/history_providers.dart';
@@ -83,6 +84,18 @@ class WorkoutProgressScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Workout Progress'),
+        actions: <Widget>[
+          IconButton(
+            tooltip: 'Delete session',
+            icon: const Icon(Icons.delete_outline),
+            onPressed: () => _deleteSession(
+              context,
+              ref,
+              selectedSession.sessionId,
+              workoutContext.workoutName,
+            ),
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
@@ -128,6 +141,69 @@ class WorkoutProgressScreen extends ConsumerWidget {
     }
     return null;
   }
+
+  Future<void> _deleteSession(
+    BuildContext context,
+    WidgetRef ref,
+    String sessionId,
+    String workoutName,
+  ) async {
+    final bool shouldDelete = await _confirmDeleteSession(context, workoutName);
+    if (!shouldDelete || !context.mounted) {
+      return;
+    }
+
+    try {
+      await ref.read(historyServiceProvider).deleteSession(sessionId);
+      if (!context.mounted) {
+        return;
+      }
+      final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+      context.go('/analysis');
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Workout session deleted.')),
+      );
+    } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error deleting workout session: $error')),
+      );
+    }
+  }
+}
+
+Future<bool> _confirmDeleteSession(
+  BuildContext context,
+  String workoutName,
+) async {
+  final bool? shouldDelete = await showDialog<bool>(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Delete Workout Session?'),
+        content: Text(
+          'Delete this saved "$workoutName" session and its move history?',
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      );
+    },
+  );
+  return shouldDelete ?? false;
 }
 
 _WorkoutContext _resolveWorkoutContext(
