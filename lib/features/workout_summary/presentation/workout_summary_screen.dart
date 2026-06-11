@@ -70,6 +70,11 @@ class WorkoutSummaryScreen extends ConsumerWidget {
                   '/library/detail/$planId/edit-workout?workoutId=$workoutId',
                 ),
               ),
+              IconButton(
+                tooltip: 'Delete workout',
+                icon: const Icon(Icons.delete_outline),
+                onPressed: () => _deleteWorkout(context, ref, workout),
+              ),
             ],
           ),
           bottomNavigationBar: SafeArea(
@@ -139,6 +144,70 @@ class WorkoutSummaryScreen extends ConsumerWidget {
       },
     );
   }
+
+  Future<void> _deleteWorkout(
+    BuildContext context,
+    WidgetRef ref,
+    Workout workout,
+  ) async {
+    final bool shouldDelete =
+        await _confirmDeleteWorkout(context, workout.title);
+    if (!shouldDelete || !context.mounted) {
+      return;
+    }
+
+    try {
+      await ref.read(loadedWorkoutPlansNotifierProvider.notifier).removeWorkout(
+            planId: planId,
+            workoutId: workout.workoutId,
+          );
+      if (!context.mounted) {
+        return;
+      }
+      final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+      context.go('/library/detail/$planId');
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Workout deleted.')),
+      );
+    } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error deleting workout: $error')),
+      );
+    }
+  }
+}
+
+Future<bool> _confirmDeleteWorkout(
+  BuildContext context,
+  String workoutName,
+) async {
+  final bool? shouldDelete = await showDialog<bool>(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Delete Workout?'),
+        content: Text('Delete "$workoutName" from this plan?'),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      );
+    },
+  );
+  return shouldDelete ?? false;
 }
 
 class _WorkoutHero extends StatelessWidget {

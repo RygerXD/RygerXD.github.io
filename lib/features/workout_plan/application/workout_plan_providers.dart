@@ -63,6 +63,28 @@ class LoadedWorkoutPlansNotifier extends AsyncNotifier<List<WorkoutPlan>> {
     ref.invalidateSelf();
     await future;
   }
+
+  Future<void> removeWorkout({
+    required String planId,
+    required String workoutId,
+  }) async {
+    final WorkoutRepository repository = ref.read(workoutRepositoryProvider);
+    final WorkoutPlan? plan = await repository.getPlanById(planId);
+    if (plan == null) {
+      return;
+    }
+
+    final List<Workout> updatedWorkouts = plan.workouts
+        .where((Workout workout) => workout.workoutId != workoutId)
+        .toList(growable: false);
+    if (updatedWorkouts.length == plan.workouts.length) {
+      return;
+    }
+
+    await repository.savePlan(plan.copyWith(workouts: updatedWorkouts));
+    ref.invalidateSelf();
+    await future;
+  }
 }
 
 final AsyncNotifierProvider<LoadedWorkoutPlansNotifier, List<WorkoutPlan>>
