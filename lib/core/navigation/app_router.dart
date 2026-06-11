@@ -158,6 +158,10 @@ class AppScaffold extends StatelessWidget {
               icon: Icon(Icons.settings_outlined), label: 'Settings'),
         ],
         onDestinationSelected: (int index) {
+          if (index == 1) {
+            context.go('/exercises');
+            return;
+          }
           navigationShell.goBranch(index);
         },
       ),

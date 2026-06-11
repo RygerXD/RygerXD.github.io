@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -7,6 +7,7 @@ import 'package:workout_app_rewrite/features/history/data/history_db.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
 import 'package:workout_app_rewrite/features/workout_plan/data/in_memory_workout_repository.dart';
 import 'package:workout_app_rewrite/features/workout_plan/data/workout_repository.dart';
+import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
 import 'package:workout_app_rewrite/main.dart';
 
 void main() {
@@ -75,5 +76,77 @@ void main() {
       scrollable: find.byType(Scrollable),
     );
     expect(find.text('Exercise finished ding'), findsOneWidget);
+  });
+
+  testWidgets('exercises tab returns to exercises after deleting a workout',
+      (WidgetTester tester) async {
+    final SharedPreferences sharedPreferences =
+        await SharedPreferences.getInstance();
+    final InMemoryWorkoutRepository workoutRepository =
+        InMemoryWorkoutRepository();
+    await workoutRepository.savePlan(
+      const WorkoutPlan(
+        schemaVersion: 1,
+        planId: 'plan-1',
+        name: 'Plan 1',
+        workouts: <Workout>[
+          Workout(
+            workoutId: 'workout-a',
+            title: 'Workout A',
+            sets: <WorkoutSet>[
+              WorkoutSet(
+                setId: 'set-1',
+                loopCount: 1,
+                restBetweenLoopsSeconds: 0,
+                moves: <Move>[
+                  Move(
+                    moveId: 'move-1',
+                    exerciseId: 'exercise-1',
+                    type: MoveType.reps,
+                    repCount: 10,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+        exercises: <Exercise>[
+          Exercise(exerciseId: 'exercise-1', name: 'Squat'),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: <Override>[
+          allSessionsProvider.overrideWith(
+            (ref) => Stream<List<WorkoutSessionEntity>>.value(
+                <WorkoutSessionEntity>[]),
+          ),
+          sharedPreferencesProvider.overrideWithValue(sharedPreferences),
+          workoutRepositoryProvider.overrideWithValue(workoutRepository),
+        ],
+        child: const WorkoutApp(),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    await tester.tap(find.text('Workout A'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Delete workout'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Workout not found'), findsNothing);
+
+    await tester.tap(find.text('Exercises'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Search exercises'), findsOneWidget);
+    expect(find.text('Squat'), findsOneWidget);
+    expect(find.text('Workout not found'), findsNothing);
   });
 }
