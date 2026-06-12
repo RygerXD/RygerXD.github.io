@@ -5,6 +5,7 @@ import 'package:workout_app_rewrite/core/media/exercise_media_image.dart';
 import 'package:workout_app_rewrite/core/media/media_thumbnail.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
 import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
+import 'package:workout_app_rewrite/core/widgets/confirm_destructive_action.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/active_workout_controller.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_metrics.dart';
@@ -184,30 +185,11 @@ Future<bool> _confirmDeleteWorkout(
   BuildContext context,
   String workoutName,
 ) async {
-  final bool? shouldDelete = await showDialog<bool>(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: const Text('Delete Workout?'),
-        content: Text('Delete "$workoutName" from this plan?'),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-              foregroundColor: Theme.of(context).colorScheme.onError,
-            ),
-            child: const Text('Delete'),
-          ),
-        ],
-      );
-    },
+  return confirmDestructiveAction(
+    context,
+    title: 'Delete Workout?',
+    message: 'Delete "$workoutName" from this plan?',
   );
-  return shouldDelete ?? false;
 }
 
 class _WorkoutHero extends StatelessWidget {

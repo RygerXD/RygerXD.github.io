@@ -7,43 +7,13 @@ void main() {
     const WorkoutPlanParser parser = WorkoutPlanParser();
 
     test('parses a valid plan', () {
-      final Map<String, dynamic> json = <String, dynamic>{
-        'schemaVersion': 1,
-        'planId': 'plan-1',
-        'name': 'Plan 1',
-        'imageUrl': 'https://example.com/plan.gif',
-        'exercises': <Map<String, dynamic>>[
-          <String, dynamic>{
-            'exerciseId': 'ex-1',
-            'name': 'Squat',
-          },
-        ],
-        'workouts': <Map<String, dynamic>>[
-          <String, dynamic>{
-            'workoutId': 'w-1',
-            'title': 'Workout A',
-            'imageUrl': 'https://example.com/workout.gif',
-            'sets': <Map<String, dynamic>>[
-              <String, dynamic>{
-                'setId': 's-1',
-                'loopCount': 1,
-                'restBetweenLoopsSeconds': 30,
-                'moves': <Map<String, dynamic>>[
-                  <String, dynamic>{
-                    'moveId': 'm-1',
-                    'exerciseId': 'ex-1',
-                    'type': 'reps',
-                    'repCount': 10,
-                    'setCount': 2,
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      };
+      final WorkoutPlan parsed = parser.parseFromJson(_planJson(
+        move: <String, dynamic>{
+          'repCount': 10,
+          'setCount': 2,
+        },
+      ));
 
-      final WorkoutPlan parsed = parser.parseFromJson(json);
       expect(parsed.planId, 'plan-1');
       expect(parsed.imageUrl, 'https://example.com/plan.gif');
       expect(
@@ -53,138 +23,51 @@ void main() {
     });
 
     test('throws on unsupported schemaVersion', () {
-      final Map<String, dynamic> json = <String, dynamic>{
-        'schemaVersion': 3,
-        'planId': 'plan-1',
-        'name': 'Plan 1',
-        'exercises': <dynamic>[],
-        'workouts': <dynamic>[],
-      };
-
       expect(
-        () => parser.parseFromJson(json),
+        () => parser.parseFromJson(_planJson(schemaVersion: 3)),
         throwsA(isA<WorkoutPlanParseException>()),
       );
     });
 
     test('throws when move references unknown exercise', () {
-      final Map<String, dynamic> json = <String, dynamic>{
-        'schemaVersion': 1,
-        'planId': 'plan-1',
-        'name': 'Plan 1',
-        'exercises': <Map<String, dynamic>>[
-          <String, dynamic>{
-            'exerciseId': 'ex-1',
-            'name': 'Squat',
-          },
-        ],
-        'workouts': <Map<String, dynamic>>[
-          <String, dynamic>{
-            'workoutId': 'w-1',
-            'title': 'Workout A',
-            'sets': <Map<String, dynamic>>[
-              <String, dynamic>{
-                'setId': 's-1',
-                'loopCount': 1,
-                'restBetweenLoopsSeconds': 30,
-                'moves': <Map<String, dynamic>>[
-                  <String, dynamic>{
-                    'moveId': 'm-1',
-                    'exerciseId': 'ex-does-not-exist',
-                    'type': 'reps',
-                    'repCount': 10,
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      };
-
       expect(
-        () => parser.parseFromJson(json),
+        () => parser.parseFromJson(_planJson(
+          move: <String, dynamic>{'exerciseId': 'ex-does-not-exist'},
+        )),
         throwsA(isA<WorkoutPlanParseException>()),
       );
     });
 
     test('parses metronome BPM for duration moves', () {
-      final Map<String, dynamic> json = <String, dynamic>{
-        'schemaVersion': 1,
-        'planId': 'plan-1',
-        'name': 'Plan 1',
-        'exercises': <Map<String, dynamic>>[
-          <String, dynamic>{
-            'exerciseId': 'ex-1',
-            'name': 'Jumping Jacks',
-          },
-        ],
-        'workouts': <Map<String, dynamic>>[
-          <String, dynamic>{
-            'workoutId': 'w-1',
-            'title': 'Workout A',
-            'sets': <Map<String, dynamic>>[
-              <String, dynamic>{
-                'setId': 's-1',
-                'loopCount': 1,
-                'restBetweenLoopsSeconds': 30,
-                'moves': <Map<String, dynamic>>[
-                  <String, dynamic>{
-                    'moveId': 'm-1',
-                    'exerciseId': 'ex-1',
-                    'type': 'duration',
-                    'durationSeconds': 30,
-                    'metronomeSpeed': 60,
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      };
-
-      final WorkoutPlan parsed = parser.parseFromJson(json);
+      final WorkoutPlan parsed = parser.parseFromJson(_planJson(
+        exerciseName: 'Jumping Jacks',
+        move: <String, dynamic>{
+          'type': 'duration',
+          'durationSeconds': 30,
+          'metronomeSpeed': 60,
+        },
+      ));
 
       expect(
           parsed.workouts.single.sets.single.moves.single.metronomeSpeed, 60);
     });
 
     test('parses each-side duration moves', () {
-      final Map<String, dynamic> json = <String, dynamic>{
-        'schemaVersion': 1,
-        'planId': 'plan-1',
-        'name': 'Plan 1',
-        'exercises': <Map<String, dynamic>>[
-          <String, dynamic>{
-            'exerciseId': 'ex-1',
-            'name': 'Lunge',
-          },
-        ],
-        'workouts': <Map<String, dynamic>>[
-          <String, dynamic>{
-            'workoutId': 'w-1',
-            'title': 'Workout A',
-            'sets': <Map<String, dynamic>>[
-              <String, dynamic>{
-                'setId': 's-1',
-                'loopCount': 1,
-                'restBetweenLoopsSeconds': 30,
-                'moves': <Map<String, dynamic>>[
-                  <String, dynamic>{
-                    'moveId': 'm-1',
-                    'exerciseId': 'ex-1',
-                    'type': 'duration',
-                    'durationSeconds': 30,
-                    'repeatEachSide': true,
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      };
-
-      final WorkoutPlan parsed = parser.parseFromJson(json);
-      final Move move = parsed.workouts.single.sets.single.moves.single;
+      final Move move = parser
+          .parseFromJson(_planJson(
+            exerciseName: 'Lunge',
+            move: <String, dynamic>{
+              'type': 'duration',
+              'durationSeconds': 30,
+              'repeatEachSide': true,
+            },
+          ))
+          .workouts
+          .single
+          .sets
+          .single
+          .moves
+          .single;
 
       expect(move.durationSeconds, 30);
       expect(move.repeatEachSide, true);
@@ -192,124 +75,42 @@ void main() {
     });
 
     test('parses stopwatch moves', () {
-      final Map<String, dynamic> json = <String, dynamic>{
-        'schemaVersion': 1,
-        'planId': 'plan-1',
-        'name': 'Plan 1',
-        'exercises': <Map<String, dynamic>>[
-          <String, dynamic>{
-            'exerciseId': 'ex-1',
-            'name': 'Wall Sit',
-          },
-        ],
-        'workouts': <Map<String, dynamic>>[
-          <String, dynamic>{
-            'workoutId': 'w-1',
-            'title': 'Workout A',
-            'sets': <Map<String, dynamic>>[
-              <String, dynamic>{
-                'setId': 's-1',
-                'loopCount': 1,
-                'restBetweenLoopsSeconds': 30,
-                'moves': <Map<String, dynamic>>[
-                  <String, dynamic>{
-                    'moveId': 'm-1',
-                    'exerciseId': 'ex-1',
-                    'type': 'stopwatch',
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      };
+      final Move move = parser
+          .parseFromJson(_planJson(
+            exerciseName: 'Wall Sit',
+            move: <String, dynamic>{'type': 'stopwatch'},
+          ))
+          .workouts
+          .single
+          .sets
+          .single
+          .moves
+          .single;
 
-      final WorkoutPlan parsed = parser.parseFromJson(json);
-
-      expect(parsed.workouts.single.sets.single.moves.single.type,
-          MoveType.stopwatch);
-      expect(parsed.workouts.single.sets.single.moves.single.durationSeconds,
-          isNull);
+      expect(move.type, MoveType.stopwatch);
+      expect(move.durationSeconds, isNull);
     });
 
     test('throws when metronome BPM is set on a rep move', () {
-      final Map<String, dynamic> json = <String, dynamic>{
-        'schemaVersion': 1,
-        'planId': 'plan-1',
-        'name': 'Plan 1',
-        'exercises': <Map<String, dynamic>>[
-          <String, dynamic>{
-            'exerciseId': 'ex-1',
-            'name': 'Squat',
-          },
-        ],
-        'workouts': <Map<String, dynamic>>[
-          <String, dynamic>{
-            'workoutId': 'w-1',
-            'title': 'Workout A',
-            'sets': <Map<String, dynamic>>[
-              <String, dynamic>{
-                'setId': 's-1',
-                'loopCount': 1,
-                'restBetweenLoopsSeconds': 30,
-                'moves': <Map<String, dynamic>>[
-                  <String, dynamic>{
-                    'moveId': 'm-1',
-                    'exerciseId': 'ex-1',
-                    'type': 'reps',
-                    'repCount': 10,
-                    'metronomeSpeed': 60,
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      };
-
       expect(
-        () => parser.parseFromJson(json),
+        () => parser.parseFromJson(_planJson(
+          move: <String, dynamic>{'metronomeSpeed': 60},
+        )),
         throwsA(isA<WorkoutPlanParseException>()),
       );
     });
 
     test('parses each-side rep moves', () {
-      final Map<String, dynamic> json = <String, dynamic>{
-        'schemaVersion': 1,
-        'planId': 'plan-1',
-        'name': 'Plan 1',
-        'exercises': <Map<String, dynamic>>[
-          <String, dynamic>{
-            'exerciseId': 'ex-1',
-            'name': 'Squat',
-          },
-        ],
-        'workouts': <Map<String, dynamic>>[
-          <String, dynamic>{
-            'workoutId': 'w-1',
-            'title': 'Workout A',
-            'sets': <Map<String, dynamic>>[
-              <String, dynamic>{
-                'setId': 's-1',
-                'loopCount': 1,
-                'restBetweenLoopsSeconds': 30,
-                'moves': <Map<String, dynamic>>[
-                  <String, dynamic>{
-                    'moveId': 'm-1',
-                    'exerciseId': 'ex-1',
-                    'type': 'reps',
-                    'repCount': 10,
-                    'repeatEachSide': true,
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      };
-
-      final WorkoutPlan parsed = parser.parseFromJson(json);
-      final Move move = parsed.workouts.single.sets.single.moves.single;
+      final Move move = parser
+          .parseFromJson(_planJson(
+            move: <String, dynamic>{'repeatEachSide': true},
+          ))
+          .workouts
+          .single
+          .sets
+          .single
+          .moves
+          .single;
 
       expect(move.type, MoveType.reps);
       expect(move.repCount, 10);
@@ -317,41 +118,20 @@ void main() {
     });
 
     test('parses each-side stopwatch moves', () {
-      final Map<String, dynamic> json = <String, dynamic>{
-        'schemaVersion': 1,
-        'planId': 'plan-1',
-        'name': 'Plan 1',
-        'exercises': <Map<String, dynamic>>[
-          <String, dynamic>{
-            'exerciseId': 'ex-1',
-            'name': 'Wall Sit',
-          },
-        ],
-        'workouts': <Map<String, dynamic>>[
-          <String, dynamic>{
-            'workoutId': 'w-1',
-            'title': 'Workout A',
-            'sets': <Map<String, dynamic>>[
-              <String, dynamic>{
-                'setId': 's-1',
-                'loopCount': 1,
-                'restBetweenLoopsSeconds': 30,
-                'moves': <Map<String, dynamic>>[
-                  <String, dynamic>{
-                    'moveId': 'm-1',
-                    'exerciseId': 'ex-1',
-                    'type': 'stopwatch',
-                    'repeatEachSide': true,
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      };
-
-      final WorkoutPlan parsed = parser.parseFromJson(json);
-      final Move move = parsed.workouts.single.sets.single.moves.single;
+      final Move move = parser
+          .parseFromJson(_planJson(
+            exerciseName: 'Wall Sit',
+            move: <String, dynamic>{
+              'type': 'stopwatch',
+              'repeatEachSide': true,
+            },
+          ))
+          .workouts
+          .single
+          .sets
+          .single
+          .moves
+          .single;
 
       expect(move.type, MoveType.stopwatch);
       expect(move.durationSeconds, isNull);
@@ -359,44 +139,55 @@ void main() {
     });
 
     test('throws when move setCount is less than one', () {
-      final Map<String, dynamic> json = <String, dynamic>{
-        'schemaVersion': 1,
-        'planId': 'plan-1',
-        'name': 'Plan 1',
-        'exercises': <Map<String, dynamic>>[
-          <String, dynamic>{
-            'exerciseId': 'ex-1',
-            'name': 'Squat',
-          },
-        ],
-        'workouts': <Map<String, dynamic>>[
-          <String, dynamic>{
-            'workoutId': 'w-1',
-            'title': 'Workout A',
-            'sets': <Map<String, dynamic>>[
-              <String, dynamic>{
-                'setId': 's-1',
-                'loopCount': 1,
-                'restBetweenLoopsSeconds': 30,
-                'moves': <Map<String, dynamic>>[
-                  <String, dynamic>{
-                    'moveId': 'm-1',
-                    'exerciseId': 'ex-1',
-                    'type': 'reps',
-                    'repCount': 10,
-                    'setCount': 0,
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      };
-
       expect(
-        () => parser.parseFromJson(json),
+        () => parser.parseFromJson(_planJson(
+          move: <String, dynamic>{'setCount': 0},
+        )),
         throwsA(isA<WorkoutPlanParseException>()),
       );
     });
   });
+}
+
+Map<String, dynamic> _planJson({
+  int schemaVersion = 1,
+  String exerciseId = 'ex-1',
+  String exerciseName = 'Squat',
+  Map<String, dynamic> move = const <String, dynamic>{},
+}) {
+  return <String, dynamic>{
+    'schemaVersion': schemaVersion,
+    'planId': 'plan-1',
+    'name': 'Plan 1',
+    'imageUrl': 'https://example.com/plan.gif',
+    'exercises': <Map<String, dynamic>>[
+      <String, dynamic>{
+        'exerciseId': exerciseId,
+        'name': exerciseName,
+      },
+    ],
+    'workouts': <Map<String, dynamic>>[
+      <String, dynamic>{
+        'workoutId': 'w-1',
+        'title': 'Workout A',
+        'imageUrl': 'https://example.com/workout.gif',
+        'sets': <Map<String, dynamic>>[
+          <String, dynamic>{
+            'setId': 's-1',
+            'loopCount': 1,
+            'restBetweenLoopsSeconds': 30,
+            'moves': <Map<String, dynamic>>[
+              <String, dynamic>{
+                'moveId': 'm-1',
+                'exerciseId': exerciseId,
+                'type': 'reps',
+                'repCount': 10,
+                ...move,
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
 }

@@ -505,7 +505,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     }
     await WorkoutAudio.playGetReadyDing(
       sound: settings.getReadyDingSound,
-      volume: settings.getReadyDingVolume,
+      volume: settings.audioVolume,
     );
   }
 
@@ -516,7 +516,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     }
     await WorkoutAudio.playGetReadyCountdown(
       sound: settings.getReadyCountdownSound,
-      volume: settings.getReadyCountdownVolume,
+      volume: settings.audioVolume,
     );
   }
 
@@ -527,7 +527,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     }
     await WorkoutAudio.playExerciseCountdown(
       sound: settings.exerciseCountdownSound,
-      volume: settings.exerciseCountdownVolume,
+      volume: settings.audioVolume,
     );
   }
 
@@ -538,7 +538,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     }
     await WorkoutAudio.playExerciseFinishedDing(
       sound: settings.exerciseFinishedDingSound,
-      volume: settings.exerciseFinishedDingVolume,
+      volume: settings.audioVolume,
     );
   }
 
@@ -549,7 +549,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     }
     await WorkoutAudio.playMetronomeClick(
       sound: settings.metronomeClickSound,
-      volume: settings.metronomeVolume,
+      volume: settings.audioVolume,
     );
   }
 
@@ -749,27 +749,21 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     required Move move,
     required WorkoutSet set,
   }) async {
-    final Workout? workout =
-        ref.read(activeWorkoutControllerProvider.notifier).workout;
-    if (workout == null) {
-      return;
-    }
-
-    final int? lastReps = await ref.read(repHistoryServiceProvider).getLastReps(
-          workoutId: workout.workoutId,
-          setId: set.setId,
-          loopIndex: state.loopIndex,
-          exerciseId: move.exerciseId,
-        );
-
-    if (!mounted || _lastMoveKey != moveKey) {
-      return;
-    }
-
-    setState(() {
-      _lastRepsForCurrentMove = lastReps;
-      _currentReps = lastReps ?? (move.repCount ?? 0);
-    });
+    await _loadLastTrackedValueForMove<int>(
+      moveKey: moveKey,
+      loadValue: (Workout workout) {
+        return ref.read(repHistoryServiceProvider).getLastReps(
+              workoutId: workout.workoutId,
+              setId: set.setId,
+              loopIndex: state.loopIndex,
+              exerciseId: move.exerciseId,
+            );
+      },
+      applyValue: (int? lastReps) {
+        _lastRepsForCurrentMove = lastReps;
+        _currentReps = lastReps ?? (move.repCount ?? 0);
+      },
+    );
   }
 
   Future<void> _loadLastWeightForMove({
@@ -778,30 +772,27 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     required Move move,
     required WorkoutSet set,
   }) async {
-    final Workout? workout =
-        ref.read(activeWorkoutControllerProvider.notifier).workout;
     final WeightUnit? unit = move.targetWeightUnit;
-    if (workout == null || unit == null) {
+    if (unit == null) {
       return;
     }
 
-    final double? lastWeight =
-        await ref.read(repHistoryServiceProvider).getLastWeight(
+    await _loadLastTrackedValueForMove<double>(
+      moveKey: moveKey,
+      loadValue: (Workout workout) {
+        return ref.read(repHistoryServiceProvider).getLastWeight(
               workoutId: workout.workoutId,
               setId: set.setId,
               loopIndex: state.loopIndex,
               exerciseId: move.exerciseId,
               weightUnit: unit.name,
             );
-
-    if (!mounted || _lastMoveKey != moveKey) {
-      return;
-    }
-
-    setState(() {
-      _lastWeightForCurrentMove = lastWeight;
-      _currentWeight = lastWeight ?? (move.targetWeight ?? 0);
-    });
+      },
+      applyValue: (double? lastWeight) {
+        _lastWeightForCurrentMove = lastWeight;
+        _currentWeight = lastWeight ?? (move.targetWeight ?? 0);
+      },
+    );
   }
 
   Future<void> _loadLastDurationForMove({
@@ -810,26 +801,41 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     required Move move,
     required WorkoutSet set,
   }) async {
+    await _loadLastTrackedValueForMove<int>(
+      moveKey: moveKey,
+      loadValue: (Workout workout) {
+        return ref.read(repHistoryServiceProvider).getLastDuration(
+              workoutId: workout.workoutId,
+              setId: set.setId,
+              loopIndex: state.loopIndex,
+              exerciseId: move.exerciseId,
+            );
+      },
+      applyValue: (int? lastDuration) {
+        _lastDurationForCurrentMove = lastDuration;
+      },
+    );
+  }
+
+  Future<void> _loadLastTrackedValueForMove<T>({
+    required String moveKey,
+    required Future<T?> Function(Workout workout) loadValue,
+    required void Function(T? value) applyValue,
+  }) async {
     final Workout? workout =
         ref.read(activeWorkoutControllerProvider.notifier).workout;
     if (workout == null) {
       return;
     }
 
-    final int? lastDuration =
-        await ref.read(repHistoryServiceProvider).getLastDuration(
-              workoutId: workout.workoutId,
-              setId: set.setId,
-              loopIndex: state.loopIndex,
-              exerciseId: move.exerciseId,
-            );
+    final T? value = await loadValue(workout);
 
     if (!mounted || _lastMoveKey != moveKey) {
       return;
     }
 
     setState(() {
-      _lastDurationForCurrentMove = lastDuration;
+      applyValue(value);
     });
   }
 

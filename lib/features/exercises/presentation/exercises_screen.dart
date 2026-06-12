@@ -4,7 +4,7 @@ import 'package:workout_app_rewrite/core/media/image_or_gif_url_field.dart';
 import 'package:workout_app_rewrite/core/media/media_thumbnail.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
 import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
-import 'package:workout_app_rewrite/core/utils/fuzzy_search.dart';
+import 'package:workout_app_rewrite/features/exercises/application/exercise_catalog.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
 
@@ -39,8 +39,9 @@ class _ExercisesScreenState extends ConsumerState<ExercisesScreen> {
         error: (Object error, StackTrace stack) =>
             Center(child: Text('Error loading exercises: $error')),
         data: (List<WorkoutPlan> plans) {
-          final List<_ExerciseEntry> exercises = _collectExercises(plans);
-          final List<_ExerciseEntry> filteredExercises =
+          final List<ReferencedExerciseEntry> exercises =
+              collectReferencedExercises(plans);
+          final List<ReferencedExerciseEntry> filteredExercises =
               _filteredExercises(exercises);
           if (exercises.isEmpty) {
             return const _EmptyState(
@@ -68,7 +69,7 @@ class _ExercisesScreenState extends ConsumerState<ExercisesScreen> {
               if (filteredExercises.isEmpty)
                 const _EmptyState(message: 'No matching exercises.')
               else
-                for (final _ExerciseEntry entry in filteredExercises)
+                for (final ReferencedExerciseEntry entry in filteredExercises)
                   _ExerciseCard(
                     entry: entry,
                     onTap: () => _editExercise(context, ref, plans, entry),
@@ -80,81 +81,21 @@ class _ExercisesScreenState extends ConsumerState<ExercisesScreen> {
     );
   }
 
-  List<_ExerciseEntry> _collectExercises(List<WorkoutPlan> plans) {
-    final Map<String, _MutableExerciseEntry> entries =
-        <String, _MutableExerciseEntry>{};
-
-    for (final WorkoutPlan plan in plans) {
-      final Map<String, int> moveCountsByExerciseId = <String, int>{};
-      for (final Workout workout in plan.workouts) {
-        for (final WorkoutSet set in workout.sets) {
-          for (final Move move in set.moves) {
-            moveCountsByExerciseId.update(
-              move.exerciseId,
-              (int count) => count + 1,
-              ifAbsent: () => 1,
-            );
-          }
-        }
-      }
-
-      for (final Exercise exercise in plan.exercises) {
-        final int moveCount = moveCountsByExerciseId[exercise.exerciseId] ?? 0;
-        if (moveCount == 0) {
-          continue;
-        }
-        final _MutableExerciseEntry entry = entries.putIfAbsent(
-          exercise.exerciseId,
-          () => _MutableExerciseEntry(exercise: exercise),
-        );
-        entry.planNames.add(plan.name);
-        entry.moveCount += moveCount;
-      }
-    }
-
-    final List<_ExerciseEntry> result = entries.values
-        .map((_MutableExerciseEntry entry) => entry.toEntry())
-        .toList(growable: false);
-    result.sort(
-      (_ExerciseEntry a, _ExerciseEntry b) => a.exercise.name
-          .toLowerCase()
-          .compareTo(b.exercise.name.toLowerCase()),
+  List<ReferencedExerciseEntry> _filteredExercises(
+    List<ReferencedExerciseEntry> exercises,
+  ) {
+    return filterByFuzzyExerciseName<ReferencedExerciseEntry>(
+      entries: exercises,
+      query: _query,
+      exerciseFor: (ReferencedExerciseEntry entry) => entry.exercise,
     );
-    return result;
-  }
-
-  List<_ExerciseEntry> _filteredExercises(List<_ExerciseEntry> exercises) {
-    final String query = _query.trim().toLowerCase();
-    if (query.isEmpty) {
-      return exercises;
-    }
-
-    final List<_ScoredExerciseEntry> matches = <_ScoredExerciseEntry>[];
-    for (final _ExerciseEntry entry in exercises) {
-      final int? score = fuzzyScore(entry.exercise.name.toLowerCase(), query);
-      if (score != null) {
-        matches.add(_ScoredExerciseEntry(entry: entry, score: score));
-      }
-    }
-
-    matches.sort((_ScoredExerciseEntry a, _ScoredExerciseEntry b) {
-      final int scoreCompare = a.score.compareTo(b.score);
-      if (scoreCompare != 0) {
-        return scoreCompare;
-      }
-      return a.entry.exercise.name.compareTo(b.entry.exercise.name);
-    });
-
-    return matches
-        .map((_ScoredExerciseEntry match) => match.entry)
-        .toList(growable: false);
   }
 
   Future<void> _editExercise(
     BuildContext context,
     WidgetRef ref,
     List<WorkoutPlan> plans,
-    _ExerciseEntry entry,
+    ReferencedExerciseEntry entry,
   ) async {
     final Exercise? updatedExercise = await showDialog<Exercise>(
       context: context,
@@ -207,7 +148,7 @@ class _ExerciseCard extends StatelessWidget {
     required this.onTap,
   });
 
-  final _ExerciseEntry entry;
+  final ReferencedExerciseEntry entry;
   final VoidCallback onTap;
 
   @override
@@ -416,46 +357,4 @@ class _EmptyState extends StatelessWidget {
       ),
     );
   }
-}
-
-class _ExerciseEntry {
-  const _ExerciseEntry({
-    required this.exercise,
-    required this.planNames,
-    required this.moveCount,
-  });
-
-  final Exercise exercise;
-  final List<String> planNames;
-  final int moveCount;
-}
-
-class _MutableExerciseEntry {
-  _MutableExerciseEntry({
-    required this.exercise,
-  });
-
-  final Exercise exercise;
-  final Set<String> planNames = <String>{};
-  int moveCount = 0;
-
-  _ExerciseEntry toEntry() {
-    final List<String> sortedPlanNames = planNames.toList(growable: false)
-      ..sort();
-    return _ExerciseEntry(
-      exercise: exercise,
-      planNames: sortedPlanNames,
-      moveCount: moveCount,
-    );
-  }
-}
-
-class _ScoredExerciseEntry {
-  const _ScoredExerciseEntry({
-    required this.entry,
-    required this.score,
-  });
-
-  final _ExerciseEntry entry;
-  final int score;
 }

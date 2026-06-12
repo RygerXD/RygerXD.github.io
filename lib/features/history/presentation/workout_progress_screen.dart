@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
 import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
+import 'package:workout_app_rewrite/core/widgets/confirm_destructive_action.dart';
 import 'package:workout_app_rewrite/features/history/application/history_providers.dart';
 import 'package:workout_app_rewrite/features/history/data/history_db.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
@@ -178,32 +179,11 @@ Future<bool> _confirmDeleteSession(
   BuildContext context,
   String workoutName,
 ) async {
-  final bool? shouldDelete = await showDialog<bool>(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: const Text('Delete Workout Session?'),
-        content: Text(
-          'Delete this saved "$workoutName" session and its move history?',
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-              foregroundColor: Theme.of(context).colorScheme.onError,
-            ),
-            child: const Text('Delete'),
-          ),
-        ],
-      );
-    },
+  return confirmDestructiveAction(
+    context,
+    title: 'Delete Workout Session?',
+    message: 'Delete this saved "$workoutName" session and its move history?',
   );
-  return shouldDelete ?? false;
 }
 
 _WorkoutContext _resolveWorkoutContext(

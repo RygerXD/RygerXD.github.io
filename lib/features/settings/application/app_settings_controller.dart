@@ -49,15 +49,11 @@ class AppSettings {
     required this.streakWorkoutsPerWeek,
     required this.audioCuesEnabled,
     required this.metronomeClickSound,
-    required this.metronomeVolume,
+    required this.audioVolume,
     required this.getReadyCountdownSound,
-    required this.getReadyCountdownVolume,
     required this.getReadyDingSound,
-    required this.getReadyDingVolume,
     required this.exerciseCountdownSound,
-    required this.exerciseCountdownVolume,
     required this.exerciseFinishedDingSound,
-    required this.exerciseFinishedDingVolume,
   });
 
   final AppThemePreference themePreference;
@@ -65,15 +61,11 @@ class AppSettings {
   final int streakWorkoutsPerWeek;
   final bool audioCuesEnabled;
   final MetronomeClickSound metronomeClickSound;
-  final double metronomeVolume;
+  final double audioVolume;
   final CountdownSound getReadyCountdownSound;
-  final double getReadyCountdownVolume;
   final GetReadyDingSound getReadyDingSound;
-  final double getReadyDingVolume;
   final CountdownSound exerciseCountdownSound;
-  final double exerciseCountdownVolume;
   final ExerciseFinishedDingSound exerciseFinishedDingSound;
-  final double exerciseFinishedDingVolume;
 
   AppSettings copyWith({
     AppThemePreference? themePreference,
@@ -81,15 +73,11 @@ class AppSettings {
     int? streakWorkoutsPerWeek,
     bool? audioCuesEnabled,
     MetronomeClickSound? metronomeClickSound,
-    double? metronomeVolume,
+    double? audioVolume,
     CountdownSound? getReadyCountdownSound,
-    double? getReadyCountdownVolume,
     GetReadyDingSound? getReadyDingSound,
-    double? getReadyDingVolume,
     CountdownSound? exerciseCountdownSound,
-    double? exerciseCountdownVolume,
     ExerciseFinishedDingSound? exerciseFinishedDingSound,
-    double? exerciseFinishedDingVolume,
   }) {
     return AppSettings(
       themePreference: themePreference ?? this.themePreference,
@@ -98,21 +86,14 @@ class AppSettings {
           streakWorkoutsPerWeek ?? this.streakWorkoutsPerWeek,
       audioCuesEnabled: audioCuesEnabled ?? this.audioCuesEnabled,
       metronomeClickSound: metronomeClickSound ?? this.metronomeClickSound,
-      metronomeVolume: metronomeVolume ?? this.metronomeVolume,
+      audioVolume: audioVolume ?? this.audioVolume,
       getReadyCountdownSound:
           getReadyCountdownSound ?? this.getReadyCountdownSound,
-      getReadyCountdownVolume:
-          getReadyCountdownVolume ?? this.getReadyCountdownVolume,
       getReadyDingSound: getReadyDingSound ?? this.getReadyDingSound,
-      getReadyDingVolume: getReadyDingVolume ?? this.getReadyDingVolume,
       exerciseCountdownSound:
           exerciseCountdownSound ?? this.exerciseCountdownSound,
-      exerciseCountdownVolume:
-          exerciseCountdownVolume ?? this.exerciseCountdownVolume,
       exerciseFinishedDingSound:
           exerciseFinishedDingSound ?? this.exerciseFinishedDingSound,
-      exerciseFinishedDingVolume:
-          exerciseFinishedDingVolume ?? this.exerciseFinishedDingVolume,
     );
   }
 
@@ -141,39 +122,35 @@ class AppSettings {
         values: MetronomeClickSound.values,
         fallback: MetronomeClickSound.classic,
       ),
-      metronomeVolume: _readDouble(json, key: 'metronomeVolume', fallback: 0.8),
+      audioVolume: _readDouble(
+        json,
+        key: 'audioVolume',
+        fallback: _readDouble(json, key: 'metronomeVolume', fallback: 0.8),
+      ),
       getReadyCountdownSound: _readEnum(
         json,
         key: 'getReadyCountdownSound',
         values: CountdownSound.values,
         fallback: CountdownSound.click,
       ),
-      getReadyCountdownVolume:
-          _readDouble(json, key: 'getReadyCountdownVolume', fallback: 0.8),
       getReadyDingSound: _readEnum(
         json,
         key: 'getReadyDingSound',
         values: GetReadyDingSound.values,
         fallback: GetReadyDingSound.classic,
       ),
-      getReadyDingVolume:
-          _readDouble(json, key: 'getReadyDingVolume', fallback: 0.8),
       exerciseCountdownSound: _readEnum(
         json,
         key: 'exerciseCountdownSound',
         values: CountdownSound.values,
         fallback: CountdownSound.pulse,
       ),
-      exerciseCountdownVolume:
-          _readDouble(json, key: 'exerciseCountdownVolume', fallback: 0.8),
       exerciseFinishedDingSound: _readEnum(
         json,
         key: 'exerciseFinishedDingSound',
         values: ExerciseFinishedDingSound.values,
         fallback: ExerciseFinishedDingSound.classic,
       ),
-      exerciseFinishedDingVolume:
-          _readDouble(json, key: 'exerciseFinishedDingVolume', fallback: 0.8),
     );
   }
 
@@ -184,15 +161,11 @@ class AppSettings {
       'streakWorkoutsPerWeek': streakWorkoutsPerWeek,
       'audioCuesEnabled': audioCuesEnabled,
       'metronomeClickSound': metronomeClickSound.name,
-      'metronomeVolume': metronomeVolume,
+      'audioVolume': audioVolume,
       'getReadyCountdownSound': getReadyCountdownSound.name,
-      'getReadyCountdownVolume': getReadyCountdownVolume,
       'getReadyDingSound': getReadyDingSound.name,
-      'getReadyDingVolume': getReadyDingVolume,
       'exerciseCountdownSound': exerciseCountdownSound.name,
-      'exerciseCountdownVolume': exerciseCountdownVolume,
       'exerciseFinishedDingSound': exerciseFinishedDingSound.name,
-      'exerciseFinishedDingVolume': exerciseFinishedDingVolume,
     };
   }
 
@@ -246,6 +219,12 @@ final NotifierProvider<AppSettingsController, AppSettings> appSettingsProvider =
     NotifierProvider<AppSettingsController, AppSettings>(
         AppSettingsController.new);
 
+Provider<T> _settingsSelector<T>(T Function(AppSettings settings) select) {
+  return Provider<T>((Ref<T> ref) {
+    return ref.watch(appSettingsProvider.select(select));
+  });
+}
+
 final Provider<ThemeMode> appThemeModeProvider =
     Provider<ThemeMode>((Ref<ThemeMode> ref) {
   final AppThemePreference preference = ref.watch(
@@ -260,82 +239,37 @@ final Provider<ThemeMode> appThemeModeProvider =
   }
 });
 
-final Provider<bool> audioCuesEnabledProvider = Provider<bool>((Ref<bool> ref) {
-  return ref.watch(appSettingsProvider
-      .select((AppSettings value) => value.audioCuesEnabled));
-});
+final Provider<bool> audioCuesEnabledProvider =
+    _settingsSelector<bool>((AppSettings value) => value.audioCuesEnabled);
 
 final Provider<MetronomeClickSound> metronomeClickSoundProvider =
-    Provider<MetronomeClickSound>((Ref<MetronomeClickSound> ref) {
-  return ref.watch(appSettingsProvider
-      .select((AppSettings value) => value.metronomeClickSound));
-});
+    _settingsSelector<MetronomeClickSound>(
+        (AppSettings value) => value.metronomeClickSound);
 
-final Provider<double> metronomeVolumeProvider =
-    Provider<double>((Ref<double> ref) {
-  return ref.watch(
-      appSettingsProvider.select((AppSettings value) => value.metronomeVolume));
-});
+final Provider<double> audioVolumeProvider =
+    _settingsSelector<double>((AppSettings value) => value.audioVolume);
 
 final Provider<GetReadyDingSound> getReadyDingSoundProvider =
-    Provider<GetReadyDingSound>((Ref<GetReadyDingSound> ref) {
-  return ref.watch(appSettingsProvider
-      .select((AppSettings value) => value.getReadyDingSound));
-});
-
-final Provider<double> getReadyDingVolumeProvider =
-    Provider<double>((Ref<double> ref) {
-  return ref.watch(appSettingsProvider
-      .select((AppSettings value) => value.getReadyDingVolume));
-});
+    _settingsSelector<GetReadyDingSound>(
+        (AppSettings value) => value.getReadyDingSound);
 
 final Provider<CountdownSound> getReadyCountdownSoundProvider =
-    Provider<CountdownSound>((Ref<CountdownSound> ref) {
-  return ref.watch(appSettingsProvider
-      .select((AppSettings value) => value.getReadyCountdownSound));
-});
-
-final Provider<double> getReadyCountdownVolumeProvider =
-    Provider<double>((Ref<double> ref) {
-  return ref.watch(appSettingsProvider
-      .select((AppSettings value) => value.getReadyCountdownVolume));
-});
+    _settingsSelector<CountdownSound>(
+        (AppSettings value) => value.getReadyCountdownSound);
 
 final Provider<CountdownSound> exerciseCountdownSoundProvider =
-    Provider<CountdownSound>((Ref<CountdownSound> ref) {
-  return ref.watch(appSettingsProvider
-      .select((AppSettings value) => value.exerciseCountdownSound));
-});
-
-final Provider<double> exerciseCountdownVolumeProvider =
-    Provider<double>((Ref<double> ref) {
-  return ref.watch(appSettingsProvider
-      .select((AppSettings value) => value.exerciseCountdownVolume));
-});
+    _settingsSelector<CountdownSound>(
+        (AppSettings value) => value.exerciseCountdownSound);
 
 final Provider<ExerciseFinishedDingSound> exerciseFinishedDingSoundProvider =
-    Provider<ExerciseFinishedDingSound>((Ref<ExerciseFinishedDingSound> ref) {
-  return ref.watch(appSettingsProvider
-      .select((AppSettings value) => value.exerciseFinishedDingSound));
-});
-
-final Provider<double> exerciseFinishedDingVolumeProvider =
-    Provider<double>((Ref<double> ref) {
-  return ref.watch(appSettingsProvider
-      .select((AppSettings value) => value.exerciseFinishedDingVolume));
-});
+    _settingsSelector<ExerciseFinishedDingSound>(
+        (AppSettings value) => value.exerciseFinishedDingSound);
 
 final Provider<AppUnitSystem> appUnitSystemProvider =
-    Provider<AppUnitSystem>((Ref<AppUnitSystem> ref) {
-  return ref.watch(
-      appSettingsProvider.select((AppSettings value) => value.unitSystem));
-});
+    _settingsSelector<AppUnitSystem>((AppSettings value) => value.unitSystem);
 
 final Provider<int> streakWorkoutsPerWeekProvider =
-    Provider<int>((Ref<int> ref) {
-  return ref.watch(appSettingsProvider
-      .select((AppSettings value) => value.streakWorkoutsPerWeek));
-});
+    _settingsSelector<int>((AppSettings value) => value.streakWorkoutsPerWeek);
 
 class AppSettingsController extends Notifier<AppSettings> {
   static const String _themePreferenceKey = 'settings.theme_preference.v1';
@@ -345,23 +279,17 @@ class AppSettingsController extends Notifier<AppSettings> {
   static const String _audioCuesEnabledKey = 'settings.audio_cues_enabled.v1';
   static const String _metronomeClickSoundKey =
       'settings.metronome_click_sound.v1';
-  static const String _metronomeVolumeKey = 'settings.metronome_volume.v1';
+  static const String _audioVolumeKey = 'settings.audio_volume.v1';
+  static const String _legacyMetronomeVolumeKey =
+      'settings.metronome_volume.v1';
   static const String _getReadyCountdownSoundKey =
       'settings.get_ready_countdown_sound.v1';
-  static const String _getReadyCountdownVolumeKey =
-      'settings.get_ready_countdown_volume.v1';
   static const String _getReadyDingSoundKey =
       'settings.get_ready_ding_sound.v1';
-  static const String _getReadyDingVolumeKey =
-      'settings.get_ready_ding_volume.v1';
   static const String _exerciseCountdownSoundKey =
       'settings.exercise_countdown_sound.v1';
-  static const String _exerciseCountdownVolumeKey =
-      'settings.exercise_countdown_volume.v1';
   static const String _exerciseFinishedDingSoundKey =
       'settings.exercise_finished_ding_sound.v1';
-  static const String _exerciseFinishedDingVolumeKey =
-      'settings.exercise_finished_ding_volume.v1';
 
   @override
   AppSettings build() {
@@ -387,21 +315,12 @@ class AppSettingsController extends Notifier<AppSettings> {
         values: MetronomeClickSound.values,
         fallback: MetronomeClickSound.classic,
       ),
-      metronomeVolume: _readVolume(
-        prefs,
-        key: _metronomeVolumeKey,
-        fallback: 0.8,
-      ),
+      audioVolume: _readAudioVolume(prefs),
       getReadyCountdownSound: _readEnum(
         prefs,
         key: _getReadyCountdownSoundKey,
         values: CountdownSound.values,
         fallback: CountdownSound.click,
-      ),
-      getReadyCountdownVolume: _readVolume(
-        prefs,
-        key: _getReadyCountdownVolumeKey,
-        fallback: 0.8,
       ),
       getReadyDingSound: _readEnum(
         prefs,
@@ -409,32 +328,17 @@ class AppSettingsController extends Notifier<AppSettings> {
         values: GetReadyDingSound.values,
         fallback: GetReadyDingSound.classic,
       ),
-      getReadyDingVolume: _readVolume(
-        prefs,
-        key: _getReadyDingVolumeKey,
-        fallback: 0.8,
-      ),
       exerciseCountdownSound: _readEnum(
         prefs,
         key: _exerciseCountdownSoundKey,
         values: CountdownSound.values,
         fallback: CountdownSound.pulse,
       ),
-      exerciseCountdownVolume: _readVolume(
-        prefs,
-        key: _exerciseCountdownVolumeKey,
-        fallback: 0.8,
-      ),
       exerciseFinishedDingSound: _readEnum(
         prefs,
         key: _exerciseFinishedDingSoundKey,
         values: ExerciseFinishedDingSound.values,
         fallback: ExerciseFinishedDingSound.classic,
-      ),
-      exerciseFinishedDingVolume: _readVolume(
-        prefs,
-        key: _exerciseFinishedDingVolumeKey,
-        fallback: 0.8,
       ),
     );
   }
@@ -459,20 +363,22 @@ class AppSettingsController extends Notifier<AppSettings> {
   }
 
   Future<void> setStreakWorkoutsPerWeek(int value) async {
-    final int clamped = value.clamp(1, 14);
-    if (state.streakWorkoutsPerWeek == clamped) {
-      return;
-    }
-    state = state.copyWith(streakWorkoutsPerWeek: clamped);
-    await _prefs.setInt(_streakWorkoutsPerWeekKey, clamped);
+    await _setInt(
+      currentValue: state.streakWorkoutsPerWeek,
+      value: value,
+      key: _streakWorkoutsPerWeekKey,
+      normalize: (int value) => value.clamp(1, 14).toInt(),
+      update: (int value) => state.copyWith(streakWorkoutsPerWeek: value),
+    );
   }
 
   Future<void> setAudioCuesEnabled(bool value) async {
-    if (state.audioCuesEnabled == value) {
-      return;
-    }
-    state = state.copyWith(audioCuesEnabled: value);
-    await _prefs.setBool(_audioCuesEnabledKey, value);
+    await _setBool(
+      currentValue: state.audioCuesEnabled,
+      value: value,
+      key: _audioCuesEnabledKey,
+      update: (bool value) => state.copyWith(audioCuesEnabled: value),
+    );
   }
 
   Future<void> setMetronomeClickSound(MetronomeClickSound value) async {
@@ -485,12 +391,12 @@ class AppSettingsController extends Notifier<AppSettings> {
     );
   }
 
-  Future<void> setMetronomeVolume(double value) async {
+  Future<void> setAudioVolume(double value) async {
     await _setVolume(
-      currentValue: state.metronomeVolume,
+      currentValue: state.audioVolume,
       value: value,
-      key: _metronomeVolumeKey,
-      update: (double value) => state.copyWith(metronomeVolume: value),
+      key: _audioVolumeKey,
+      update: (double value) => state.copyWith(audioVolume: value),
     );
   }
 
@@ -504,15 +410,6 @@ class AppSettingsController extends Notifier<AppSettings> {
     );
   }
 
-  Future<void> setGetReadyCountdownVolume(double value) async {
-    await _setVolume(
-      currentValue: state.getReadyCountdownVolume,
-      value: value,
-      key: _getReadyCountdownVolumeKey,
-      update: (double value) => state.copyWith(getReadyCountdownVolume: value),
-    );
-  }
-
   Future<void> setGetReadyDingSound(GetReadyDingSound value) async {
     await _setEnum(
       currentValue: state.getReadyDingSound,
@@ -523,15 +420,6 @@ class AppSettingsController extends Notifier<AppSettings> {
     );
   }
 
-  Future<void> setGetReadyDingVolume(double value) async {
-    await _setVolume(
-      currentValue: state.getReadyDingVolume,
-      value: value,
-      key: _getReadyDingVolumeKey,
-      update: (double value) => state.copyWith(getReadyDingVolume: value),
-    );
-  }
-
   Future<void> setExerciseCountdownSound(CountdownSound value) async {
     await _setEnum(
       currentValue: state.exerciseCountdownSound,
@@ -539,15 +427,6 @@ class AppSettingsController extends Notifier<AppSettings> {
       key: _exerciseCountdownSoundKey,
       update: (CountdownSound value) =>
           state.copyWith(exerciseCountdownSound: value),
-    );
-  }
-
-  Future<void> setExerciseCountdownVolume(double value) async {
-    await _setVolume(
-      currentValue: state.exerciseCountdownVolume,
-      value: value,
-      key: _exerciseCountdownVolumeKey,
-      update: (double value) => state.copyWith(exerciseCountdownVolume: value),
     );
   }
 
@@ -562,36 +441,28 @@ class AppSettingsController extends Notifier<AppSettings> {
     );
   }
 
-  Future<void> setExerciseFinishedDingVolume(double value) async {
-    await _setVolume(
-      currentValue: state.exerciseFinishedDingVolume,
-      value: value,
-      key: _exerciseFinishedDingVolumeKey,
-      update: (double value) =>
-          state.copyWith(exerciseFinishedDingVolume: value),
-    );
-  }
-
   Future<void> applySettings(AppSettings settings) async {
     await setThemePreference(settings.themePreference);
     await setUnitSystem(settings.unitSystem);
     await setStreakWorkoutsPerWeek(settings.streakWorkoutsPerWeek);
     await setAudioCuesEnabled(settings.audioCuesEnabled);
     await setMetronomeClickSound(settings.metronomeClickSound);
-    await setMetronomeVolume(settings.metronomeVolume);
+    await setAudioVolume(settings.audioVolume);
     await setGetReadyCountdownSound(settings.getReadyCountdownSound);
-    await setGetReadyCountdownVolume(settings.getReadyCountdownVolume);
     await setGetReadyDingSound(settings.getReadyDingSound);
-    await setGetReadyDingVolume(settings.getReadyDingVolume);
     await setExerciseCountdownSound(settings.exerciseCountdownSound);
-    await setExerciseCountdownVolume(settings.exerciseCountdownVolume);
     await setExerciseFinishedDingSound(settings.exerciseFinishedDingSound);
-    await setExerciseFinishedDingVolume(settings.exerciseFinishedDingVolume);
   }
 
   int _readStreakWorkoutsPerWeek(SharedPreferences prefs) {
     final int raw = prefs.getInt(_streakWorkoutsPerWeekKey) ?? 3;
     return raw.clamp(1, 14);
+  }
+
+  double _readAudioVolume(SharedPreferences prefs) {
+    final double? raw = prefs.getDouble(_audioVolumeKey) ??
+        prefs.getDouble(_legacyMetronomeVolumeKey);
+    return (raw ?? 0.8).clamp(0, 1).toDouble();
   }
 
   T _readEnum<T extends Enum>(
@@ -612,15 +483,6 @@ class AppSettingsController extends Notifier<AppSettings> {
     return fallback;
   }
 
-  double _readVolume(
-    SharedPreferences prefs, {
-    required String key,
-    required double fallback,
-  }) {
-    final double? raw = prefs.getDouble(key);
-    return (raw ?? fallback).clamp(0, 1).toDouble();
-  }
-
   SharedPreferences get _prefs => ref.read(sharedPreferencesProvider);
 
   Future<void> _setEnum<T extends Enum>({
@@ -634,6 +496,34 @@ class AppSettingsController extends Notifier<AppSettings> {
     }
     state = update(value);
     await _prefs.setString(key, value.name);
+  }
+
+  Future<void> _setBool({
+    required bool currentValue,
+    required bool value,
+    required String key,
+    required AppSettings Function(bool value) update,
+  }) async {
+    if (currentValue == value) {
+      return;
+    }
+    state = update(value);
+    await _prefs.setBool(key, value);
+  }
+
+  Future<void> _setInt({
+    required int currentValue,
+    required int value,
+    required String key,
+    required int Function(int value) normalize,
+    required AppSettings Function(int value) update,
+  }) async {
+    final int normalized = normalize(value);
+    if (currentValue == normalized) {
+      return;
+    }
+    state = update(normalized);
+    await _prefs.setInt(key, normalized);
   }
 
   Future<void> _setVolume({

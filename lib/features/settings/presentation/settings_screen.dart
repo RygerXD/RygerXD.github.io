@@ -119,6 +119,11 @@ class SettingsScreen extends ConsumerWidget {
           value: settings.audioCuesEnabled,
           onChanged: controller.setAudioCuesEnabled,
         ),
+        _VolumeSetting(
+          title: 'Sound volume',
+          value: settings.audioVolume,
+          onChanged: controller.setAudioVolume,
+        ),
         Divider(),
         ListTile(
           title: const Text('Backup and restore'),
@@ -151,14 +156,9 @@ class SettingsScreen extends ConsumerWidget {
           onTest: () => unawaited(
             WorkoutAudio.playMetronomeClick(
               sound: settings.metronomeClickSound,
-              volume: settings.metronomeVolume,
+              volume: settings.audioVolume,
             ),
           ),
-        ),
-        _VolumeSetting(
-          title: 'Metronome volume',
-          value: settings.metronomeVolume,
-          onChanged: controller.setMetronomeVolume,
         ),
         const SizedBox(height: AppSpacing.md),
         _SoundSetting<CountdownSound>(
@@ -171,14 +171,9 @@ class SettingsScreen extends ConsumerWidget {
           onTest: () => unawaited(
             WorkoutAudio.playGetReadyCountdown(
               sound: settings.getReadyCountdownSound,
-              volume: settings.getReadyCountdownVolume,
+              volume: settings.audioVolume,
             ),
           ),
-        ),
-        _VolumeSetting(
-          title: 'Get ready countdown volume',
-          value: settings.getReadyCountdownVolume,
-          onChanged: controller.setGetReadyCountdownVolume,
         ),
         const SizedBox(height: AppSpacing.md),
         _SoundSetting<GetReadyDingSound>(
@@ -191,14 +186,9 @@ class SettingsScreen extends ConsumerWidget {
           onTest: () => unawaited(
             WorkoutAudio.playGetReadyDing(
               sound: settings.getReadyDingSound,
-              volume: settings.getReadyDingVolume,
+              volume: settings.audioVolume,
             ),
           ),
-        ),
-        _VolumeSetting(
-          title: 'Get ready volume',
-          value: settings.getReadyDingVolume,
-          onChanged: controller.setGetReadyDingVolume,
         ),
         const SizedBox(height: AppSpacing.md),
         _SoundSetting<CountdownSound>(
@@ -211,14 +201,9 @@ class SettingsScreen extends ConsumerWidget {
           onTest: () => unawaited(
             WorkoutAudio.playExerciseCountdown(
               sound: settings.exerciseCountdownSound,
-              volume: settings.exerciseCountdownVolume,
+              volume: settings.audioVolume,
             ),
           ),
-        ),
-        _VolumeSetting(
-          title: 'Exercise countdown volume',
-          value: settings.exerciseCountdownVolume,
-          onChanged: controller.setExerciseCountdownVolume,
         ),
         const SizedBox(height: AppSpacing.md),
         _SoundSetting<ExerciseFinishedDingSound>(
@@ -231,14 +216,9 @@ class SettingsScreen extends ConsumerWidget {
           onTest: () => unawaited(
             WorkoutAudio.playExerciseFinishedDing(
               sound: settings.exerciseFinishedDingSound,
-              volume: settings.exerciseFinishedDingVolume,
+              volume: settings.audioVolume,
             ),
           ),
-        ),
-        _VolumeSetting(
-          title: 'Exercise finished volume',
-          value: settings.exerciseFinishedDingVolume,
-          onChanged: controller.setExerciseFinishedDingVolume,
         ),
       ],
     );

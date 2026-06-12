@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:workout_app_rewrite/core/media/exercise_media_image.dart';
+import 'package:workout_app_rewrite/core/media/media_thumbnail.dart';
 import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
-import 'package:workout_app_rewrite/core/utils/fuzzy_search.dart';
+import 'package:workout_app_rewrite/features/exercises/application/exercise_catalog.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
 
 class ExistingMovePickerDialog extends StatefulWidget {
@@ -87,57 +87,15 @@ class _ExistingMovePickerDialogState extends State<ExistingMovePickerDialog> {
   }
 
   List<Exercise> _collectExercises() {
-    final Map<String, Exercise> exercisesByName = <String, Exercise>{};
-
-    for (final WorkoutPlan plan in widget.plans) {
-      final Map<String, Exercise> exerciseMap = <String, Exercise>{
-        for (final Exercise exercise in plan.exercises)
-          exercise.exerciseId: exercise,
-      };
-
-      for (final Workout workout in plan.workouts) {
-        for (final WorkoutSet set in workout.sets) {
-          for (final Move move in set.moves) {
-            final Exercise? exercise = exerciseMap[move.exerciseId];
-            if (exercise == null) {
-              continue;
-            }
-            final String key = exercise.name.trim().toLowerCase();
-            exercisesByName.putIfAbsent(key, () => exercise);
-          }
-        }
-      }
-    }
-
-    return exercisesByName.values.toList(growable: false)
-      ..sort((Exercise a, Exercise b) => a.name.compareTo(b.name));
+    return collectUniqueReferencedExercisesByName(widget.plans);
   }
 
   List<Exercise> _filteredExercises() {
-    final String query = _query.trim().toLowerCase();
-    if (query.isEmpty) {
-      return _exercises;
-    }
-
-    final List<_ScoredExercise> matches = <_ScoredExercise>[];
-    for (final Exercise exercise in _exercises) {
-      final int? score = fuzzyScore(exercise.name.toLowerCase(), query);
-      if (score != null) {
-        matches.add(_ScoredExercise(exercise: exercise, score: score));
-      }
-    }
-
-    matches.sort((_ScoredExercise a, _ScoredExercise b) {
-      final int scoreCompare = a.score.compareTo(b.score);
-      if (scoreCompare != 0) {
-        return scoreCompare;
-      }
-      return a.exercise.name.compareTo(b.exercise.name);
-    });
-
-    return matches
-        .map((_ScoredExercise match) => match.exercise)
-        .toList(growable: false);
+    return filterByFuzzyExerciseName<Exercise>(
+      entries: _exercises,
+      query: _query,
+      exerciseFor: (Exercise exercise) => exercise,
+    );
   }
 }
 
@@ -150,32 +108,14 @@ class _ExerciseThumbnail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (imageUrl == null) {
-      return const CircleAvatar(child: Icon(Icons.fitness_center));
-    }
-
-    return ClipOval(
-      child: ColoredBox(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        child: SizedBox.square(
-          dimension: 40,
-          child: ExerciseMediaImage(
-            source: imageUrl!,
-            fit: BoxFit.cover,
-            errorPlaceholder: const Icon(Icons.fitness_center),
-          ),
-        ),
-      ),
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    return MediaThumbnail(
+      imageUrl: imageUrl,
+      fallbackIcon: Icons.fitness_center,
+      backgroundColor: colors.surfaceContainerHighest,
+      iconColor: colors.onSurfaceVariant,
+      dimension: 40,
+      isCircular: true,
     );
   }
-}
-
-class _ScoredExercise {
-  const _ScoredExercise({
-    required this.exercise,
-    required this.score,
-  });
-
-  final Exercise exercise;
-  final int score;
 }

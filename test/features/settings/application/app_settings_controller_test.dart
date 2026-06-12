@@ -26,16 +26,12 @@ void main() {
       expect(settings.streakWorkoutsPerWeek, 3);
       expect(settings.audioCuesEnabled, isTrue);
       expect(settings.metronomeClickSound, MetronomeClickSound.classic);
-      expect(settings.metronomeVolume, 0.8);
+      expect(settings.audioVolume, 0.8);
       expect(settings.getReadyCountdownSound, CountdownSound.click);
-      expect(settings.getReadyCountdownVolume, 0.8);
       expect(settings.getReadyDingSound, GetReadyDingSound.classic);
-      expect(settings.getReadyDingVolume, 0.8);
       expect(settings.exerciseCountdownSound, CountdownSound.pulse);
-      expect(settings.exerciseCountdownVolume, 0.8);
       expect(settings.exerciseFinishedDingSound,
           ExerciseFinishedDingSound.classic);
-      expect(settings.exerciseFinishedDingVolume, 0.8);
       expect(container.read(appThemeModeProvider), ThemeMode.system);
     });
 
@@ -56,16 +52,12 @@ void main() {
       await controller.setStreakWorkoutsPerWeek(4);
       await controller.setAudioCuesEnabled(false);
       await controller.setMetronomeClickSound(MetronomeClickSound.bell);
-      await controller.setMetronomeVolume(0.35);
+      await controller.setAudioVolume(0.35);
       await controller.setGetReadyCountdownSound(CountdownSound.wood);
-      await controller.setGetReadyCountdownVolume(0.25);
       await controller.setGetReadyDingSound(GetReadyDingSound.bright);
-      await controller.setGetReadyDingVolume(0.45);
       await controller.setExerciseCountdownSound(CountdownSound.low);
-      await controller.setExerciseCountdownVolume(0.55);
       await controller
           .setExerciseFinishedDingSound(ExerciseFinishedDingSound.bell);
-      await controller.setExerciseFinishedDingVolume(0.65);
 
       final ProviderContainer reloadedContainer = ProviderContainer(
         overrides: <Override>[
@@ -81,20 +73,16 @@ void main() {
       expect(reloadedSettings.streakWorkoutsPerWeek, 4);
       expect(reloadedSettings.audioCuesEnabled, isFalse);
       expect(reloadedSettings.metronomeClickSound, MetronomeClickSound.bell);
-      expect(reloadedSettings.metronomeVolume, 0.35);
+      expect(reloadedSettings.audioVolume, 0.35);
       expect(reloadedSettings.getReadyCountdownSound, CountdownSound.wood);
-      expect(reloadedSettings.getReadyCountdownVolume, 0.25);
       expect(reloadedSettings.getReadyDingSound, GetReadyDingSound.bright);
-      expect(reloadedSettings.getReadyDingVolume, 0.45);
       expect(reloadedSettings.exerciseCountdownSound, CountdownSound.low);
-      expect(reloadedSettings.exerciseCountdownVolume, 0.55);
       expect(reloadedSettings.exerciseFinishedDingSound,
           ExerciseFinishedDingSound.bell);
-      expect(reloadedSettings.exerciseFinishedDingVolume, 0.65);
       expect(reloadedContainer.read(appThemeModeProvider), ThemeMode.dark);
     });
 
-    test('clamps saved metronome volume', () async {
+    test('clamps saved audio volume', () async {
       SharedPreferences.setMockInitialValues(<String, Object>{});
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       final ProviderContainer container = ProviderContainer(
@@ -106,48 +94,12 @@ void main() {
 
       final AppSettingsController controller =
           container.read(appSettingsProvider.notifier);
-      await controller.setMetronomeVolume(1.5);
+      await controller.setAudioVolume(1.5);
 
-      expect(container.read(appSettingsProvider).metronomeVolume, 1);
-    });
+      expect(container.read(appSettingsProvider).audioVolume, 1);
 
-    test('clamps saved get ready volume', () async {
-      SharedPreferences.setMockInitialValues(<String, Object>{});
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      final ProviderContainer container = ProviderContainer(
-        overrides: <Override>[
-          sharedPreferencesProvider.overrideWithValue(prefs),
-        ],
-      );
-      addTearDown(container.dispose);
-
-      final AppSettingsController controller =
-          container.read(appSettingsProvider.notifier);
-      await controller.setGetReadyDingVolume(-0.5);
-
-      expect(container.read(appSettingsProvider).getReadyDingVolume, 0);
-    });
-
-    test('clamps saved countdown and exercise finish volumes', () async {
-      SharedPreferences.setMockInitialValues(<String, Object>{});
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      final ProviderContainer container = ProviderContainer(
-        overrides: <Override>[
-          sharedPreferencesProvider.overrideWithValue(prefs),
-        ],
-      );
-      addTearDown(container.dispose);
-
-      final AppSettingsController controller =
-          container.read(appSettingsProvider.notifier);
-      await controller.setGetReadyCountdownVolume(1.5);
-      await controller.setExerciseCountdownVolume(-0.5);
-      await controller.setExerciseFinishedDingVolume(1.25);
-
-      final AppSettings settings = container.read(appSettingsProvider);
-      expect(settings.getReadyCountdownVolume, 1);
-      expect(settings.exerciseCountdownVolume, 0);
-      expect(settings.exerciseFinishedDingVolume, 1);
+      await controller.setAudioVolume(-0.5);
+      expect(container.read(appSettingsProvider).audioVolume, 0);
     });
 
     test('clamps saved streak workout goal', () async {
@@ -167,6 +119,21 @@ void main() {
 
       await controller.setStreakWorkoutsPerWeek(-2);
       expect(container.read(appSettingsProvider).streakWorkoutsPerWeek, 1);
+    });
+
+    test('loads legacy metronome volume as shared audio volume', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{
+        'settings.metronome_volume.v1': 0.45,
+      });
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final ProviderContainer container = ProviderContainer(
+        overrides: <Override>[
+          sharedPreferencesProvider.overrideWithValue(prefs),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      expect(container.read(appSettingsProvider).audioVolume, 0.45);
     });
   });
 }
