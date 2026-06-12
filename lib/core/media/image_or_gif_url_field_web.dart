@@ -23,6 +23,8 @@ class WebImageOrGifUrlField extends StatefulWidget {
 class _WebImageOrGifUrlFieldState extends State<WebImageOrGifUrlField> {
   static const String _viewType =
       'workout_app_rewrite/web_keyboard_media_editable';
+  static const String _acceptedImageMimeTypes =
+      'image/gif,image/png,image/jpeg,image/webp,image/*';
   static final Map<String, _WebImageOrGifUrlFieldState> _states =
       <String, _WebImageOrGifUrlFieldState>{};
 
@@ -32,6 +34,7 @@ class _WebImageOrGifUrlFieldState extends State<WebImageOrGifUrlField> {
 
   late final String _fieldId = 'media-field-${_nextFieldId++}';
   web.HTMLDivElement? _element;
+  web.HTMLInputElement? _fileInput;
 
   @override
   void initState() {
@@ -55,6 +58,7 @@ class _WebImageOrGifUrlFieldState extends State<WebImageOrGifUrlField> {
   @override
   void dispose() {
     widget.controller.removeListener(_syncElementFromController);
+    _fileInput?.remove();
     _states.remove(_fieldId);
     super.dispose();
   }
@@ -96,11 +100,15 @@ class _WebImageOrGifUrlFieldState extends State<WebImageOrGifUrlField> {
     element.textContent = initialText;
     element.setAttribute('role', 'textbox');
     element.setAttribute('aria-label', 'Image or GIF URL');
-    element.setAttribute('inputmode', 'text');
+    element.setAttribute('aria-multiline', 'true');
+    element.setAttribute('accept', _acceptedImageMimeTypes);
     element.setAttribute('autocapitalize', 'none');
     element.setAttribute('autocomplete', 'off');
+    element.setAttribute('autocorrect', 'off');
+    element.setAttribute('enterkeyhint', 'done');
     element.setAttribute('spellcheck', 'false');
     element.setAttribute('data-workout-media-field', fieldId);
+    element.setAttribute('data-accepted-mime-types', _acceptedImageMimeTypes);
     element.setAttribute('data-placeholder', hintText);
     element.style.cssText = '''
 box-sizing: border-box;
@@ -265,6 +273,29 @@ overflow-y: auto;
     reader.readAsDataURL(file);
   }
 
+  void _openImagePicker() {
+    _fileInput?.remove();
+    final web.HTMLInputElement input = web.HTMLInputElement();
+    _fileInput = input;
+    input.type = 'file';
+    input.accept = _acceptedImageMimeTypes;
+    input.style.display = 'none';
+    input.onchange = ((web.Event event) {
+      final web.File? file = input.files?.item(0);
+      input.remove();
+      if (_fileInput == input) {
+        _fileInput = null;
+      }
+      if (file == null || !file.type.toLowerCase().startsWith('image/')) {
+        widget.onMediaAdded(null);
+        return;
+      }
+      _readImageFile(file);
+    }).toJS;
+    web.document.body?.append(input);
+    input.click();
+  }
+
   String? _extractInsertedImageSource(web.HTMLDivElement element) {
     final web.HTMLImageElement? image =
         element.querySelector('img') as web.HTMLImageElement?;
@@ -290,11 +321,16 @@ overflow-y: auto;
   Widget build(BuildContext context) {
     return InputDecorator(
       isEmpty: widget.controller.text.isEmpty,
-      decoration: const InputDecoration(
+      decoration: InputDecoration(
         labelText: 'Image or GIF URL',
         floatingLabelBehavior: FloatingLabelBehavior.always,
-        border: OutlineInputBorder(),
-        prefixIcon: Icon(Icons.image_outlined),
+        border: const OutlineInputBorder(),
+        prefixIcon: const Icon(Icons.image_outlined),
+        suffixIcon: IconButton(
+          tooltip: 'Add image or GIF',
+          icon: const Icon(Icons.add_photo_alternate_outlined),
+          onPressed: _openImagePicker,
+        ),
       ),
       child: SizedBox(
         height: 72,
