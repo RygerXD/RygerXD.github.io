@@ -88,7 +88,10 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     final WorkoutPlan? plan = _findPlanById(plans, controller.planId);
     final WorkoutPhase displayPhase = _displayPhase(state);
     final Exercise? currentExercise = _resolveMoveExercise(currentMove, plan);
-    final String moveLabel = currentExercise?.name ?? currentMove.exerciseId;
+    final String moveLabel = _moveLabel(
+      currentExercise?.name ?? currentMove.exerciseId,
+      currentMove,
+    );
     final String setLabel =
         optionalText(currentSet.name) ?? 'Set ${state.setIndex + 1}';
     final String? moveMediaUrl = optionalText(currentExercise?.imageUrl);
@@ -102,7 +105,10 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
         : _resolveMoveExercise(nextMoveDuringRest, plan);
     final String? nextMoveLabelDuringRest = nextMoveDuringRest == null
         ? null
-        : nextExerciseDuringRest?.name ?? nextMoveDuringRest.exerciseId;
+        : _moveLabel(
+            nextExerciseDuringRest?.name ?? nextMoveDuringRest.exerciseId,
+            nextMoveDuringRest,
+          );
     final String? nextMoveMediaUrlDuringRest =
         optionalText(nextExerciseDuringRest?.imageUrl);
     final Color statusColor = _statusColor(displayPhase);
@@ -274,6 +280,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                                   Column(
                                     children: <Widget>[
                                       _StopwatchDisplay(
+                                        move: currentMove,
                                         seconds: _timerSeconds,
                                         color: statusColor,
                                         lastDuration:
@@ -1002,6 +1009,14 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     return null;
   }
 
+  String _moveLabel(String exerciseName, Move move) {
+    return switch (move.side) {
+      MoveSide.left => 'Left $exerciseName',
+      MoveSide.right => 'Right $exerciseName',
+      null => exerciseName,
+    };
+  }
+
   Move? _nextMoveDuringRest({
     required WorkoutPhase phase,
     required WorkoutState state,
@@ -1204,11 +1219,13 @@ class _TimerDisplay extends StatelessWidget {
 
 class _StopwatchDisplay extends StatelessWidget {
   const _StopwatchDisplay({
+    required this.move,
     required this.seconds,
     required this.color,
     this.lastDuration,
   });
 
+  final Move move;
   final int seconds;
   final Color color;
   final int? lastDuration;
@@ -1218,6 +1235,12 @@ class _StopwatchDisplay extends StatelessWidget {
     return Column(
       children: <Widget>[
         _TimerDisplay(seconds: seconds, color: color),
+        if (move.repeatEachSide || move.side != null)
+          const Text(
+            'Left and right sides',
+            style: TextStyle(color: Colors.grey, fontSize: 16),
+            textAlign: TextAlign.center,
+          ),
         if (lastDuration != null)
           Text(
             'Last: ${formatShortDuration(lastDuration!)}',
@@ -1246,9 +1269,11 @@ class _AdjustableRepDisplay extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: <Widget>[
-        const Text(
-          'ACTUAL REPS',
-          style: TextStyle(
+        Text(
+          move.repeatEachSide || move.side != null
+              ? 'ACTUAL REPS / SIDE'
+              : 'ACTUAL REPS',
+          style: const TextStyle(
               color: Colors.grey,
               letterSpacing: 1.2,
               fontWeight: FontWeight.bold),
@@ -1260,7 +1285,9 @@ class _AdjustableRepDisplay extends StatelessWidget {
               fontSize: 84, fontWeight: FontWeight.bold, color: Colors.blue),
         ),
         Text(
-          'Recommended: ${move.repCount ?? 0}',
+          move.repeatEachSide || move.side != null
+              ? 'Recommended: ${move.repCount ?? 0} / side'
+              : 'Recommended: ${move.repCount ?? 0}',
           style: const TextStyle(color: Colors.grey, fontSize: 16),
           textAlign: TextAlign.center,
         ),

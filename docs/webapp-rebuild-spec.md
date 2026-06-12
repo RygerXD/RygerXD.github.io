@@ -282,7 +282,7 @@ The web parser must reject invalid imports with user-visible validation messages
 - `duration` moves require `durationSeconds >= 1`.
 - `stopwatch` moves must not set `durationSeconds`.
 - `prepTimeSeconds` and `finishTimeSeconds` default to `0` and must be `>= 0` when present.
-- `repeatEachSide` is only valid on `duration` moves.
+- `repeatEachSide` is valid on `reps`, `duration`, and `stopwatch` moves.
 - `metronomeSpeed` is only valid on `duration` moves and must be between `20` and `300`.
 - `targetWeight`, if present, must be greater than `0`.
 - `targetWeightUnit`, if present, must be `kg` or `lb`; if target weight tracking is enabled in UI, both weight and unit must be saved.
@@ -720,7 +720,7 @@ Fields:
 - Cooldown Time seconds.
 - Rep Count for reps moves.
 - Duration seconds for duration moves.
-- Left and right sides switch for duration moves.
+- Left and right sides switch for every move type.
 - Metronome switch for duration moves.
 - BPM field when metronome is enabled.
 - Track weight switch.
@@ -756,9 +756,9 @@ Save behavior:
 - New exercise gets UUID `exerciseId` unless editing/reusing an existing exercise.
 - New move gets UUID `moveId` unless editing.
 - Exercise `description` is preserved when editing an existing exercise.
-- For `reps`, save `repCount`; do not save duration/metronome/repeatEachSide.
+- For `reps`, save `repCount` and optional `repeatEachSide`; do not save duration/metronome.
 - For `duration`, save `durationSeconds`, optional `repeatEachSide`, optional `metronomeSpeed`.
-- For `stopwatch`, do not save `durationSeconds`, metronome, or repeatEachSide.
+- For `stopwatch`, save optional `repeatEachSide`; do not save `durationSeconds` or metronome.
 - If tracking weight, save `targetWeight` and `targetWeightUnit`.
 
 Move summaries:
@@ -827,8 +827,9 @@ Workout estimates:
 - Set estimate is repeated for each loop.
 - Add restBetweenLoopsSeconds between loops only, not after final loop.
 - Reps and stopwatch active durations count as 0 for estimates.
-- Duration active time is `durationSeconds`, doubled when `repeatEachSide` is true.
-- Move estimate includes prep + active + cooldown.
+- Duration active time is `durationSeconds` per side when `repeatEachSide` is true.
+- Move estimate includes prep + active + cooldown for each runtime execution.
+- `repeatEachSide` creates two runtime executions: left and right.
 
 ### 9.10 Active Workout Player
 
@@ -894,8 +895,8 @@ Timer behavior:
 - A one-second ticker drives timers.
 - Paused state freezes timers and metronome.
 - Prep counts down from move `prepTimeSeconds`.
-- Duration move counts down from effective move duration.
-- Effective duration is doubled when `repeatEachSide` is true.
+- Duration move counts down from the per-execution duration.
+- `repeatEachSide` moves are expanded before playback into left and right runtime moves.
 - Stopwatch moves count up from 0.
 - Rest counts down from move `finishTimeSeconds`.
 - Rest-between-loops counts down from set `restBetweenLoopsSeconds`.
@@ -1376,10 +1377,10 @@ These are present in the Flutter app and should be handled intentionally:
 Cover:
 
 - Plan parser accepts valid schemaVersion 1 JSON.
-- Parser rejects invalid root, missing schemaVersion, unsupported schemaVersion, empty required strings, bad move references, invalid move type data, invalid metronome speed, invalid repeatEachSide usage, and invalid stopwatch duration.
+- Parser rejects invalid root, missing schemaVersion, unsupported schemaVersion, empty required strings, bad move references, invalid move type data, invalid metronome speed, and invalid stopwatch duration.
 - Workout estimate calculations:
   - prep + duration + cooldown.
-  - repeatEachSide doubles active duration.
+  - repeatEachSide creates left/right runtime moves and doubles total active duration for duration moves.
   - loop rest is counted between loops only.
   - reps and stopwatch active time are 0.
 - Move count across loops.

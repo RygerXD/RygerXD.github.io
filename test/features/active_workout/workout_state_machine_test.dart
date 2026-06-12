@@ -151,6 +151,51 @@ void main() {
       expect(machine.state.phase, WorkoutPhase.completed);
     });
 
+    test('expands each-side moves into left and right executions', () {
+      for (final MoveType type in MoveType.values) {
+        final WorkoutStateMachine machine = WorkoutStateMachine(
+          workout: _singleSetWorkout(
+            loopCount: 1,
+            moveType: type,
+            repeatEachSide: true,
+          ),
+        );
+        final List<Move> moves = machine.workout.sets.single.moves;
+
+        expect(moves, hasLength(2));
+        expect(moves.map((Move move) => move.side), <MoveSide>[
+          MoveSide.left,
+          MoveSide.right,
+        ]);
+        expect(moves.map((Move move) => move.repeatEachSide), <bool>[
+          false,
+          false,
+        ]);
+        expect(moves.map((Move move) => move.moveId), <String>[
+          'm1:left',
+          'm1:right',
+        ]);
+      }
+    });
+
+    test('runs left then right for each-side moves', () {
+      final WorkoutStateMachine machine = WorkoutStateMachine(
+        workout: _singleSetWorkout(loopCount: 1, repeatEachSide: true),
+      );
+      machine.start();
+      expect(machine.workout.sets.single.moves.first.side, MoveSide.left);
+
+      machine.startPrepNow();
+      machine.completeMove();
+      expect(machine.state.phase, WorkoutPhase.prep);
+      expect(machine.state.moveIndex, 1);
+      expect(machine.workout.sets.single.moves[1].side, MoveSide.right);
+
+      machine.startPrepNow();
+      machine.completeMove();
+      expect(machine.state.phase, WorkoutPhase.completed);
+    });
+
     test('uses move cooldown before advancing to the next move', () {
       final Workout workout = Workout(
         workoutId: 'w4',
@@ -212,6 +257,8 @@ Workout _singleSetWorkout({
   required int loopCount,
   int finishTimeSeconds = 0,
   int setCount = 1,
+  MoveType moveType = MoveType.reps,
+  bool repeatEachSide = false,
 }) {
   return Workout(
     workoutId: 'w1',
@@ -225,10 +272,12 @@ Workout _singleSetWorkout({
           Move(
             moveId: 'm1',
             exerciseId: 'e1',
-            type: MoveType.reps,
-            repCount: 10,
+            type: moveType,
+            repCount: moveType == MoveType.reps ? 10 : null,
+            durationSeconds: moveType == MoveType.duration ? 30 : null,
             finishTimeSeconds: finishTimeSeconds,
             setCount: setCount,
+            repeatEachSide: repeatEachSide,
           ),
         ],
       ),

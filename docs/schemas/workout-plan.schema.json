@@ -227,17 +227,8 @@
               "repCount"
             ],
             "not": {
-              "anyOf": [
-                {
-                  "required": [
-                    "metronomeSpeed"
-                  ]
-                },
-                {
-                  "required": [
-                    "repeatEachSide"
-                  ]
-                }
+              "required": [
+                "metronomeSpeed"
               ]
             }
           }
@@ -275,11 +266,6 @@
                 {
                   "required": [
                     "metronomeSpeed"
-                  ]
-                },
-                {
-                  "required": [
-                    "repeatEachSide"
                   ]
                 }
               ]

@@ -8,6 +8,7 @@ import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
 import 'package:workout_app_rewrite/features/edit_workout/presentation/add_move_dialog.dart';
 import 'package:workout_app_rewrite/features/edit_workout/presentation/existing_move_picker_dialog.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
+import 'package:workout_app_rewrite/features/workout_plan/domain/workout_metrics.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
 
 class EditWorkoutScreen extends ConsumerStatefulWidget {
@@ -507,19 +508,37 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
 
   String _moveSummary(Move move) {
     if (move.type == MoveType.reps) {
-      return '${move.repCount ?? 0} reps';
+      return _withTargetWeight(
+        _withEachSide('${move.repCount ?? 0} reps', move),
+        move,
+      );
     }
     if (move.type == MoveType.stopwatch) {
-      return 'Max time';
+      return _withTargetWeight(_withEachSide('Max time', move), move);
     }
     final int? bpm = move.metronomeSpeed;
-    final String durationSummary = move.repeatEachSide
-        ? '${move.durationSeconds ?? 0} seconds / side'
-        : '${move.durationSeconds ?? 0} seconds';
+    final String durationSummary =
+        _withEachSide('${move.durationSeconds ?? 0} seconds', move);
+    final String? targetWeight = formatMoveTargetWeight(move);
+    final String weightedSummary = targetWeight == null
+        ? durationSummary
+        : '$durationSummary, $targetWeight';
     if (bpm == null) {
-      return durationSummary;
+      return weightedSummary;
     }
-    return '$durationSummary - $bpm BPM';
+    return '$weightedSummary - $bpm BPM';
+  }
+
+  String _withTargetWeight(String summary, Move move) {
+    final String? targetWeight = formatMoveTargetWeight(move);
+    if (targetWeight == null) {
+      return summary;
+    }
+    return '$summary, $targetWeight';
+  }
+
+  String _withEachSide(String summary, Move move) {
+    return move.repeatEachSide ? '$summary / side' : summary;
   }
 }
 

@@ -18,11 +18,28 @@ Workout expandRepeatedMoveSets(Workout workout) {
 
 Iterable<Move> _expandedMoveSets(Move move) sync* {
   final int setCount = effectiveMoveSetCount(move);
-  yield move.copyWith(setCount: 1);
+  yield* _expandedMoveSides(move.copyWith(setCount: 1));
   for (int setNumber = 2; setNumber <= setCount; setNumber += 1) {
+    yield* _expandedMoveSides(
+      move.copyWith(
+        moveId: '${move.moveId}:set-$setNumber',
+        setCount: 1,
+      ),
+    );
+  }
+}
+
+Iterable<Move> _expandedMoveSides(Move move) sync* {
+  if (!move.repeatEachSide) {
+    yield move;
+    return;
+  }
+
+  for (final MoveSide side in MoveSide.values) {
     yield move.copyWith(
-      moveId: '${move.moveId}:set-$setNumber',
-      setCount: 1,
+      moveId: '${move.moveId}:${side.name}',
+      repeatEachSide: false,
+      side: side,
     );
   }
 }

@@ -17,7 +17,7 @@ void main() {
       );
 
       expect(effectiveMoveDurationSeconds(move), 60);
-      expect(estimateMoveSeconds(move), 75);
+      expect(estimateMoveSeconds(move), 90);
     });
 
     test('formats each-side duration targets', () {
@@ -30,6 +30,64 @@ void main() {
       );
 
       expect(formatMoveTarget(move), '00:30 / side');
+    });
+
+    test('formats each-side rep and stopwatch targets', () {
+      const Move repMove = Move(
+        moveId: 'm-1',
+        exerciseId: 'ex-1',
+        type: MoveType.reps,
+        repCount: 10,
+        repeatEachSide: true,
+      );
+      const Move stopwatchMove = Move(
+        moveId: 'm-2',
+        exerciseId: 'ex-2',
+        type: MoveType.stopwatch,
+        repeatEachSide: true,
+      );
+
+      expect(formatMoveTarget(repMove), '10 reps / side');
+      expect(formatMoveTarget(stopwatchMove), 'Max time / side');
+    });
+
+    test('counts each-side moves as two workout move executions', () {
+      const Workout workout = Workout(
+        workoutId: 'w-1',
+        title: 'Workout',
+        sets: <WorkoutSet>[
+          WorkoutSet(
+            setId: 's-1',
+            loopCount: 1,
+            restBetweenLoopsSeconds: 0,
+            moves: <Move>[
+              Move(
+                moveId: 'm-1',
+                exerciseId: 'ex-1',
+                type: MoveType.reps,
+                repCount: 10,
+                repeatEachSide: true,
+              ),
+            ],
+          ),
+        ],
+      );
+
+      expect(countWorkoutMoves(workout), 2);
+    });
+
+    test('formats tracked target weight with move targets', () {
+      const Move move = Move(
+        moveId: 'm-1',
+        exerciseId: 'ex-1',
+        type: MoveType.reps,
+        repCount: 10,
+        targetWeight: 70,
+        targetWeightUnit: WeightUnit.lb,
+      );
+
+      expect(formatMoveTarget(move), '10 reps, 70lbs');
+      expect(formatMoveTargetWeight(move), '70lbs');
     });
 
     test('counts move setCount in estimates and target labels', () {

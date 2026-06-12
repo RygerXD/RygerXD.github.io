@@ -320,7 +320,7 @@ List<_MoveSeries> _buildMoveSeries({
         if (points == null || points.isEmpty) {
           continue;
         }
-        final String moveName = _exerciseName(move.exerciseId, plan);
+        final String moveName = _moveName(move, plan);
         final String setName = set.name?.trim().isNotEmpty == true
             ? set.name!.trim()
             : 'Set ${setIndex + 1}';
@@ -356,6 +356,15 @@ String _exerciseName(String exerciseId, WorkoutPlan? plan) {
     }
   }
   return exerciseId;
+}
+
+String _moveName(Move move, WorkoutPlan? plan) {
+  final String exerciseName = _exerciseName(move.exerciseId, plan);
+  return switch (move.side) {
+    MoveSide.left => 'Left $exerciseName',
+    MoveSide.right => 'Right $exerciseName',
+    null => exerciseName,
+  };
 }
 
 DateTime _dateFromMs(int millisecondsSinceEpoch) {

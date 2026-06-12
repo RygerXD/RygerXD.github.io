@@ -119,11 +119,13 @@ Use exactly one of these `type` values for every move:
 `setCount` defaults to `1`; use a larger value when one exercise should be
 completed for multiple sets before moving to the next exercise.
 
-Use `repeatEachSide: true` on `duration` moves where the listed
-`durationSeconds` should run once for the left side and once for the right
-side. For example, a 30-second lunge with `repeatEachSide: true` counts as 60
-active seconds. Do not create separate left and right exercise entries for the
-same sided movement unless they need different names or settings.
+Use `repeatEachSide: true` on any move where the listed target should run once
+for the left side and once for the right side. For example, a 30-second lunge
+with `repeatEachSide: true` counts as 60 active seconds, and a 10-rep split
+squat displays as 10 reps per side. Do not create separate left and right
+exercise entries for the same sided movement unless they need different names
+or settings; the workout player expands the move into separate left and right
+executions.
 
 `metronomeSpeed` is only for `duration` moves and must be between `20` and
 `300`.
@@ -143,7 +145,6 @@ Before importing, check that:
 - If present, move `setCount` is at least `1`.
 - Reps moves have `repCount` of at least `1`.
 - Duration moves have `durationSeconds` of at least `1`.
-- `repeatEachSide` is only used on duration moves.
 - Stopwatch moves do not have `durationSeconds`.
 
 The canonical schema is in `docs/schemas/workout-plan.schema.json`, and a

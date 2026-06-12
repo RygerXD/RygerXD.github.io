@@ -273,7 +273,7 @@ void main() {
       );
     });
 
-    test('throws when repeatEachSide is set on a rep move', () {
+    test('parses each-side rep moves', () {
       final Map<String, dynamic> json = <String, dynamic>{
         'schemaVersion': 1,
         'planId': 'plan-1',
@@ -308,10 +308,54 @@ void main() {
         ],
       };
 
-      expect(
-        () => parser.parseFromJson(json),
-        throwsA(isA<WorkoutPlanParseException>()),
-      );
+      final WorkoutPlan parsed = parser.parseFromJson(json);
+      final Move move = parsed.workouts.single.sets.single.moves.single;
+
+      expect(move.type, MoveType.reps);
+      expect(move.repCount, 10);
+      expect(move.repeatEachSide, true);
+    });
+
+    test('parses each-side stopwatch moves', () {
+      final Map<String, dynamic> json = <String, dynamic>{
+        'schemaVersion': 1,
+        'planId': 'plan-1',
+        'name': 'Plan 1',
+        'exercises': <Map<String, dynamic>>[
+          <String, dynamic>{
+            'exerciseId': 'ex-1',
+            'name': 'Wall Sit',
+          },
+        ],
+        'workouts': <Map<String, dynamic>>[
+          <String, dynamic>{
+            'workoutId': 'w-1',
+            'title': 'Workout A',
+            'sets': <Map<String, dynamic>>[
+              <String, dynamic>{
+                'setId': 's-1',
+                'loopCount': 1,
+                'restBetweenLoopsSeconds': 30,
+                'moves': <Map<String, dynamic>>[
+                  <String, dynamic>{
+                    'moveId': 'm-1',
+                    'exerciseId': 'ex-1',
+                    'type': 'stopwatch',
+                    'repeatEachSide': true,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      final WorkoutPlan parsed = parser.parseFromJson(json);
+      final Move move = parsed.workouts.single.sets.single.moves.single;
+
+      expect(move.type, MoveType.stopwatch);
+      expect(move.durationSeconds, isNull);
+      expect(move.repeatEachSide, true);
     });
 
     test('throws when move setCount is less than one', () {

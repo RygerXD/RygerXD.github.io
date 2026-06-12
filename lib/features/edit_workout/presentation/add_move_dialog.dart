@@ -125,7 +125,7 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
           : null,
       finishTimeSeconds: _parseNonNegativeSeconds(_cooldownController.text, 0),
       setCount: widget.initialMove?.setCount ?? 1,
-      repeatEachSide: _moveType == MoveType.duration && _repeatEachSide,
+      repeatEachSide: _repeatEachSide,
       targetWeight: _hasWeight ? targetWeight : null,
       targetWeightUnit: _hasWeight ? _weightUnit : null,
       metronomeSpeed: metronomeSpeed,
@@ -221,9 +221,6 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
                 onSelectionChanged: (Set<MoveType> selected) {
                   setState(() {
                     _moveType = selected.first;
-                    if (_moveType != MoveType.duration) {
-                      _repeatEachSide = false;
-                    }
                   });
                 },
               ),
@@ -271,19 +268,6 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
                     const SizedBox(height: AppSpacing.md),
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('Left and right sides'),
-                      subtitle:
-                          const Text('Repeat this duration for each side'),
-                      value: _repeatEachSide,
-                      onChanged: (bool value) {
-                        setState(() {
-                          _repeatEachSide = value;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
                       title: const Text('Metronome'),
                       subtitle: const Text('Count one rep per beat'),
                       value: _useMetronome,
@@ -306,6 +290,18 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
                 )
               else
                 const SizedBox.shrink(),
+              const SizedBox(height: AppSpacing.md),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Left and right sides'),
+                subtitle: const Text('Repeat this move for each side'),
+                value: _repeatEachSide,
+                onChanged: (bool value) {
+                  setState(() {
+                    _repeatEachSide = value;
+                  });
+                },
+              ),
               const SizedBox(height: AppSpacing.md),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,

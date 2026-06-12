@@ -179,6 +179,63 @@ void main() {
     expect(capturedMove?.repeatEachSide, true);
   });
 
+  testWidgets('add move dialog saves each-side rep moves',
+      (WidgetTester tester) async {
+    Move? capturedMove;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (BuildContext context) {
+              return TextButton(
+                onPressed: () {
+                  showDialog<void>(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AddMoveDialog(
+                        onAdd: (Move move, Exercise exercise) {
+                          capturedMove = move;
+                        },
+                      );
+                    },
+                  );
+                },
+                child: const Text('Open'),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+
+    Finder dialogFields = find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.byType(TextField),
+    );
+    await tester.enterText(dialogFields.at(0), 'Split Squat');
+
+    await tester.ensureVisible(find.text('Left and right sides'));
+    await tester.tap(find.text('Left and right sides'));
+    await tester.pumpAndSettle();
+
+    dialogFields = find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.byType(TextField),
+    );
+    await tester.enterText(dialogFields.at(4), '12');
+    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Add'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Add'));
+    await tester.pumpAndSettle();
+
+    expect(capturedMove?.type, MoveType.reps);
+    expect(capturedMove?.repCount, 12);
+    expect(capturedMove?.repeatEachSide, true);
+  });
+
   testWidgets('saves image or GIF URL for new moves',
       (WidgetTester tester) async {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
@@ -337,6 +394,68 @@ void main() {
 
     expect(capturedMove?.targetWeight, 35);
     expect(capturedMove?.targetWeightUnit, WeightUnit.lb);
+  });
+
+  testWidgets('shows target weight on weighted move cards',
+      (WidgetTester tester) async {
+    final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
+    await repository.savePlan(
+      const WorkoutPlan(
+        schemaVersion: 1,
+        planId: 'plan-1',
+        name: 'Plan 1',
+        workouts: <Workout>[
+          Workout(
+            workoutId: 'workout-1',
+            title: 'Workout A',
+            sets: <WorkoutSet>[
+              WorkoutSet(
+                setId: 'set-1',
+                loopCount: 1,
+                restBetweenLoopsSeconds: 30,
+                moves: <Move>[
+                  Move(
+                    moveId: 'move-1',
+                    exerciseId: 'incline-bench',
+                    type: MoveType.reps,
+                    repCount: 10,
+                    setCount: 3,
+                    targetWeight: 70,
+                    targetWeightUnit: WeightUnit.lb,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+        exercises: <Exercise>[
+          Exercise(exerciseId: 'incline-bench', name: 'Incline Bench'),
+        ],
+      ),
+    );
+
+    final ProviderContainer container = ProviderContainer(
+      overrides: <Override>[
+        workoutRepositoryProvider.overrideWithValue(repository),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container.read(loadedWorkoutPlansNotifierProvider.future);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(
+          home: EditWorkoutScreen(planId: 'plan-1', workoutId: 'workout-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Incline Bench'), findsOneWidget);
+    expect(find.text('10 reps, 70lbs'), findsOneWidget);
+    expect(find.text('3 sets x 10 reps, 70lbs'), findsNothing);
+    expect(find.text('10 reps'), findsNothing);
   });
 
   testWidgets('add move dialog saves cooldown time',
@@ -518,12 +637,16 @@ void main() {
     await tester.enterText(dialogFields.at(0), 'Wall Sit');
     await tester.tap(find.text('Max Time'));
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Left and right sides'));
+    await tester.tap(find.text('Left and right sides'));
+    await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(FilledButton, 'Add'));
     await tester.pumpAndSettle();
 
     expect(capturedMove?.type, MoveType.stopwatch);
     expect(capturedMove?.repCount, isNull);
     expect(capturedMove?.durationSeconds, isNull);
+    expect(capturedMove?.repeatEachSide, true);
   });
 
   testWidgets('edits added moves', (WidgetTester tester) async {

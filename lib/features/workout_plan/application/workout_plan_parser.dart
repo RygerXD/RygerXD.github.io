@@ -229,13 +229,6 @@ class WorkoutPlanParser {
               message: 'time-based move requires durationSeconds >= 1.',
             ));
           }
-          if (move.repeatEachSide && move.type != MoveType.duration) {
-            issues.add(PlanValidationIssue(
-              path:
-                  '\$.workouts[$workoutIndex].sets[$setIndex].moves[$moveIndex].repeatEachSide',
-              message: 'repeatEachSide is only supported for time-based moves.',
-            ));
-          }
           if (move.metronomeSpeed != null) {
             if (move.type != MoveType.duration) {
               issues.add(PlanValidationIssue(

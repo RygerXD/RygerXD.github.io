@@ -1,3 +1,4 @@
+import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_runtime_expansion.dart';
 
@@ -23,11 +24,12 @@ int estimateSetSeconds(WorkoutSet set) {
 
 int estimateMoveSeconds(Move move) {
   final int activeSeconds = switch (move.type) {
-    MoveType.duration => effectiveMoveDurationSeconds(move),
+    MoveType.duration => move.durationSeconds ?? 0,
     MoveType.reps || MoveType.stopwatch => 0,
   };
   return (move.prepTimeSeconds + activeSeconds + move.finishTimeSeconds) *
-      effectiveMoveSetCount(move);
+      effectiveMoveSetCount(move) *
+      effectiveMoveSideCount(move);
 }
 
 int effectiveMoveDurationSeconds(Move move) {
@@ -38,6 +40,10 @@ int effectiveMoveDurationSeconds(Move move) {
   return move.repeatEachSide ? durationSeconds * 2 : durationSeconds;
 }
 
+int effectiveMoveSideCount(Move move) {
+  return move.repeatEachSide ? 2 : 1;
+}
+
 int countWorkoutMoves(Workout workout) {
   return workout.sets.fold<int>(
     0,
@@ -46,7 +52,8 @@ int countWorkoutMoves(Workout workout) {
         (set.moves.fold<int>(
               0,
               (int moveTotal, Move move) =>
-                  moveTotal + effectiveMoveSetCount(move),
+                  moveTotal +
+                  (effectiveMoveSetCount(move) * effectiveMoveSideCount(move)),
             ) *
             set.loopCount),
   );
@@ -88,15 +95,43 @@ String formatClockDuration(int seconds) {
 }
 
 String formatMoveTarget(Move move) {
-  final String target = switch (move.type) {
+  final String baseTarget = switch (move.type) {
     MoveType.reps => '${move.repCount ?? 0} reps',
-    MoveType.duration => move.repeatEachSide
-        ? '${formatShortClockDuration(move.durationSeconds ?? 0)} / side'
-        : formatShortClockDuration(move.durationSeconds ?? 0),
+    MoveType.duration => formatShortClockDuration(move.durationSeconds ?? 0),
     MoveType.stopwatch => 'Max time',
   };
+  final String target =
+      _withTargetWeight(_withEachSide(baseTarget, move), move);
   final int setCount = effectiveMoveSetCount(move);
   return setCount > 1 ? '$setCount sets x $target' : target;
+}
+
+String? formatMoveTargetWeight(Move move) {
+  final double? weight = move.targetWeight;
+  final WeightUnit? unit = move.targetWeightUnit;
+  if (weight == null || unit == null) {
+    return null;
+  }
+  return '${formatWeight(weight)}${_formatWeightUnit(unit)}';
+}
+
+String _withTargetWeight(String label, Move move) {
+  final String? targetWeight = formatMoveTargetWeight(move);
+  if (targetWeight == null) {
+    return label;
+  }
+  return '$label, $targetWeight';
+}
+
+String _withEachSide(String label, Move move) {
+  return move.repeatEachSide ? '$label / side' : label;
+}
+
+String _formatWeightUnit(WeightUnit unit) {
+  return switch (unit) {
+    WeightUnit.lb => 'lbs',
+    WeightUnit.kg => 'kg',
+  };
 }
 
 String formatShortClockDuration(int seconds) {

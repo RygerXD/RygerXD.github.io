@@ -9,6 +9,11 @@ enum WeightUnit {
   lb,
 }
 
+enum MoveSide {
+  left,
+  right,
+}
+
 const Object _copyWithUnset = Object();
 
 class Exercise {
@@ -72,6 +77,7 @@ class Move {
     this.finishTimeSeconds = 0,
     this.setCount = 1,
     this.repeatEachSide = false,
+    this.side,
     this.targetWeight,
     this.targetWeightUnit,
     this.metronomeSpeed,
@@ -86,6 +92,7 @@ class Move {
   final int finishTimeSeconds;
   final int setCount;
   final bool repeatEachSide;
+  final MoveSide? side;
   final double? targetWeight;
   final WeightUnit? targetWeightUnit;
   final int? metronomeSpeed;
@@ -100,6 +107,7 @@ class Move {
     int? finishTimeSeconds,
     int? setCount,
     bool? repeatEachSide,
+    Object? side = _copyWithUnset,
     Object? targetWeight = _copyWithUnset,
     Object? targetWeightUnit = _copyWithUnset,
     Object? metronomeSpeed = _copyWithUnset,
@@ -118,6 +126,7 @@ class Move {
       finishTimeSeconds: finishTimeSeconds ?? this.finishTimeSeconds,
       setCount: setCount ?? this.setCount,
       repeatEachSide: repeatEachSide ?? this.repeatEachSide,
+      side: identical(side, _copyWithUnset) ? this.side : side as MoveSide?,
       targetWeight: identical(targetWeight, _copyWithUnset)
           ? this.targetWeight
           : targetWeight as double?,

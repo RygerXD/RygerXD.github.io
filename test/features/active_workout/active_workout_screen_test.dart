@@ -78,6 +78,57 @@ void main() {
     expect(find.text('Last: 40 lb'), findsOneWidget);
     expect(find.text('COMPLETE'), findsOneWidget);
   });
+
+  testWidgets('weighted each-side moves show as left and right executions',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    final SharedPreferences preferences = await SharedPreferences.getInstance();
+    final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
+    final WorkoutPlan plan = _planWithMove(
+      const Move(
+        moveId: 'move-1',
+        exerciseId: 'exercise-1',
+        type: MoveType.reps,
+        repCount: 15,
+        repeatEachSide: true,
+        targetWeight: 35,
+        targetWeightUnit: WeightUnit.lb,
+      ),
+    );
+    await repository.savePlan(plan);
+
+    final ProviderContainer container = ProviderContainer(
+      overrides: <Override>[
+        workoutRepositoryProvider.overrideWithValue(repository),
+        sharedPreferencesProvider.overrideWithValue(preferences),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container.read(loadedWorkoutPlansNotifierProvider.future);
+    container
+        .read(activeWorkoutControllerProvider.notifier)
+        .startWithWorkout(plan.workouts.single, plan.planId);
+    container.read(activeWorkoutControllerProvider.notifier).startPrepNow();
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(home: ActiveWorkoutScreen()),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Left Pushups'), findsOneWidget);
+    expect(find.text('1 / 2 - Loop 1/1'), findsOneWidget);
+    expect(find.text('ACTUAL REPS / SIDE'), findsOneWidget);
+    expect(find.text('ACTUAL WEIGHT'), findsOneWidget);
+
+    container.read(activeWorkoutControllerProvider.notifier).completeMove();
+    await tester.pump();
+
+    expect(find.text('Next: Right Pushups'), findsOneWidget);
+    expect(find.text('2 / 2 - Loop 1/1'), findsOneWidget);
+  });
 }
 
 WorkoutPlan _planWithMove(Move move) {

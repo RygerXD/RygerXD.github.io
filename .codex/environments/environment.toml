@@ -19,3 +19,8 @@ command = "$env:DART_ANALYTICS_HOME='C:\\tmp\\dart-analytics'; & 'C:\\src\\flutt
 name = "Install Android (Keep Data)"
 icon = "run"
 command = "$env:DART_ANALYTICS_HOME='C:\\tmp\\dart-analytics'; & 'C:\\src\\flutter\\bin\\flutter.bat' build apk --debug; if ($LASTEXITCODE -eq 0) { & 'C:\\Android\\Sdk\\platform-tools\\adb.exe' -s 59061JEBF08244 install -r -t 'build\\app\\outputs\\flutter-apk\\app-debug.apk' }"
+
+[[actions]]
+name = "Push Site"
+icon = "run"
+command = "powershell -NoProfile -ExecutionPolicy Bypass -File .codex\\scripts\\push-site.ps1"
