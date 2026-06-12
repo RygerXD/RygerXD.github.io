@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:workout_app_rewrite/core/media/data_url_image.dart';
 
 class ExerciseMediaImage extends StatelessWidget {
   const ExerciseMediaImage({
@@ -17,20 +16,33 @@ class ExerciseMediaImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Widget? dataUrlImage = buildDataUrlImage(
-      source: source,
+    return Image.network(
+      source,
       fit: fit,
-      errorPlaceholder: errorPlaceholder,
+      loadingBuilder: (
+        BuildContext context,
+        Widget child,
+        ImageChunkEvent? loadingProgress,
+      ) {
+        return loadingProgress == null
+            ? child
+            : loadingPlaceholder ?? _defaultPlaceholder();
+      },
+      errorBuilder: (
+        BuildContext context,
+        Object error,
+        StackTrace? stackTrace,
+      ) {
+        return errorPlaceholder ?? _defaultPlaceholder();
+      },
     );
-    if (dataUrlImage != null) {
-      return dataUrlImage;
-    }
+  }
 
-    return buildNetworkMediaImage(
-      source: source,
-      fit: fit,
-      loadingPlaceholder: loadingPlaceholder,
-      errorPlaceholder: errorPlaceholder,
+  Widget _defaultPlaceholder() {
+    return const SizedBox(
+      width: 160,
+      height: 120,
+      child: Icon(Icons.broken_image_outlined, size: 40),
     );
   }
 }

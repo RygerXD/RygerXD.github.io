@@ -3,8 +3,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:workout_app_rewrite/core/media/image_or_gif_url_field_web_stub.dart'
-    if (dart.library.js_interop) 'package:workout_app_rewrite/core/media/image_or_gif_url_field_web.dart';
 import 'package:workout_app_rewrite/core/media/keyboard_media_saver.dart';
 
 class ImageOrGifUrlField extends StatefulWidget {
@@ -104,14 +102,6 @@ class _ImageOrGifUrlFieldState extends State<ImageOrGifUrlField> {
 
   @override
   Widget build(BuildContext context) {
-    if (kIsWeb) {
-      return WebImageOrGifUrlField(
-        controller: widget.controller,
-        hintText: widget.hintText,
-        onMediaAdded: _setMediaPath,
-      );
-    }
-
     if (_usesNativeAndroidField) {
       return InputDecorator(
         isEmpty: widget.controller.text.isEmpty,
