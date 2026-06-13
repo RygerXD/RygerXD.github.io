@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:workout_app_rewrite/core/media/media_thumbnail.dart';
 import 'package:workout_app_rewrite/features/workout_detail/presentation/workout_detail_screen.dart';
+import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_export_service.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
 import 'package:workout_app_rewrite/features/workout_plan/data/in_memory_workout_repository.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
@@ -11,6 +12,8 @@ void main() {
   testWidgets('shows workout image thumbnails inside a plan',
       (WidgetTester tester) async {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
+    final _FakeWorkoutPlanExportService exportService =
+        _FakeWorkoutPlanExportService();
     await repository.savePlan(
       const WorkoutPlan(
         schemaVersion: 1,
@@ -47,6 +50,7 @@ void main() {
     final ProviderContainer container = ProviderContainer(
       overrides: <Override>[
         workoutRepositoryProvider.overrideWithValue(repository),
+        workoutPlanExportServiceProvider.overrideWithValue(exportService),
       ],
     );
     addTearDown(container.dispose);
@@ -70,6 +74,17 @@ void main() {
     expect(find.text('1mins'), findsOneWidget);
     expect(find.text('1 Set'), findsOneWidget);
     expect(find.byTooltip('Export plan'), findsOneWidget);
+    expect(find.byTooltip('Export workout'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Export workout'));
+    await tester.pumpAndSettle();
+
+    expect(exportService.exportedPlan?.planId, 'plan-1-workout-1');
+    expect(exportService.exportedPlan?.name, 'Leg Day');
+    expect(exportService.exportedPlan?.workouts.single.workoutId, 'workout-1');
+    expect(
+        exportService.exportedPlan?.exercises.single.exerciseId, 'exercise-1');
+    expect(find.text('Exported Leg Day'), findsOneWidget);
   });
 
   testWidgets('confirms before deleting workout plan',
@@ -117,4 +132,17 @@ void main() {
 
     expect(await repository.getPlanById('plan-1'), isNotNull);
   });
+}
+
+class _FakeWorkoutPlanExportService extends WorkoutPlanExportService {
+  WorkoutPlan? exportedPlan;
+
+  @override
+  Future<WorkoutPlanExportResult?> exportPlan(WorkoutPlan plan) async {
+    exportedPlan = plan;
+    return const WorkoutPlanExportResult(
+      fileName: 'leg-day.workout.plan.json',
+      path: 'C:\\leg-day.workout.plan.json',
+    );
+  }
 }
