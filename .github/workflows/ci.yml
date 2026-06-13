@@ -8,11 +8,15 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    env:
+      FLUTTER_VERSION: '3.38.6'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
       - name: Flutter version
         run: flutter --version
       - name: Install dependencies
