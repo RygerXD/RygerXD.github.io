@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:workout_app_rewrite/core/media/exercise_media_image.dart';
 import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/active_workout_controller.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/metronome_audio.dart';
@@ -12,6 +11,8 @@ import 'package:workout_app_rewrite/features/active_workout/application/metronom
 import 'package:workout_app_rewrite/features/active_workout/application/rep_history_service.dart';
 import 'package:workout_app_rewrite/features/active_workout/domain/workout_phase.dart';
 import 'package:workout_app_rewrite/features/active_workout/domain/workout_state.dart';
+import 'package:workout_app_rewrite/features/active_workout/presentation/active_workout_controls.dart';
+import 'package:workout_app_rewrite/features/active_workout/presentation/active_workout_helpers.dart';
 import 'package:workout_app_rewrite/features/history/application/history_providers.dart';
 import 'package:workout_app_rewrite/features/settings/application/app_settings_controller.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
@@ -74,7 +75,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     if (workout == null ||
         currentSet == null ||
         currentMove == null ||
-        _isInactiveState(state)) {
+        isInactiveWorkoutState(state)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           _exitPlayer();
@@ -85,34 +86,34 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
 
     final List<WorkoutPlan>? plans =
         ref.watch(loadedWorkoutPlansNotifierProvider).valueOrNull;
-    final WorkoutPlan? plan = _findPlanById(plans, controller.planId);
-    final WorkoutPhase displayPhase = _displayPhase(state);
-    final Exercise? currentExercise = _resolveMoveExercise(currentMove, plan);
-    final String moveLabel = _moveLabel(
+    final WorkoutPlan? plan = findWorkoutPlanById(plans, controller.planId);
+    final WorkoutPhase displayPhase = displayWorkoutPhase(state);
+    final Exercise? currentExercise = resolveMoveExercise(currentMove, plan);
+    final String moveLabel = moveDisplayLabel(
       currentExercise?.name ?? currentMove.exerciseId,
       currentMove,
     );
     final String setLabel =
         optionalText(currentSet.name) ?? 'Set ${state.setIndex + 1}';
     final String? moveMediaUrl = optionalText(currentExercise?.imageUrl);
-    final Move? nextMoveDuringRest = _nextMoveDuringRest(
+    final Move? nextMoveDuringRest = nextMoveDuringRestPhase(
       phase: displayPhase,
       state: state,
       workout: workout,
     );
     final Exercise? nextExerciseDuringRest = nextMoveDuringRest == null
         ? null
-        : _resolveMoveExercise(nextMoveDuringRest, plan);
+        : resolveMoveExercise(nextMoveDuringRest, plan);
     final String? nextMoveLabelDuringRest = nextMoveDuringRest == null
         ? null
-        : _moveLabel(
+        : moveDisplayLabel(
             nextExerciseDuringRest?.name ?? nextMoveDuringRest.exerciseId,
             nextMoveDuringRest,
           );
     final String? nextMoveMediaUrlDuringRest =
         optionalText(nextExerciseDuringRest?.imageUrl);
-    final Color statusColor = _statusColor(displayPhase);
-    final String statusLabel = _statusLabel(displayPhase);
+    final Color statusColor = activeWorkoutPhaseColor(displayPhase);
+    final String statusLabel = activeWorkoutPhaseLabel(displayPhase);
     final bool isPaused = state.phase == WorkoutPhase.paused;
     final bool isPrep = displayPhase == WorkoutPhase.prep;
     final bool isRest = displayPhase == WorkoutPhase.restBetweenLoops ||
@@ -124,11 +125,8 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     return PopScope<Object?>(
       canPop: false,
       onPopInvokedWithResult: (bool didPop, Object? result) async {
-        if (didPop) {
-          return;
-        }
-        if (await _confirmExit() && mounted) {
-          _exitPlayer();
+        if (!didPop) {
+          await _confirmAndExit();
         }
       },
       child: Scaffold(
@@ -143,11 +141,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                   children: <Widget>[
                     IconButton(
                       icon: const Icon(Icons.close),
-                      onPressed: () async {
-                        if (await _confirmExit() && mounted) {
-                          _exitPlayer();
-                        }
-                      },
+                      onPressed: _confirmAndExit,
                     ),
                     Column(
                       children: <Widget>[
@@ -199,7 +193,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: <Widget>[
-                              _PhaseChip(
+                              ActivePhaseChip(
                                   label: statusLabel, color: statusColor),
                               const SizedBox(height: 24),
                               if (isPrep || isRest) ...<Widget>[
@@ -207,14 +201,14 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                                         ? moveMediaUrl
                                         : nextMoveMediaUrlDuringRest) !=
                                     null) ...<Widget>[
-                                  _MoveMedia(
+                                  ActiveMoveMedia(
                                     url: isPrep
                                         ? moveMediaUrl!
                                         : nextMoveMediaUrlDuringRest!,
                                   ),
                                   const SizedBox(height: 16),
                                 ],
-                                _TimerDisplay(
+                                ActiveTimerDisplay(
                                     seconds: _timerSeconds, color: statusColor),
                                 const SizedBox(height: 16),
                                 if (isPrep)
@@ -231,7 +225,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                                   ),
                               ] else if (isMove) ...<Widget>[
                                 if (moveMediaUrl != null) ...<Widget>[
-                                  _MoveMedia(url: moveMediaUrl),
+                                  ActiveMoveMedia(url: moveMediaUrl),
                                   const SizedBox(height: 16),
                                 ],
                                 Text(
@@ -245,13 +239,13 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                                 const SizedBox(height: 24),
                                 if (currentMove.type ==
                                     MoveType.duration) ...<Widget>[
-                                  _TimerDisplay(
+                                  ActiveTimerDisplay(
                                       seconds: _timerSeconds,
                                       color: statusColor),
                                   if (currentMove.metronomeSpeed !=
                                       null) ...<Widget>[
                                     const SizedBox(height: 8),
-                                    _MetronomeSummary(
+                                    ActiveMetronomeSummary(
                                       bpm: currentMove.metronomeSpeed!,
                                       estimatedReps:
                                           metronomeRepsForElapsedTime(
@@ -265,21 +259,16 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                                     ),
                                   ],
                                   if (hasTrackedWeight) ...<Widget>[
-                                    const SizedBox(height: 16),
-                                    _AdjustableWeightDisplay(
-                                      move: currentMove,
-                                      currentWeight: _currentWeight,
-                                      onWeightChanged: (double value) =>
-                                          setState(() => _currentWeight =
-                                              value.clamp(0, 9999).toDouble()),
-                                      lastWeight: _lastWeightForCurrentMove,
+                                    ..._weightControls(
+                                      currentMove,
+                                      topPadding: 16,
                                     ),
                                   ],
                                 ] else if (currentMove.type ==
                                     MoveType.stopwatch)
                                   Column(
                                     children: <Widget>[
-                                      _StopwatchDisplay(
+                                      ActiveStopwatchDisplay(
                                         move: currentMove,
                                         seconds: _timerSeconds,
                                         color: statusColor,
@@ -287,16 +276,9 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                                             _lastDurationForCurrentMove,
                                       ),
                                       if (hasTrackedWeight) ...<Widget>[
-                                        const SizedBox(height: 18),
-                                        _AdjustableWeightDisplay(
-                                          move: currentMove,
-                                          currentWeight: _currentWeight,
-                                          onWeightChanged: (double value) =>
-                                              setState(() => _currentWeight =
-                                                  value
-                                                      .clamp(0, 9999)
-                                                      .toDouble()),
-                                          lastWeight: _lastWeightForCurrentMove,
+                                        ..._weightControls(
+                                          currentMove,
+                                          topPadding: 18,
                                         ),
                                       ],
                                     ],
@@ -304,7 +286,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                                 else
                                   Column(
                                     children: <Widget>[
-                                      _AdjustableRepDisplay(
+                                      ActiveAdjustableRepDisplay(
                                         move: currentMove,
                                         currentReps: _currentReps,
                                         onRepsChanged: (int value) => setState(
@@ -312,16 +294,9 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                                         lastReps: _lastRepsForCurrentMove,
                                       ),
                                       if (hasTrackedWeight) ...<Widget>[
-                                        const SizedBox(height: 18),
-                                        _AdjustableWeightDisplay(
-                                          move: currentMove,
-                                          currentWeight: _currentWeight,
-                                          onWeightChanged: (double value) =>
-                                              setState(() => _currentWeight =
-                                                  value
-                                                      .clamp(0, 9999)
-                                                      .toDouble()),
-                                          lastWeight: _lastWeightForCurrentMove,
+                                        ..._weightControls(
+                                          currentMove,
+                                          topPadding: 18,
                                         ),
                                       ],
                                     ],
@@ -353,55 +328,35 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                       ),
                       const SizedBox(width: 16),
                       Expanded(
-                        child: ElevatedButton(
-                          onPressed:
-                              _isProcessing ? null : _completeCurrentMove,
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            backgroundColor: Colors.blue,
-                            foregroundColor: Colors.white,
-                          ),
-                          child: const Text('COMPLETE'),
+                        child: _primaryActionButton(
+                          label: 'COMPLETE',
+                          color: Colors.blue,
+                          onPressed: _completeCurrentMove,
                         ),
                       ),
                     ] else if (isRest)
                       Expanded(
-                        child: ElevatedButton(
-                          onPressed: _isProcessing
-                              ? null
-                              : () => _runGuarded(() {
-                                    if (displayPhase ==
-                                        WorkoutPhase.restBetweenLoops) {
-                                      controller.completeRestBetweenLoops();
-                                    } else {
-                                      controller.completeRest();
-                                    }
-                                  }),
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            backgroundColor: Colors.green,
-                            foregroundColor: Colors.white,
-                          ),
-                          child: Text(
-                            displayPhase == WorkoutPhase.rest
-                                ? 'SKIP COOLDOWN'
-                                : 'SKIP REST',
-                          ),
+                        child: _primaryActionButton(
+                          label: displayPhase == WorkoutPhase.rest
+                              ? 'SKIP COOLDOWN'
+                              : 'SKIP REST',
+                          color: Colors.green,
+                          onPressed: () => _runGuarded(() {
+                            if (displayPhase == WorkoutPhase.restBetweenLoops) {
+                              controller.completeRestBetweenLoops();
+                            } else {
+                              controller.completeRest();
+                            }
+                          }),
                         ),
                       )
                     else
                       Expanded(
-                        child: ElevatedButton(
-                          onPressed: _isProcessing
-                              ? null
-                              : () =>
-                                  _runGuarded(() => controller.startPrepNow()),
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            backgroundColor: Colors.orange,
-                            foregroundColor: Colors.white,
-                          ),
-                          child: const Text('START NOW'),
+                        child: _primaryActionButton(
+                          label: 'START NOW',
+                          color: Colors.orange,
+                          onPressed: () =>
+                              _runGuarded(() => controller.startPrepNow()),
                         ),
                       ),
                   ],
@@ -414,6 +369,44 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     );
   }
 
+  void _setCurrentWeight(double value) {
+    setState(() => _currentWeight = value.clamp(0, 9999).toDouble());
+  }
+
+  List<Widget> _weightControls(Move move, {required double topPadding}) {
+    return <Widget>[
+      SizedBox(height: topPadding),
+      ActiveAdjustableWeightDisplay(
+        move: move,
+        currentWeight: _currentWeight,
+        onWeightChanged: _setCurrentWeight,
+        lastWeight: _lastWeightForCurrentMove,
+      ),
+    ];
+  }
+
+  Widget _primaryActionButton({
+    required String label,
+    required Color color,
+    required VoidCallback onPressed,
+  }) {
+    return ElevatedButton(
+      onPressed: _isProcessing ? null : onPressed,
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        backgroundColor: color,
+        foregroundColor: Colors.white,
+      ),
+      child: Text(label),
+    );
+  }
+
+  Future<void> _confirmAndExit() async {
+    if (await _confirmExit() && mounted) {
+      _exitPlayer();
+    }
+  }
+
   void _startTicker() {
     _ticker?.cancel();
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) async {
@@ -422,13 +415,13 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       }
 
       final WorkoutState state = ref.read(activeWorkoutControllerProvider);
-      if (state.phase == WorkoutPhase.paused || _isInactiveState(state)) {
+      if (state.phase == WorkoutPhase.paused || isInactiveWorkoutState(state)) {
         return;
       }
 
       final Move? currentMove =
           ref.read(activeWorkoutControllerProvider.notifier).currentMove;
-      if (_displayPhase(state) == WorkoutPhase.move &&
+      if (displayWorkoutPhase(state) == WorkoutPhase.move &&
           currentMove?.type == MoveType.stopwatch) {
         setState(() {
           _timerSeconds += 1;
@@ -463,7 +456,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     _stopMetronome();
 
     final WorkoutState state = ref.read(activeWorkoutControllerProvider);
-    final WorkoutPhase displayPhase = _displayPhase(state);
+    final WorkoutPhase displayPhase = displayWorkoutPhase(state);
     final ActiveWorkoutController controller =
         ref.read(activeWorkoutControllerProvider.notifier);
 
@@ -498,60 +491,55 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     await SystemSound.play(SystemSoundType.alert);
   }
 
-  Future<void> _playGetReadyDing() async {
+  Future<void> _playConfiguredWorkoutAudio(
+    Future<void> Function(AppSettings settings) play,
+  ) async {
     final AppSettings settings = ref.read(appSettingsProvider);
     if (!settings.audioCuesEnabled) {
       return;
     }
-    await WorkoutAudio.playGetReadyDing(
-      sound: settings.getReadyDingSound,
-      volume: settings.audioVolume,
-    );
+    await play(settings);
   }
 
-  Future<void> _playGetReadyCountdownCue() async {
-    final AppSettings settings = ref.read(appSettingsProvider);
-    if (!settings.audioCuesEnabled) {
-      return;
-    }
-    await WorkoutAudio.playGetReadyCountdown(
-      sound: settings.getReadyCountdownSound,
-      volume: settings.audioVolume,
-    );
-  }
+  Future<void> _playGetReadyDing() =>
+      _playConfiguredWorkoutAudio((AppSettings settings) {
+        return WorkoutAudio.playGetReadyDing(
+          sound: settings.getReadyDingSound,
+          volume: settings.audioVolume,
+        );
+      });
 
-  Future<void> _playExerciseCountdownCue() async {
-    final AppSettings settings = ref.read(appSettingsProvider);
-    if (!settings.audioCuesEnabled) {
-      return;
-    }
-    await WorkoutAudio.playExerciseCountdown(
-      sound: settings.exerciseCountdownSound,
-      volume: settings.audioVolume,
-    );
-  }
+  Future<void> _playGetReadyCountdownCue() =>
+      _playConfiguredWorkoutAudio((AppSettings settings) {
+        return WorkoutAudio.playGetReadyCountdown(
+          sound: settings.getReadyCountdownSound,
+          volume: settings.audioVolume,
+        );
+      });
 
-  Future<void> _playExerciseFinishedDing() async {
-    final AppSettings settings = ref.read(appSettingsProvider);
-    if (!settings.audioCuesEnabled) {
-      return;
-    }
-    await WorkoutAudio.playExerciseFinishedDing(
-      sound: settings.exerciseFinishedDingSound,
-      volume: settings.audioVolume,
-    );
-  }
+  Future<void> _playExerciseCountdownCue() =>
+      _playConfiguredWorkoutAudio((AppSettings settings) {
+        return WorkoutAudio.playExerciseCountdown(
+          sound: settings.exerciseCountdownSound,
+          volume: settings.audioVolume,
+        );
+      });
 
-  Future<void> _playMetronomeTick() async {
-    final AppSettings settings = ref.read(appSettingsProvider);
-    if (!settings.audioCuesEnabled) {
-      return;
-    }
-    await WorkoutAudio.playMetronomeClick(
-      sound: settings.metronomeClickSound,
-      volume: settings.audioVolume,
-    );
-  }
+  Future<void> _playExerciseFinishedDing() =>
+      _playConfiguredWorkoutAudio((AppSettings settings) {
+        return WorkoutAudio.playExerciseFinishedDing(
+          sound: settings.exerciseFinishedDingSound,
+          volume: settings.audioVolume,
+        );
+      });
+
+  Future<void> _playMetronomeTick() =>
+      _playConfiguredWorkoutAudio((AppSettings settings) {
+        return WorkoutAudio.playMetronomeClick(
+          sound: settings.metronomeClickSound,
+          volume: settings.audioVolume,
+        );
+      });
 
   Future<void> _completeCurrentMove() {
     return _runGuarded(() async {
@@ -652,7 +640,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       return;
     }
 
-    if (_isInactiveState(next)) {
+    if (isInactiveWorkoutState(next)) {
       return;
     }
 
@@ -885,7 +873,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   }
 
   void _syncMetronomeWithState(WorkoutState state, {required Move move}) {
-    final WorkoutPhase displayPhase = _displayPhase(state);
+    final WorkoutPhase displayPhase = displayWorkoutPhase(state);
     final int? bpm = move.metronomeSpeed;
     final bool shouldPlay = state.phase != WorkoutPhase.paused &&
         displayPhase == WorkoutPhase.move &&
@@ -921,7 +909,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
             ref.read(activeWorkoutControllerProvider.notifier).currentMove;
         if (currentMove == null ||
             currentState.phase == WorkoutPhase.paused ||
-            _displayPhase(currentState) != WorkoutPhase.move ||
+            displayWorkoutPhase(currentState) != WorkoutPhase.move ||
             currentMove.moveId != move.moveId ||
             currentMove.metronomeSpeed != bpm) {
           _stopMetronome();
@@ -940,22 +928,17 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   }
 
   void _playGetReadyCountdownCueIfNeeded(WorkoutState state, int seconds) {
-    if (_displayPhase(state) != WorkoutPhase.prep ||
-        seconds < 1 ||
-        seconds > 3) {
-      return;
-    }
-
     final Move? currentMove =
         ref.read(activeWorkoutControllerProvider.notifier).currentMove;
-    final String countdownKey =
-        '${state.setIndex}:${state.loopIndex}:${state.moveIndex}:${currentMove?.moveId}:$seconds';
-    if (_lastGetReadyCountdownKey == countdownKey) {
-      return;
-    }
-
-    _lastGetReadyCountdownKey = countdownKey;
-    unawaited(_playGetReadyCountdownCue());
+    _playCountdownCueIfNeeded(
+      state,
+      currentMove: currentMove,
+      seconds: seconds,
+      phase: WorkoutPhase.prep,
+      lastKey: _lastGetReadyCountdownKey,
+      rememberKey: (String key) => _lastGetReadyCountdownKey = key,
+      playCue: _playGetReadyCountdownCue,
+    );
   }
 
   void _playExerciseCountdownCueIfNeeded(
@@ -963,141 +946,43 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     required Move? currentMove,
     required int seconds,
   }) {
-    if (_displayPhase(state) != WorkoutPhase.move ||
-        currentMove?.type != MoveType.duration ||
+    _playCountdownCueIfNeeded(
+      state,
+      currentMove: currentMove,
+      seconds: seconds,
+      phase: WorkoutPhase.move,
+      moveMatches: (Move? move) => move?.type == MoveType.duration,
+      lastKey: _lastExerciseCountdownKey,
+      rememberKey: (String key) => _lastExerciseCountdownKey = key,
+      playCue: _playExerciseCountdownCue,
+    );
+  }
+
+  void _playCountdownCueIfNeeded(
+    WorkoutState state, {
+    required Move? currentMove,
+    required int seconds,
+    required WorkoutPhase phase,
+    required String? lastKey,
+    required ValueChanged<String> rememberKey,
+    required Future<void> Function() playCue,
+    bool Function(Move? move)? moveMatches,
+  }) {
+    if (displayWorkoutPhase(state) != phase ||
         seconds < 1 ||
-        seconds > 3) {
+        seconds > 3 ||
+        (moveMatches != null && !moveMatches(currentMove))) {
       return;
     }
 
     final String countdownKey =
         '${state.setIndex}:${state.loopIndex}:${state.moveIndex}:${currentMove?.moveId}:$seconds';
-    if (_lastExerciseCountdownKey == countdownKey) {
+    if (lastKey == countdownKey) {
       return;
     }
 
-    _lastExerciseCountdownKey = countdownKey;
-    unawaited(_playExerciseCountdownCue());
-  }
-
-  WorkoutPhase _displayPhase(WorkoutState state) {
-    if (state.phase == WorkoutPhase.paused) {
-      return state.pausedFrom ?? WorkoutPhase.move;
-    }
-    return state.phase;
-  }
-
-  bool _isInactiveState(WorkoutState state) {
-    return state.phase == WorkoutPhase.idle;
-  }
-
-  WorkoutPlan? _findPlanById(List<WorkoutPlan>? plans, String? planId) {
-    if (plans == null || planId == null) {
-      return null;
-    }
-    for (final WorkoutPlan plan in plans) {
-      if (plan.planId == planId) {
-        return plan;
-      }
-    }
-    return null;
-  }
-
-  Exercise? _resolveMoveExercise(Move move, WorkoutPlan? plan) {
-    if (plan == null) {
-      return null;
-    }
-    for (final Exercise exercise in plan.exercises) {
-      if (exercise.exerciseId == move.exerciseId) {
-        return exercise;
-      }
-    }
-    return null;
-  }
-
-  String _moveLabel(String exerciseName, Move move) {
-    return switch (move.side) {
-      MoveSide.left => 'Left $exerciseName',
-      MoveSide.right => 'Right $exerciseName',
-      null => exerciseName,
-    };
-  }
-
-  Move? _nextMoveDuringRest({
-    required WorkoutPhase phase,
-    required WorkoutState state,
-    required Workout workout,
-  }) {
-    if (phase == WorkoutPhase.restBetweenLoops) {
-      return _moveAt(
-        workout: workout,
-        setIndex: state.setIndex,
-        moveIndex: state.moveIndex,
-      );
-    }
-    if (phase != WorkoutPhase.rest) {
-      return null;
-    }
-
-    final WorkoutSet? currentSet = _setAt(workout, state.setIndex);
-    if (currentSet == null) {
-      return null;
-    }
-
-    final int nextMoveIndex = state.moveIndex + 1;
-    if (nextMoveIndex < currentSet.moves.length) {
-      return currentSet.moves[nextMoveIndex];
-    }
-    if (state.loopIndex + 1 < currentSet.loopCount) {
-      return currentSet.moves.isEmpty ? null : currentSet.moves.first;
-    }
-    return _moveAt(
-      workout: workout,
-      setIndex: state.setIndex + 1,
-      moveIndex: 0,
-    );
-  }
-
-  WorkoutSet? _setAt(Workout workout, int setIndex) {
-    if (setIndex < 0 || setIndex >= workout.sets.length) {
-      return null;
-    }
-    return workout.sets[setIndex];
-  }
-
-  Move? _moveAt({
-    required Workout workout,
-    required int setIndex,
-    required int moveIndex,
-  }) {
-    final WorkoutSet? set = _setAt(workout, setIndex);
-    if (set == null || moveIndex < 0 || moveIndex >= set.moves.length) {
-      return null;
-    }
-    return set.moves[moveIndex];
-  }
-
-  Color _statusColor(WorkoutPhase phase) {
-    if (phase == WorkoutPhase.prep) {
-      return Colors.orange;
-    }
-    if (phase == WorkoutPhase.restBetweenLoops || phase == WorkoutPhase.rest) {
-      return Colors.green;
-    }
-    return Colors.blue;
-  }
-
-  String _statusLabel(WorkoutPhase phase) {
-    if (phase == WorkoutPhase.prep) {
-      return 'Get Ready';
-    }
-    if (phase == WorkoutPhase.rest) {
-      return 'Cooldown';
-    }
-    if (phase == WorkoutPhase.restBetweenLoops) {
-      return 'Rest';
-    }
-    return 'Go!';
+    rememberKey(countdownKey);
+    unawaited(playCue());
   }
 
   Future<bool> _confirmExit() async {
@@ -1149,370 +1034,5 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       return;
     }
     context.go('/dashboard');
-  }
-}
-
-class _MoveMedia extends StatelessWidget {
-  const _MoveMedia({
-    required this.url,
-  });
-
-  final String url;
-
-  @override
-  Widget build(BuildContext context) {
-    final Size screenSize = MediaQuery.sizeOf(context);
-    final ColorScheme colorScheme = Theme.of(context).colorScheme;
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        constraints: BoxConstraints(
-          maxWidth: screenSize.width * 0.9,
-          maxHeight: screenSize.height * 0.24,
-        ),
-        color: colorScheme.surfaceContainerHighest,
-        child: ExerciseMediaImage(
-          source: url,
-          fit: BoxFit.contain,
-          loadingPlaceholder: const SizedBox(
-            width: 160,
-            height: 120,
-            child: Center(child: CircularProgressIndicator()),
-          ),
-          errorPlaceholder: const SizedBox(
-            width: 160,
-            height: 120,
-            child: Icon(Icons.broken_image_outlined, size: 40),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TimerDisplay extends StatelessWidget {
-  const _TimerDisplay({
-    required this.seconds,
-    required this.color,
-  });
-
-  final int seconds;
-  final Color color;
-
-  String _formatTime(int totalSeconds) {
-    if (totalSeconds < 0) {
-      return '00:00';
-    }
-    final int minutes = totalSeconds ~/ 60;
-    final int remainingSeconds = totalSeconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      _formatTime(seconds),
-      style: TextStyle(
-        fontSize: 120,
-        fontWeight: FontWeight.bold,
-        color: color,
-        fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
-      ),
-    );
-  }
-}
-
-class _StopwatchDisplay extends StatelessWidget {
-  const _StopwatchDisplay({
-    required this.move,
-    required this.seconds,
-    required this.color,
-    this.lastDuration,
-  });
-
-  final Move move;
-  final int seconds;
-  final Color color;
-  final int? lastDuration;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: <Widget>[
-        _TimerDisplay(seconds: seconds, color: color),
-        if (move.repeatEachSide || move.side != null)
-          const Text(
-            'Left and right sides',
-            style: TextStyle(color: Colors.grey, fontSize: 16),
-            textAlign: TextAlign.center,
-          ),
-        if (lastDuration != null)
-          Text(
-            'Last: ${formatShortDuration(lastDuration!)}',
-            style: const TextStyle(color: Colors.orange, fontSize: 16),
-            textAlign: TextAlign.center,
-          ),
-      ],
-    );
-  }
-}
-
-class _AdjustableRepDisplay extends StatelessWidget {
-  const _AdjustableRepDisplay({
-    required this.move,
-    required this.currentReps,
-    required this.onRepsChanged,
-    this.lastReps,
-  });
-
-  final Move move;
-  final int currentReps;
-  final ValueChanged<int> onRepsChanged;
-  final int? lastReps;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: <Widget>[
-        Text(
-          move.repeatEachSide || move.side != null
-              ? 'ACTUAL REPS / SIDE'
-              : 'ACTUAL REPS',
-          style: const TextStyle(
-              color: Colors.grey,
-              letterSpacing: 1.2,
-              fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          currentReps.toString(),
-          style: const TextStyle(
-              fontSize: 84, fontWeight: FontWeight.bold, color: Colors.blue),
-        ),
-        Text(
-          move.repeatEachSide || move.side != null
-              ? 'Recommended: ${move.repCount ?? 0} / side'
-              : 'Recommended: ${move.repCount ?? 0}',
-          style: const TextStyle(color: Colors.grey, fontSize: 16),
-          textAlign: TextAlign.center,
-        ),
-        if (lastReps != null)
-          Text(
-            'Last: $lastReps',
-            style: const TextStyle(color: Colors.orange, fontSize: 16),
-            textAlign: TextAlign.center,
-          ),
-        const SizedBox(height: 16),
-        Wrap(
-          alignment: WrapAlignment.center,
-          spacing: 12,
-          runSpacing: 12,
-          children: <Widget>[
-            _RepButton(
-              label: '-10',
-              icon: Icons.keyboard_double_arrow_left,
-              onPressed: currentReps >= 10
-                  ? () => onRepsChanged(currentReps - 10)
-                  : null,
-              color: Colors.blue,
-            ),
-            _RepButton(
-              label: '-1',
-              icon: Icons.remove,
-              onPressed:
-                  currentReps > 0 ? () => onRepsChanged(currentReps - 1) : null,
-              color: Colors.blue,
-            ),
-            _RepButton(
-              label: '+1',
-              icon: Icons.add,
-              onPressed: () => onRepsChanged(currentReps + 1),
-              color: Colors.blue,
-            ),
-            _RepButton(
-              label: '+10',
-              icon: Icons.keyboard_double_arrow_right,
-              onPressed: () => onRepsChanged(currentReps + 10),
-              color: Colors.blue,
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _AdjustableWeightDisplay extends StatelessWidget {
-  const _AdjustableWeightDisplay({
-    required this.move,
-    required this.currentWeight,
-    required this.onWeightChanged,
-    this.lastWeight,
-  });
-
-  final Move move;
-  final double currentWeight;
-  final ValueChanged<double> onWeightChanged;
-  final double? lastWeight;
-
-  @override
-  Widget build(BuildContext context) {
-    final String unit = move.targetWeightUnit?.name ?? '';
-
-    return Column(
-      children: <Widget>[
-        const Text(
-          'ACTUAL WEIGHT',
-          style: TextStyle(
-              color: Colors.grey,
-              letterSpacing: 1.2,
-              fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          '${formatWeight(currentWeight)} $unit',
-          style: const TextStyle(
-              fontSize: 42, fontWeight: FontWeight.bold, color: Colors.teal),
-        ),
-        Text(
-          'Recommended: ${formatWeight(move.targetWeight ?? 0)} $unit',
-          style: const TextStyle(color: Colors.grey, fontSize: 16),
-          textAlign: TextAlign.center,
-        ),
-        if (lastWeight != null)
-          Text(
-            'Last: ${formatWeight(lastWeight!)} $unit',
-            style: const TextStyle(color: Colors.orange, fontSize: 16),
-            textAlign: TextAlign.center,
-          ),
-        const SizedBox(height: 12),
-        Wrap(
-          alignment: WrapAlignment.center,
-          spacing: 12,
-          runSpacing: 12,
-          children: <Widget>[
-            _RepButton(
-              label: '-5',
-              icon: Icons.keyboard_double_arrow_left,
-              onPressed: currentWeight >= 5
-                  ? () => onWeightChanged(currentWeight - 5)
-                  : null,
-              color: Colors.teal,
-            ),
-            _RepButton(
-              label: '-1',
-              icon: Icons.remove,
-              onPressed: currentWeight >= 1
-                  ? () => onWeightChanged(currentWeight - 1)
-                  : null,
-              color: Colors.teal,
-            ),
-            _RepButton(
-              label: '+1',
-              icon: Icons.add,
-              onPressed: () => onWeightChanged(currentWeight + 1),
-              color: Colors.teal,
-            ),
-            _RepButton(
-              label: '+5',
-              icon: Icons.keyboard_double_arrow_right,
-              onPressed: () => onWeightChanged(currentWeight + 5),
-              color: Colors.teal,
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _MetronomeSummary extends StatelessWidget {
-  const _MetronomeSummary({
-    required this.bpm,
-    required this.estimatedReps,
-  });
-
-  final int bpm;
-  final int estimatedReps;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      '$bpm BPM - $estimatedReps reps',
-      style: const TextStyle(color: Colors.grey, fontSize: 16),
-      textAlign: TextAlign.center,
-    );
-  }
-}
-
-class _RepButton extends StatelessWidget {
-  const _RepButton({
-    required this.label,
-    required this.icon,
-    required this.color,
-    this.onPressed,
-  });
-
-  final String label;
-  final IconData icon;
-  final Color color;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 58,
-      child: Column(
-        children: <Widget>[
-          IconButton.filled(
-            onPressed: onPressed,
-            icon: Icon(icon, size: 28),
-            style: IconButton.styleFrom(
-              backgroundColor: color.withValues(alpha: 0.2),
-              foregroundColor: color,
-              fixedSize: const Size.square(56),
-              padding: EdgeInsets.zero,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(color: color.withValues(alpha: 0.7), fontSize: 12),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PhaseChip extends StatelessWidget {
-  const _PhaseChip({
-    required this.label,
-    required this.color,
-  });
-
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
-      ),
-      child: Text(
-        label.toUpperCase(),
-        style: TextStyle(
-          color: color,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 1.2,
-        ),
-      ),
-    );
   }
 }

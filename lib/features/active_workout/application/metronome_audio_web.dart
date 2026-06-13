@@ -84,208 +84,117 @@ Future<void> _playProfile({
 }
 
 class _SoundProfile {
-  const _SoundProfile({
-    required this.duration,
-    required this.tones,
-  });
+  const _SoundProfile(this.duration, this.tones);
 
   final double duration;
   final List<_Tone> tones;
 
-  static _SoundProfile forMetronomeClick(MetronomeClickSound sound) {
-    switch (sound) {
-      case MetronomeClickSound.classic:
-        return const _SoundProfile(
-          duration: 0.055,
-          tones: <_Tone>[
-            _Tone(frequency: 1800, type: 'square'),
-            _Tone(frequency: 3600, type: 'sine'),
-          ],
-        );
-      case MetronomeClickSound.sharp:
-        return const _SoundProfile(
-          duration: 0.035,
-          tones: <_Tone>[
-            _Tone(frequency: 3200, type: 'square'),
-            _Tone(frequency: 6400, type: 'sine'),
-          ],
-        );
-      case MetronomeClickSound.low:
-        return const _SoundProfile(
-          duration: 0.075,
-          tones: <_Tone>[
-            _Tone(frequency: 800, type: 'square'),
-            _Tone(frequency: 1600, type: 'triangle'),
-          ],
-        );
-      case MetronomeClickSound.bell:
-        return const _SoundProfile(
-          duration: 0.11,
-          tones: <_Tone>[
-            _Tone(frequency: 1320, type: 'sine'),
-            _Tone(frequency: 2640, type: 'sine'),
-          ],
-        );
-    }
-  }
+  static _SoundProfile forMetronomeClick(MetronomeClickSound sound) =>
+      switch (sound) {
+        MetronomeClickSound.classic => const _SoundProfile(0.055, <_Tone>[
+            _Tone(1800, 'square'),
+            _Tone(3600, 'sine'),
+          ]),
+        MetronomeClickSound.sharp => const _SoundProfile(0.035, <_Tone>[
+            _Tone(3200, 'square'),
+            _Tone(6400, 'sine'),
+          ]),
+        MetronomeClickSound.low => const _SoundProfile(0.075, <_Tone>[
+            _Tone(800, 'square'),
+            _Tone(1600, 'triangle'),
+          ]),
+        MetronomeClickSound.bell => const _SoundProfile(0.11, <_Tone>[
+            _Tone(1320, 'sine'),
+            _Tone(2640, 'sine'),
+          ]),
+      };
 
-  static _SoundProfile forGetReadyDing(GetReadyDingSound sound) {
-    switch (sound) {
-      case GetReadyDingSound.classic:
-        return const _SoundProfile(
-          duration: 0.18,
-          tones: <_Tone>[
-            _Tone(frequency: 1046, type: 'sine'),
-            _Tone(frequency: 2093, type: 'sine'),
-          ],
-        );
-      case GetReadyDingSound.bright:
-        return const _SoundProfile(
-          duration: 0.16,
-          tones: <_Tone>[
-            _Tone(frequency: 1568, type: 'sine'),
-            _Tone(frequency: 3136, type: 'sine'),
-          ],
-        );
-      case GetReadyDingSound.soft:
-        return const _SoundProfile(
-          duration: 0.22,
-          tones: <_Tone>[
-            _Tone(frequency: 740, type: 'triangle'),
-            _Tone(frequency: 1480, type: 'sine'),
-          ],
-        );
-      case GetReadyDingSound.bell:
-        return const _SoundProfile(
-          duration: 0.24,
-          tones: <_Tone>[
-            _Tone(frequency: 1320, type: 'sine'),
-            _Tone(frequency: 1976, type: 'sine'),
-            _Tone(frequency: 2637, type: 'sine'),
-          ],
-        );
-    }
-  }
+  static _SoundProfile forGetReadyDing(GetReadyDingSound sound) =>
+      switch (sound) {
+        GetReadyDingSound.classic => const _SoundProfile(0.18, <_Tone>[
+            _Tone(1046, 'sine'),
+            _Tone(2093, 'sine'),
+          ]),
+        GetReadyDingSound.bright => const _SoundProfile(0.16, <_Tone>[
+            _Tone(1568, 'sine'),
+            _Tone(3136, 'sine'),
+          ]),
+        GetReadyDingSound.soft => const _SoundProfile(0.22, <_Tone>[
+            _Tone(740, 'triangle'),
+            _Tone(1480, 'sine'),
+          ]),
+        GetReadyDingSound.bell => const _SoundProfile(0.24, <_Tone>[
+            _Tone(1320, 'sine'),
+            _Tone(1976, 'sine'),
+            _Tone(2637, 'sine'),
+          ]),
+      };
 
-  static _SoundProfile forGetReadyCountdown(CountdownSound sound) {
-    switch (sound) {
-      case CountdownSound.click:
-        return const _SoundProfile(
-          duration: 0.05,
-          tones: <_Tone>[
-            _Tone(frequency: 1200, type: 'square'),
-            _Tone(frequency: 2400, type: 'sine'),
-          ],
-        );
-      case CountdownSound.pulse:
-        return const _SoundProfile(
-          duration: 0.07,
-          tones: <_Tone>[
-            _Tone(frequency: 980, type: 'triangle'),
-            _Tone(frequency: 1960, type: 'sine'),
-          ],
-        );
-      case CountdownSound.wood:
-        return const _SoundProfile(
-          duration: 0.045,
-          tones: <_Tone>[
-            _Tone(frequency: 720, type: 'square'),
-            _Tone(frequency: 1080, type: 'triangle'),
-          ],
-        );
-      case CountdownSound.low:
-        return const _SoundProfile(
-          duration: 0.08,
-          tones: <_Tone>[
-            _Tone(frequency: 520, type: 'square'),
-            _Tone(frequency: 1040, type: 'triangle'),
-          ],
-        );
-    }
-  }
+  static _SoundProfile forGetReadyCountdown(CountdownSound sound) =>
+      switch (sound) {
+        CountdownSound.click => const _SoundProfile(0.05, <_Tone>[
+            _Tone(1200, 'square'),
+            _Tone(2400, 'sine'),
+          ]),
+        CountdownSound.pulse => const _SoundProfile(0.07, <_Tone>[
+            _Tone(980, 'triangle'),
+            _Tone(1960, 'sine'),
+          ]),
+        CountdownSound.wood => const _SoundProfile(0.045, <_Tone>[
+            _Tone(720, 'square'),
+            _Tone(1080, 'triangle'),
+          ]),
+        CountdownSound.low => const _SoundProfile(0.08, <_Tone>[
+            _Tone(520, 'square'),
+            _Tone(1040, 'triangle'),
+          ]),
+      };
 
-  static _SoundProfile forExerciseCountdown(CountdownSound sound) {
-    switch (sound) {
-      case CountdownSound.click:
-        return const _SoundProfile(
-          duration: 0.06,
-          tones: <_Tone>[
-            _Tone(frequency: 1450, type: 'square'),
-            _Tone(frequency: 2900, type: 'sine'),
-          ],
-        );
-      case CountdownSound.pulse:
-        return const _SoundProfile(
-          duration: 0.09,
-          tones: <_Tone>[
-            _Tone(frequency: 880, type: 'sawtooth'),
-            _Tone(frequency: 1760, type: 'triangle'),
-          ],
-        );
-      case CountdownSound.wood:
-        return const _SoundProfile(
-          duration: 0.055,
-          tones: <_Tone>[
-            _Tone(frequency: 640, type: 'square'),
-            _Tone(frequency: 960, type: 'triangle'),
-          ],
-        );
-      case CountdownSound.low:
-        return const _SoundProfile(
-          duration: 0.09,
-          tones: <_Tone>[
-            _Tone(frequency: 420, type: 'square'),
-            _Tone(frequency: 840, type: 'triangle'),
-          ],
-        );
-    }
-  }
+  static _SoundProfile forExerciseCountdown(CountdownSound sound) =>
+      switch (sound) {
+        CountdownSound.click => const _SoundProfile(0.06, <_Tone>[
+            _Tone(1450, 'square'),
+            _Tone(2900, 'sine'),
+          ]),
+        CountdownSound.pulse => const _SoundProfile(0.09, <_Tone>[
+            _Tone(880, 'sawtooth'),
+            _Tone(1760, 'triangle'),
+          ]),
+        CountdownSound.wood => const _SoundProfile(0.055, <_Tone>[
+            _Tone(640, 'square'),
+            _Tone(960, 'triangle'),
+          ]),
+        CountdownSound.low => const _SoundProfile(0.09, <_Tone>[
+            _Tone(420, 'square'),
+            _Tone(840, 'triangle'),
+          ]),
+      };
 
   static _SoundProfile forExerciseFinishedDing(
-      ExerciseFinishedDingSound sound) {
-    switch (sound) {
-      case ExerciseFinishedDingSound.classic:
-        return const _SoundProfile(
-          duration: 0.2,
-          tones: <_Tone>[
-            _Tone(frequency: 1175, type: 'sine'),
-            _Tone(frequency: 2350, type: 'sine'),
-          ],
-        );
-      case ExerciseFinishedDingSound.bright:
-        return const _SoundProfile(
-          duration: 0.18,
-          tones: <_Tone>[
-            _Tone(frequency: 1760, type: 'sine'),
-            _Tone(frequency: 3520, type: 'sine'),
-          ],
-        );
-      case ExerciseFinishedDingSound.soft:
-        return const _SoundProfile(
-          duration: 0.24,
-          tones: <_Tone>[
-            _Tone(frequency: 660, type: 'triangle'),
-            _Tone(frequency: 1320, type: 'sine'),
-          ],
-        );
-      case ExerciseFinishedDingSound.bell:
-        return const _SoundProfile(
-          duration: 0.28,
-          tones: <_Tone>[
-            _Tone(frequency: 1480, type: 'sine'),
-            _Tone(frequency: 2220, type: 'sine'),
-            _Tone(frequency: 2960, type: 'sine'),
-          ],
-        );
-    }
-  }
+          ExerciseFinishedDingSound sound) =>
+      switch (sound) {
+        ExerciseFinishedDingSound.classic => const _SoundProfile(0.2, <_Tone>[
+            _Tone(1175, 'sine'),
+            _Tone(2350, 'sine'),
+          ]),
+        ExerciseFinishedDingSound.bright => const _SoundProfile(0.18, <_Tone>[
+            _Tone(1760, 'sine'),
+            _Tone(3520, 'sine'),
+          ]),
+        ExerciseFinishedDingSound.soft => const _SoundProfile(0.24, <_Tone>[
+            _Tone(660, 'triangle'),
+            _Tone(1320, 'sine'),
+          ]),
+        ExerciseFinishedDingSound.bell => const _SoundProfile(0.28, <_Tone>[
+            _Tone(1480, 'sine'),
+            _Tone(2220, 'sine'),
+            _Tone(2960, 'sine'),
+          ]),
+      };
 }
 
 class _Tone {
-  const _Tone({
-    required this.frequency,
-    required this.type,
-  });
+  const _Tone(this.frequency, this.type);
 
   final double frequency;
   final String type;

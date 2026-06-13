@@ -7,93 +7,57 @@ Future<void> playMetronomeClick({
   required MetronomeClickSound sound,
   required double volume,
 }) async {
-  try {
-    await _channel.invokeMethod<void>(
-      'playClick',
-      <String, Object>{
-        'sound': sound.name,
-        'volume': volume,
-      },
-    );
-  } on MissingPluginException {
-    await SystemSound.play(SystemSoundType.click);
-  } on PlatformException {
-    await SystemSound.play(SystemSoundType.click);
-  }
+  await _invokeSound('playClick', sound, volume, SystemSoundType.click);
 }
 
 Future<void> playGetReadyDing({
   required GetReadyDingSound sound,
   required double volume,
 }) async {
-  try {
-    await _channel.invokeMethod<void>(
-      'playGetReadyDing',
-      <String, Object>{
-        'sound': sound.name,
-        'volume': volume,
-      },
-    );
-  } on MissingPluginException {
-    await SystemSound.play(SystemSoundType.alert);
-  } on PlatformException {
-    await SystemSound.play(SystemSoundType.alert);
-  }
+  await _invokeSound('playGetReadyDing', sound, volume, SystemSoundType.alert);
 }
 
 Future<void> playGetReadyCountdown({
   required CountdownSound sound,
   required double volume,
 }) async {
-  try {
-    await _channel.invokeMethod<void>(
-      'playGetReadyCountdown',
-      <String, Object>{
-        'sound': sound.name,
-        'volume': volume,
-      },
-    );
-  } on MissingPluginException {
-    await SystemSound.play(SystemSoundType.click);
-  } on PlatformException {
-    await SystemSound.play(SystemSoundType.click);
-  }
+  await _invokeSound(
+      'playGetReadyCountdown', sound, volume, SystemSoundType.click);
 }
 
 Future<void> playExerciseCountdown({
   required CountdownSound sound,
   required double volume,
 }) async {
-  try {
-    await _channel.invokeMethod<void>(
-      'playExerciseCountdown',
-      <String, Object>{
-        'sound': sound.name,
-        'volume': volume,
-      },
-    );
-  } on MissingPluginException {
-    await SystemSound.play(SystemSoundType.click);
-  } on PlatformException {
-    await SystemSound.play(SystemSoundType.click);
-  }
+  await _invokeSound(
+      'playExerciseCountdown', sound, volume, SystemSoundType.click);
 }
 
 Future<void> playExerciseFinishedDing({
   required ExerciseFinishedDingSound sound,
   required double volume,
 }) async {
+  await _invokeSound(
+      'playExerciseFinishedDing', sound, volume, SystemSoundType.alert);
+}
+
+Future<void> _invokeSound(
+  String method,
+  Enum sound,
+  double volume,
+  SystemSoundType fallback,
+) async {
   try {
     await _channel.invokeMethod<void>(
-      'playExerciseFinishedDing',
+      method,
       <String, Object>{
         'sound': sound.name,
         'volume': volume,
       },
     );
   } on MissingPluginException {
-    await SystemSound.play(SystemSoundType.alert);
+    await SystemSound.play(fallback);
   } on PlatformException {
-    await SystemSound.play(SystemSoundType.alert);
+    await SystemSound.play(fallback);
   }
 }

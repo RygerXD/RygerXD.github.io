@@ -8,81 +8,59 @@ class WorkoutAudio {
     required MetronomeClickSound sound,
     required double volume,
   }) async {
-    if (volume <= 0) {
-      return;
-    }
-
-    await platform.playMetronomeClick(
-      sound: sound,
-      volume: volume.clamp(0, 1).toDouble(),
-    );
+    await _play(
+        volume,
+        (double volume) =>
+            platform.playMetronomeClick(sound: sound, volume: volume));
   }
 
   static Future<void> playGetReadyDing({
     required GetReadyDingSound sound,
     required double volume,
   }) async {
-    if (volume <= 0) {
-      return;
-    }
-
-    await platform.playGetReadyDing(
-      sound: sound,
-      volume: volume.clamp(0, 1).toDouble(),
-    );
+    await _play(
+        volume,
+        (double volume) =>
+            platform.playGetReadyDing(sound: sound, volume: volume));
   }
 
   static Future<void> playGetReadyCountdown({
     required CountdownSound sound,
     required double volume,
   }) async {
-    if (volume <= 0) {
-      return;
-    }
-
-    await platform.playGetReadyCountdown(
-      sound: sound,
-      volume: volume.clamp(0, 1).toDouble(),
-    );
+    await _play(
+        volume,
+        (double volume) =>
+            platform.playGetReadyCountdown(sound: sound, volume: volume));
   }
 
   static Future<void> playExerciseCountdown({
     required CountdownSound sound,
     required double volume,
   }) async {
-    if (volume <= 0) {
-      return;
-    }
-
-    await platform.playExerciseCountdown(
-      sound: sound,
-      volume: volume.clamp(0, 1).toDouble(),
-    );
+    await _play(
+        volume,
+        (double volume) =>
+            platform.playExerciseCountdown(sound: sound, volume: volume));
   }
 
   static Future<void> playExerciseFinishedDing({
     required ExerciseFinishedDingSound sound,
     required double volume,
   }) async {
+    await _play(
+        volume,
+        (double volume) =>
+            platform.playExerciseFinishedDing(sound: sound, volume: volume));
+  }
+
+  static Future<void> _play(
+    double volume,
+    Future<void> Function(double volume) play,
+  ) async {
     if (volume <= 0) {
       return;
     }
-
-    await platform.playExerciseFinishedDing(
-      sound: sound,
-      volume: volume.clamp(0, 1).toDouble(),
-    );
-  }
-}
-
-class MetronomeAudio {
-  static Future<void> playClick({
-    required MetronomeClickSound sound,
-    required double volume,
-  }) async {
-    await WorkoutAudio.playMetronomeClick(
-      sound: sound,
-      volume: volume,
-    );
+    await play(volume.clamp(0, 1).toDouble());
   }
 }

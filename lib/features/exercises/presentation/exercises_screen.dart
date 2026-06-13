@@ -155,8 +155,6 @@ class _ExerciseCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final Exercise exercise = entry.exercise;
     final ColorScheme colors = Theme.of(context).colorScheme;
-    final String moveCount =
-        '${entry.moveCount} ${entry.moveCount == 1 ? 'move' : 'moves'}';
 
     return Card(
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -185,15 +183,6 @@ class _ExerciseCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w800,
-                          ),
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      moveCount,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: colors.onSurfaceVariant,
                           ),
                     ),
                     if (exercise.description != null) ...<Widget>[

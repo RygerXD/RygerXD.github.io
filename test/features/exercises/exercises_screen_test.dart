@@ -77,7 +77,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Push Up'), findsOneWidget);
-    expect(find.text('1 move'), findsNWidgets(2));
+    expect(find.text('1 move'), findsNothing);
     expect(find.text('1 move across 1 plan'), findsNothing);
     expect(find.text('Squat'), findsOneWidget);
     expect(find.text('Old Deleted Workout Exercise'), findsNothing);
@@ -87,7 +87,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Push Up'), findsOneWidget);
-    expect(find.text('1 move'), findsOneWidget);
+    expect(find.text('1 move'), findsNothing);
     expect(find.text('Squat'), findsNothing);
 
     await tester.tap(find.text('Push Up'));
