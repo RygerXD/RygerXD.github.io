@@ -16,6 +16,7 @@ final NotifierProvider<ActiveWorkoutController, WorkoutState>
 class ActiveWorkoutController extends Notifier<WorkoutState> {
   WorkoutStateMachine? _machine;
   String? _planId;
+  WorkoutPlan? _planSnapshot;
   String? _sessionId;
   DateTime? _startedAt;
 
@@ -50,8 +51,13 @@ class ActiveWorkoutController extends Notifier<WorkoutState> {
     return const WorkoutState.idle();
   }
 
-  void startWithWorkout(Workout workout, String planId) {
+  void startWithWorkout(
+    Workout workout,
+    String planId, {
+    WorkoutPlan? planSnapshot,
+  }) {
     _planId = planId;
+    _planSnapshot = planSnapshot;
     _sessionId = const Uuid().v4();
     _startedAt = DateTime.now();
 
@@ -78,6 +84,7 @@ class ActiveWorkoutController extends Notifier<WorkoutState> {
   void abandon() {
     final WorkoutStateMachine? machine = _machine;
     final String? planId = _planId;
+    final WorkoutPlan? planSnapshot = _planSnapshot;
     final String? sessionId = _sessionId;
     final DateTime? startedAt = _startedAt;
     _run((WorkoutStateMachine m) => m.abandon());
@@ -88,6 +95,7 @@ class ActiveWorkoutController extends Notifier<WorkoutState> {
       _saveSession(
           machine: machine,
           planId: planId,
+          planSnapshot: planSnapshot,
           sessionId: sessionId,
           startedAt: startedAt,
           status: 'abandoned');
@@ -97,6 +105,7 @@ class ActiveWorkoutController extends Notifier<WorkoutState> {
   void finishEarly() {
     final WorkoutStateMachine? machine = _machine;
     final String? planId = _planId;
+    final WorkoutPlan? planSnapshot = _planSnapshot;
     final String? sessionId = _sessionId;
     final DateTime? startedAt = _startedAt;
     _run((WorkoutStateMachine m) => m.finishEarly());
@@ -107,6 +116,7 @@ class ActiveWorkoutController extends Notifier<WorkoutState> {
       _saveSession(
           machine: machine,
           planId: planId,
+          planSnapshot: planSnapshot,
           sessionId: sessionId,
           startedAt: startedAt,
           status: 'completed');
@@ -116,6 +126,7 @@ class ActiveWorkoutController extends Notifier<WorkoutState> {
   void clearActiveWorkout() {
     _machine = null;
     _planId = null;
+    _planSnapshot = null;
     _sessionId = null;
     _startedAt = null;
     state = const WorkoutState.idle();
@@ -134,6 +145,7 @@ class ActiveWorkoutController extends Notifier<WorkoutState> {
       // clearActiveWorkout(), nulling _machine/_planId/_sessionId/_startedAt.
       final bool shouldSave = machine.state.phase == WorkoutPhase.completed;
       final String? planId = _planId;
+      final WorkoutPlan? planSnapshot = _planSnapshot;
       final String? sessionId = _sessionId;
       final DateTime? startedAt = _startedAt;
 
@@ -146,6 +158,7 @@ class ActiveWorkoutController extends Notifier<WorkoutState> {
         _saveSession(
             machine: machine,
             planId: planId,
+            planSnapshot: planSnapshot,
             sessionId: sessionId,
             startedAt: startedAt,
             status: 'completed');
@@ -158,6 +171,7 @@ class ActiveWorkoutController extends Notifier<WorkoutState> {
   Future<void> _saveSession({
     required WorkoutStateMachine machine,
     required String planId,
+    required WorkoutPlan? planSnapshot,
     required String sessionId,
     required DateTime startedAt,
     required String status,
@@ -167,6 +181,8 @@ class ActiveWorkoutController extends Notifier<WorkoutState> {
             sessionId: sessionId,
             planId: planId,
             workoutId: machine.workout.workoutId,
+            workoutName: machine.workout.title,
+            workoutPlanSnapshot: planSnapshot,
             startedAt: startedAt,
             endedAt: DateTime.now(),
             status: status,

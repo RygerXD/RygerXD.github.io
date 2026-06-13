@@ -36,7 +36,8 @@ class WorkoutSummaryScreen extends ConsumerWidget {
             .where((WorkoutPlan plan) => plan.planId == planId)
             .firstOrNull;
         final Workout? workout = plan?.workouts
-            .where((Workout workout) => workout.workoutId == workoutId)
+            .where((Workout workout) =>
+                workout.workoutId == workoutId && !workout.isArchived)
             .firstOrNull;
 
         if (plan == null || workout == null) {
@@ -72,8 +73,8 @@ class WorkoutSummaryScreen extends ConsumerWidget {
                 ),
               ),
               IconButton(
-                tooltip: 'Delete workout',
-                icon: const Icon(Icons.delete_outline),
+                tooltip: 'Archive workout',
+                icon: const Icon(Icons.archive_outlined),
                 onPressed: () => _deleteWorkout(context, ref, workout),
               ),
             ],
@@ -89,7 +90,7 @@ class WorkoutSummaryScreen extends ConsumerWidget {
               onPressed: () {
                 ref
                     .read(activeWorkoutControllerProvider.notifier)
-                    .startWithWorkout(workout, planId);
+                    .startWithWorkout(workout, planId, planSnapshot: plan);
                 context.go('/active');
               },
               style: FilledButton.styleFrom(
@@ -168,7 +169,7 @@ class WorkoutSummaryScreen extends ConsumerWidget {
       final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
       context.go('/library/detail/$planId');
       messenger.showSnackBar(
-        const SnackBar(content: Text('Workout deleted.')),
+        const SnackBar(content: Text('Workout archived.')),
       );
     } catch (error) {
       if (!context.mounted) {
@@ -187,8 +188,10 @@ Future<bool> _confirmDeleteWorkout(
 ) async {
   return confirmDestructiveAction(
     context,
-    title: 'Delete Workout?',
-    message: 'Delete "$workoutName" from this plan?',
+    title: 'Archive Workout?',
+    message:
+        'Archive "$workoutName" and hide it from active workouts? History will stay available.',
+    confirmLabel: 'Archive',
   );
 }
 

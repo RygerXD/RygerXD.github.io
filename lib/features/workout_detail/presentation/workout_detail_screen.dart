@@ -37,6 +37,9 @@ class WorkoutDetailScreen extends ConsumerWidget {
             body: Center(child: Text('Plan not found')),
           );
         }
+        final List<Workout> activeWorkouts = plan.workouts
+            .where((Workout workout) => !workout.isArchived)
+            .toList(growable: false);
 
         return Scaffold(
           appBar: AppBar(
@@ -114,7 +117,14 @@ class WorkoutDetailScreen extends ConsumerWidget {
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: AppSpacing.md),
-              ...plan.workouts.map((Workout workout) {
+              if (activeWorkouts.isEmpty)
+                Text(
+                  'No active workouts in this plan.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                ),
+              ...activeWorkouts.map((Workout workout) {
                 return _PlanWorkoutCard(
                   workout: workout,
                   onTap: () => context.go(

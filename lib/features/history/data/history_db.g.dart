@@ -26,6 +26,24 @@ class $WorkoutSessionsTable extends WorkoutSessions
   late final GeneratedColumn<String> workoutId = GeneratedColumn<String>(
       'workout_id', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _planNameMeta =
+      const VerificationMeta('planName');
+  @override
+  late final GeneratedColumn<String> planName = GeneratedColumn<String>(
+      'plan_name', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _workoutNameMeta =
+      const VerificationMeta('workoutName');
+  @override
+  late final GeneratedColumn<String> workoutName = GeneratedColumn<String>(
+      'workout_name', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _workoutSnapshotJsonMeta =
+      const VerificationMeta('workoutSnapshotJson');
+  @override
+  late final GeneratedColumn<String> workoutSnapshotJson =
+      GeneratedColumn<String>('workout_snapshot_json', aliasedName, true,
+          type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _startedAtMeta =
       const VerificationMeta('startedAt');
   @override
@@ -54,6 +72,9 @@ class $WorkoutSessionsTable extends WorkoutSessions
         sessionId,
         planId,
         workoutId,
+        planName,
+        workoutName,
+        workoutSnapshotJson,
         startedAt,
         endedAt,
         durationSeconds,
@@ -87,6 +108,22 @@ class $WorkoutSessionsTable extends WorkoutSessions
           workoutId.isAcceptableOrUnknown(data['workout_id']!, _workoutIdMeta));
     } else if (isInserting) {
       context.missing(_workoutIdMeta);
+    }
+    if (data.containsKey('plan_name')) {
+      context.handle(_planNameMeta,
+          planName.isAcceptableOrUnknown(data['plan_name']!, _planNameMeta));
+    }
+    if (data.containsKey('workout_name')) {
+      context.handle(
+          _workoutNameMeta,
+          workoutName.isAcceptableOrUnknown(
+              data['workout_name']!, _workoutNameMeta));
+    }
+    if (data.containsKey('workout_snapshot_json')) {
+      context.handle(
+          _workoutSnapshotJsonMeta,
+          workoutSnapshotJson.isAcceptableOrUnknown(
+              data['workout_snapshot_json']!, _workoutSnapshotJsonMeta));
     }
     if (data.containsKey('started_at')) {
       context.handle(_startedAtMeta,
@@ -127,6 +164,12 @@ class $WorkoutSessionsTable extends WorkoutSessions
           .read(DriftSqlType.string, data['${effectivePrefix}plan_id'])!,
       workoutId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}workout_id'])!,
+      planName: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}plan_name']),
+      workoutName: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}workout_name']),
+      workoutSnapshotJson: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}workout_snapshot_json']),
       startedAt: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}started_at'])!,
       endedAt: attachedDatabase.typeMapping
@@ -149,6 +192,9 @@ class WorkoutSessionEntity extends DataClass
   final String sessionId;
   final String planId;
   final String workoutId;
+  final String? planName;
+  final String? workoutName;
+  final String? workoutSnapshotJson;
   final int startedAt;
   final int? endedAt;
   final int durationSeconds;
@@ -157,6 +203,9 @@ class WorkoutSessionEntity extends DataClass
       {required this.sessionId,
       required this.planId,
       required this.workoutId,
+      this.planName,
+      this.workoutName,
+      this.workoutSnapshotJson,
       required this.startedAt,
       this.endedAt,
       required this.durationSeconds,
@@ -167,6 +216,15 @@ class WorkoutSessionEntity extends DataClass
     map['session_id'] = Variable<String>(sessionId);
     map['plan_id'] = Variable<String>(planId);
     map['workout_id'] = Variable<String>(workoutId);
+    if (!nullToAbsent || planName != null) {
+      map['plan_name'] = Variable<String>(planName);
+    }
+    if (!nullToAbsent || workoutName != null) {
+      map['workout_name'] = Variable<String>(workoutName);
+    }
+    if (!nullToAbsent || workoutSnapshotJson != null) {
+      map['workout_snapshot_json'] = Variable<String>(workoutSnapshotJson);
+    }
     map['started_at'] = Variable<int>(startedAt);
     if (!nullToAbsent || endedAt != null) {
       map['ended_at'] = Variable<int>(endedAt);
@@ -181,6 +239,15 @@ class WorkoutSessionEntity extends DataClass
       sessionId: Value(sessionId),
       planId: Value(planId),
       workoutId: Value(workoutId),
+      planName: planName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(planName),
+      workoutName: workoutName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(workoutName),
+      workoutSnapshotJson: workoutSnapshotJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(workoutSnapshotJson),
       startedAt: Value(startedAt),
       endedAt: endedAt == null && nullToAbsent
           ? const Value.absent()
@@ -197,6 +264,10 @@ class WorkoutSessionEntity extends DataClass
       sessionId: serializer.fromJson<String>(json['sessionId']),
       planId: serializer.fromJson<String>(json['planId']),
       workoutId: serializer.fromJson<String>(json['workoutId']),
+      planName: serializer.fromJson<String?>(json['planName']),
+      workoutName: serializer.fromJson<String?>(json['workoutName']),
+      workoutSnapshotJson:
+          serializer.fromJson<String?>(json['workoutSnapshotJson']),
       startedAt: serializer.fromJson<int>(json['startedAt']),
       endedAt: serializer.fromJson<int?>(json['endedAt']),
       durationSeconds: serializer.fromJson<int>(json['durationSeconds']),
@@ -210,6 +281,9 @@ class WorkoutSessionEntity extends DataClass
       'sessionId': serializer.toJson<String>(sessionId),
       'planId': serializer.toJson<String>(planId),
       'workoutId': serializer.toJson<String>(workoutId),
+      'planName': serializer.toJson<String?>(planName),
+      'workoutName': serializer.toJson<String?>(workoutName),
+      'workoutSnapshotJson': serializer.toJson<String?>(workoutSnapshotJson),
       'startedAt': serializer.toJson<int>(startedAt),
       'endedAt': serializer.toJson<int?>(endedAt),
       'durationSeconds': serializer.toJson<int>(durationSeconds),
@@ -221,6 +295,9 @@ class WorkoutSessionEntity extends DataClass
           {String? sessionId,
           String? planId,
           String? workoutId,
+          Value<String?> planName = const Value.absent(),
+          Value<String?> workoutName = const Value.absent(),
+          Value<String?> workoutSnapshotJson = const Value.absent(),
           int? startedAt,
           Value<int?> endedAt = const Value.absent(),
           int? durationSeconds,
@@ -229,6 +306,11 @@ class WorkoutSessionEntity extends DataClass
         sessionId: sessionId ?? this.sessionId,
         planId: planId ?? this.planId,
         workoutId: workoutId ?? this.workoutId,
+        planName: planName.present ? planName.value : this.planName,
+        workoutName: workoutName.present ? workoutName.value : this.workoutName,
+        workoutSnapshotJson: workoutSnapshotJson.present
+            ? workoutSnapshotJson.value
+            : this.workoutSnapshotJson,
         startedAt: startedAt ?? this.startedAt,
         endedAt: endedAt.present ? endedAt.value : this.endedAt,
         durationSeconds: durationSeconds ?? this.durationSeconds,
@@ -239,6 +321,12 @@ class WorkoutSessionEntity extends DataClass
       sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
       planId: data.planId.present ? data.planId.value : this.planId,
       workoutId: data.workoutId.present ? data.workoutId.value : this.workoutId,
+      planName: data.planName.present ? data.planName.value : this.planName,
+      workoutName:
+          data.workoutName.present ? data.workoutName.value : this.workoutName,
+      workoutSnapshotJson: data.workoutSnapshotJson.present
+          ? data.workoutSnapshotJson.value
+          : this.workoutSnapshotJson,
       startedAt: data.startedAt.present ? data.startedAt.value : this.startedAt,
       endedAt: data.endedAt.present ? data.endedAt.value : this.endedAt,
       durationSeconds: data.durationSeconds.present
@@ -254,6 +342,9 @@ class WorkoutSessionEntity extends DataClass
           ..write('sessionId: $sessionId, ')
           ..write('planId: $planId, ')
           ..write('workoutId: $workoutId, ')
+          ..write('planName: $planName, ')
+          ..write('workoutName: $workoutName, ')
+          ..write('workoutSnapshotJson: $workoutSnapshotJson, ')
           ..write('startedAt: $startedAt, ')
           ..write('endedAt: $endedAt, ')
           ..write('durationSeconds: $durationSeconds, ')
@@ -263,8 +354,17 @@ class WorkoutSessionEntity extends DataClass
   }
 
   @override
-  int get hashCode => Object.hash(sessionId, planId, workoutId, startedAt,
-      endedAt, durationSeconds, status);
+  int get hashCode => Object.hash(
+      sessionId,
+      planId,
+      workoutId,
+      planName,
+      workoutName,
+      workoutSnapshotJson,
+      startedAt,
+      endedAt,
+      durationSeconds,
+      status);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -272,6 +372,9 @@ class WorkoutSessionEntity extends DataClass
           other.sessionId == this.sessionId &&
           other.planId == this.planId &&
           other.workoutId == this.workoutId &&
+          other.planName == this.planName &&
+          other.workoutName == this.workoutName &&
+          other.workoutSnapshotJson == this.workoutSnapshotJson &&
           other.startedAt == this.startedAt &&
           other.endedAt == this.endedAt &&
           other.durationSeconds == this.durationSeconds &&
@@ -282,6 +385,9 @@ class WorkoutSessionsCompanion extends UpdateCompanion<WorkoutSessionEntity> {
   final Value<String> sessionId;
   final Value<String> planId;
   final Value<String> workoutId;
+  final Value<String?> planName;
+  final Value<String?> workoutName;
+  final Value<String?> workoutSnapshotJson;
   final Value<int> startedAt;
   final Value<int?> endedAt;
   final Value<int> durationSeconds;
@@ -291,6 +397,9 @@ class WorkoutSessionsCompanion extends UpdateCompanion<WorkoutSessionEntity> {
     this.sessionId = const Value.absent(),
     this.planId = const Value.absent(),
     this.workoutId = const Value.absent(),
+    this.planName = const Value.absent(),
+    this.workoutName = const Value.absent(),
+    this.workoutSnapshotJson = const Value.absent(),
     this.startedAt = const Value.absent(),
     this.endedAt = const Value.absent(),
     this.durationSeconds = const Value.absent(),
@@ -301,6 +410,9 @@ class WorkoutSessionsCompanion extends UpdateCompanion<WorkoutSessionEntity> {
     required String sessionId,
     required String planId,
     required String workoutId,
+    this.planName = const Value.absent(),
+    this.workoutName = const Value.absent(),
+    this.workoutSnapshotJson = const Value.absent(),
     required int startedAt,
     this.endedAt = const Value.absent(),
     required int durationSeconds,
@@ -316,6 +428,9 @@ class WorkoutSessionsCompanion extends UpdateCompanion<WorkoutSessionEntity> {
     Expression<String>? sessionId,
     Expression<String>? planId,
     Expression<String>? workoutId,
+    Expression<String>? planName,
+    Expression<String>? workoutName,
+    Expression<String>? workoutSnapshotJson,
     Expression<int>? startedAt,
     Expression<int>? endedAt,
     Expression<int>? durationSeconds,
@@ -326,6 +441,10 @@ class WorkoutSessionsCompanion extends UpdateCompanion<WorkoutSessionEntity> {
       if (sessionId != null) 'session_id': sessionId,
       if (planId != null) 'plan_id': planId,
       if (workoutId != null) 'workout_id': workoutId,
+      if (planName != null) 'plan_name': planName,
+      if (workoutName != null) 'workout_name': workoutName,
+      if (workoutSnapshotJson != null)
+        'workout_snapshot_json': workoutSnapshotJson,
       if (startedAt != null) 'started_at': startedAt,
       if (endedAt != null) 'ended_at': endedAt,
       if (durationSeconds != null) 'duration_seconds': durationSeconds,
@@ -338,6 +457,9 @@ class WorkoutSessionsCompanion extends UpdateCompanion<WorkoutSessionEntity> {
       {Value<String>? sessionId,
       Value<String>? planId,
       Value<String>? workoutId,
+      Value<String?>? planName,
+      Value<String?>? workoutName,
+      Value<String?>? workoutSnapshotJson,
       Value<int>? startedAt,
       Value<int?>? endedAt,
       Value<int>? durationSeconds,
@@ -347,6 +469,9 @@ class WorkoutSessionsCompanion extends UpdateCompanion<WorkoutSessionEntity> {
       sessionId: sessionId ?? this.sessionId,
       planId: planId ?? this.planId,
       workoutId: workoutId ?? this.workoutId,
+      planName: planName ?? this.planName,
+      workoutName: workoutName ?? this.workoutName,
+      workoutSnapshotJson: workoutSnapshotJson ?? this.workoutSnapshotJson,
       startedAt: startedAt ?? this.startedAt,
       endedAt: endedAt ?? this.endedAt,
       durationSeconds: durationSeconds ?? this.durationSeconds,
@@ -366,6 +491,16 @@ class WorkoutSessionsCompanion extends UpdateCompanion<WorkoutSessionEntity> {
     }
     if (workoutId.present) {
       map['workout_id'] = Variable<String>(workoutId.value);
+    }
+    if (planName.present) {
+      map['plan_name'] = Variable<String>(planName.value);
+    }
+    if (workoutName.present) {
+      map['workout_name'] = Variable<String>(workoutName.value);
+    }
+    if (workoutSnapshotJson.present) {
+      map['workout_snapshot_json'] =
+          Variable<String>(workoutSnapshotJson.value);
     }
     if (startedAt.present) {
       map['started_at'] = Variable<int>(startedAt.value);
@@ -391,6 +526,9 @@ class WorkoutSessionsCompanion extends UpdateCompanion<WorkoutSessionEntity> {
           ..write('sessionId: $sessionId, ')
           ..write('planId: $planId, ')
           ..write('workoutId: $workoutId, ')
+          ..write('planName: $planName, ')
+          ..write('workoutName: $workoutName, ')
+          ..write('workoutSnapshotJson: $workoutSnapshotJson, ')
           ..write('startedAt: $startedAt, ')
           ..write('endedAt: $endedAt, ')
           ..write('durationSeconds: $durationSeconds, ')
@@ -1244,6 +1382,9 @@ typedef $$WorkoutSessionsTableCreateCompanionBuilder = WorkoutSessionsCompanion
   required String sessionId,
   required String planId,
   required String workoutId,
+  Value<String?> planName,
+  Value<String?> workoutName,
+  Value<String?> workoutSnapshotJson,
   required int startedAt,
   Value<int?> endedAt,
   required int durationSeconds,
@@ -1255,6 +1396,9 @@ typedef $$WorkoutSessionsTableUpdateCompanionBuilder = WorkoutSessionsCompanion
   Value<String> sessionId,
   Value<String> planId,
   Value<String> workoutId,
+  Value<String?> planName,
+  Value<String?> workoutName,
+  Value<String?> workoutSnapshotJson,
   Value<int> startedAt,
   Value<int?> endedAt,
   Value<int> durationSeconds,
@@ -1279,6 +1423,16 @@ class $$WorkoutSessionsTableFilterComposer
 
   ColumnFilters<String> get workoutId => $composableBuilder(
       column: $table.workoutId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get planName => $composableBuilder(
+      column: $table.planName, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get workoutName => $composableBuilder(
+      column: $table.workoutName, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get workoutSnapshotJson => $composableBuilder(
+      column: $table.workoutSnapshotJson,
+      builder: (column) => ColumnFilters(column));
 
   ColumnFilters<int> get startedAt => $composableBuilder(
       column: $table.startedAt, builder: (column) => ColumnFilters(column));
@@ -1312,6 +1466,16 @@ class $$WorkoutSessionsTableOrderingComposer
   ColumnOrderings<String> get workoutId => $composableBuilder(
       column: $table.workoutId, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get planName => $composableBuilder(
+      column: $table.planName, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get workoutName => $composableBuilder(
+      column: $table.workoutName, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get workoutSnapshotJson => $composableBuilder(
+      column: $table.workoutSnapshotJson,
+      builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<int> get startedAt => $composableBuilder(
       column: $table.startedAt, builder: (column) => ColumnOrderings(column));
 
@@ -1343,6 +1507,15 @@ class $$WorkoutSessionsTableAnnotationComposer
 
   GeneratedColumn<String> get workoutId =>
       $composableBuilder(column: $table.workoutId, builder: (column) => column);
+
+  GeneratedColumn<String> get planName =>
+      $composableBuilder(column: $table.planName, builder: (column) => column);
+
+  GeneratedColumn<String> get workoutName => $composableBuilder(
+      column: $table.workoutName, builder: (column) => column);
+
+  GeneratedColumn<String> get workoutSnapshotJson => $composableBuilder(
+      column: $table.workoutSnapshotJson, builder: (column) => column);
 
   GeneratedColumn<int> get startedAt =>
       $composableBuilder(column: $table.startedAt, builder: (column) => column);
@@ -1388,6 +1561,9 @@ class $$WorkoutSessionsTableTableManager extends RootTableManager<
             Value<String> sessionId = const Value.absent(),
             Value<String> planId = const Value.absent(),
             Value<String> workoutId = const Value.absent(),
+            Value<String?> planName = const Value.absent(),
+            Value<String?> workoutName = const Value.absent(),
+            Value<String?> workoutSnapshotJson = const Value.absent(),
             Value<int> startedAt = const Value.absent(),
             Value<int?> endedAt = const Value.absent(),
             Value<int> durationSeconds = const Value.absent(),
@@ -1398,6 +1574,9 @@ class $$WorkoutSessionsTableTableManager extends RootTableManager<
             sessionId: sessionId,
             planId: planId,
             workoutId: workoutId,
+            planName: planName,
+            workoutName: workoutName,
+            workoutSnapshotJson: workoutSnapshotJson,
             startedAt: startedAt,
             endedAt: endedAt,
             durationSeconds: durationSeconds,
@@ -1408,6 +1587,9 @@ class $$WorkoutSessionsTableTableManager extends RootTableManager<
             required String sessionId,
             required String planId,
             required String workoutId,
+            Value<String?> planName = const Value.absent(),
+            Value<String?> workoutName = const Value.absent(),
+            Value<String?> workoutSnapshotJson = const Value.absent(),
             required int startedAt,
             Value<int?> endedAt = const Value.absent(),
             required int durationSeconds,
@@ -1418,6 +1600,9 @@ class $$WorkoutSessionsTableTableManager extends RootTableManager<
             sessionId: sessionId,
             planId: planId,
             workoutId: workoutId,
+            planName: planName,
+            workoutName: workoutName,
+            workoutSnapshotJson: workoutSnapshotJson,
             startedAt: startedAt,
             endedAt: endedAt,
             durationSeconds: durationSeconds,

@@ -157,11 +157,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final List<_WorkoutListItem> items = <_WorkoutListItem>[
       for (final WorkoutPlan plan in plans)
         for (final Workout workout in plan.workouts)
-          _WorkoutListItem(
-            plan: plan,
-            workout: workout,
-            latestStartedAt: latestStartedAtByWorkoutId[workout.workoutId],
-          ),
+          if (!workout.isArchived)
+            _WorkoutListItem(
+              plan: plan,
+              workout: workout,
+              latestStartedAt: latestStartedAtByWorkoutId[workout.workoutId],
+            ),
     ];
 
     items.sort((_WorkoutListItem a, _WorkoutListItem b) {
@@ -408,8 +409,10 @@ class _PlanCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme colors = Theme.of(context).colorScheme;
+    final int activeWorkoutCount =
+        plan.workouts.where((Workout workout) => !workout.isArchived).length;
     final String subtitle = optionalText(plan.description) ??
-        '${plan.workouts.length} ${plan.workouts.length == 1 ? 'workout' : 'workouts'}';
+        '$activeWorkoutCount ${activeWorkoutCount == 1 ? 'workout' : 'workouts'}';
 
     return Card(
       margin: const EdgeInsets.only(bottom: AppSpacing.md),

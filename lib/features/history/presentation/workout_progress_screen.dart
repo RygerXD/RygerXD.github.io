@@ -8,6 +8,7 @@ import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
 import 'package:workout_app_rewrite/core/widgets/confirm_destructive_action.dart';
 import 'package:workout_app_rewrite/features/history/application/history_providers.dart';
 import 'package:workout_app_rewrite/features/history/data/history_db.dart';
+import 'package:workout_app_rewrite/features/history/domain/history_workout_snapshot.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_runtime_expansion.dart';
@@ -190,6 +191,16 @@ _WorkoutContext _resolveWorkoutContext(
   WorkoutSessionEntity session,
   List<WorkoutPlan> plans,
 ) {
+  final HistoryWorkoutSnapshot? snapshot =
+      decodeHistoryWorkoutSnapshot(session.workoutSnapshotJson);
+  if (snapshot != null) {
+    return _WorkoutContext(
+      plan: snapshot.toWorkoutPlan(),
+      workout: snapshot.workout,
+      workoutName: optionalText(session.workoutName) ?? snapshot.workout.title,
+    );
+  }
+
   for (final WorkoutPlan plan in plans) {
     if (plan.planId != session.planId) {
       continue;
@@ -206,13 +217,13 @@ _WorkoutContext _resolveWorkoutContext(
     return _WorkoutContext(
       plan: plan,
       workout: null,
-      workoutName: 'Unknown Workout',
+      workoutName: optionalText(session.workoutName) ?? 'Unknown Workout',
     );
   }
-  return const _WorkoutContext(
+  return _WorkoutContext(
     plan: null,
     workout: null,
-    workoutName: 'Unknown Workout',
+    workoutName: optionalText(session.workoutName) ?? 'Unknown Workout',
   );
 }
 

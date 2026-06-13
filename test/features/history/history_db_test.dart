@@ -1,6 +1,9 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:workout_app_rewrite/features/history/application/history_providers.dart';
 import 'package:workout_app_rewrite/features/history/data/history_db.dart';
+import 'package:workout_app_rewrite/features/history/domain/history_workout_snapshot.dart';
+import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
 
 void main() {
   test('deleteWorkoutSession removes only the selected session data', () async {
@@ -74,5 +77,60 @@ void main() {
       ),
       <String>['performance-2'],
     );
+  });
+
+  test('saveSession stores workout metadata snapshot for analysis', () async {
+    final HistoryDatabase db = HistoryDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+
+    const WorkoutPlan plan = WorkoutPlan(
+      schemaVersion: 1,
+      planId: 'plan-1',
+      name: 'Plan 1',
+      workouts: <Workout>[
+        Workout(
+          workoutId: 'workout-1',
+          title: 'Workout A',
+          sets: <WorkoutSet>[
+            WorkoutSet(
+              setId: 'set-1',
+              loopCount: 1,
+              restBetweenLoopsSeconds: 0,
+              moves: <Move>[
+                Move(
+                  moveId: 'move-1',
+                  exerciseId: 'exercise-1',
+                  type: MoveType.reps,
+                  repCount: 10,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ],
+      exercises: <Exercise>[
+        Exercise(exerciseId: 'exercise-1', name: 'Squat'),
+      ],
+    );
+
+    await HistoryService(db).saveSession(
+      sessionId: 'session-1',
+      planId: 'plan-1',
+      workoutId: 'workout-1',
+      workoutName: 'Workout A',
+      workoutPlanSnapshot: plan,
+      startedAt: DateTime.fromMillisecondsSinceEpoch(1000),
+      endedAt: DateTime.fromMillisecondsSinceEpoch(2000),
+      status: 'completed',
+    );
+
+    final WorkoutSessionEntity session = (await db.getAllSessions()).single;
+    final HistoryWorkoutSnapshot? snapshot =
+        decodeHistoryWorkoutSnapshot(session.workoutSnapshotJson);
+
+    expect(session.planName, 'Plan 1');
+    expect(session.workoutName, 'Workout A');
+    expect(snapshot?.workout.title, 'Workout A');
+    expect(snapshot?.exercises.single.name, 'Squat');
   });
 }

@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workout_app_rewrite/features/history/data/history_database_connection.dart';
 import 'package:workout_app_rewrite/features/history/data/history_db.dart';
+import 'package:workout_app_rewrite/features/history/domain/history_workout_snapshot.dart';
+import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
 
 // Provides the singleton instance of the HistoryDatabase
 final Provider<HistoryDatabase> historyDatabaseProvider =
@@ -42,6 +44,8 @@ class HistoryService {
     required String sessionId,
     required String planId,
     required String workoutId,
+    required String workoutName,
+    WorkoutPlan? workoutPlanSnapshot,
     required DateTime startedAt,
     required DateTime endedAt,
     required String status,
@@ -53,6 +57,10 @@ class HistoryService {
         sessionId: sessionId,
         planId: planId,
         workoutId: workoutId,
+        planName: workoutPlanSnapshot?.name,
+        workoutName: workoutName,
+        workoutSnapshotJson:
+            encodeHistoryWorkoutSnapshot(workoutPlanSnapshot, workoutId),
         startedAt: startedAt.millisecondsSinceEpoch,
         endedAt: endedAt.millisecondsSinceEpoch,
         durationSeconds: duration,

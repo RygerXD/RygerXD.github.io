@@ -141,9 +141,10 @@ class AnalysisScreen extends ConsumerWidget {
 
     return sessions.map((WorkoutSessionEntity session) {
       final WorkoutPlan? plan = plansById[session.planId];
-      String workoutName = 'Unknown Workout';
+      String workoutName =
+          optionalText(session.workoutName) ?? 'Unknown Workout';
 
-      if (plan != null) {
+      if (workoutName == 'Unknown Workout' && plan != null) {
         for (final Workout workout in plan.workouts) {
           if (workout.workoutId == session.workoutId) {
             workoutName = workout.title;
@@ -154,7 +155,8 @@ class AnalysisScreen extends ConsumerWidget {
 
       return AnalysisSessionItem(
         session: session,
-        planName: plan?.name ?? 'Unknown Plan',
+        planName:
+            optionalText(session.planName) ?? plan?.name ?? 'Unknown Plan',
         workoutName: workoutName,
       );
     }).toList(growable: false);

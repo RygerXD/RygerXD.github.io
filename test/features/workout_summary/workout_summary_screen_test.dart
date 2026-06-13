@@ -94,7 +94,7 @@ void main() {
     expect(find.widgetWithText(FilledButton, 'START'), findsOneWidget);
   });
 
-  testWidgets('confirms before deleting workout from plan',
+  testWidgets('confirms before archiving workout from active plan views',
       (WidgetTester tester) async {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
@@ -191,24 +191,29 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byTooltip('Delete workout'));
+    await tester.tap(find.byTooltip('Archive workout'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Delete Workout?'), findsOneWidget);
-    expect(find.text('Delete "Workout A" from this plan?'), findsOneWidget);
+    expect(find.text('Archive Workout?'), findsOneWidget);
+    expect(
+      find.text(
+        'Archive "Workout A" and hide it from active workouts? History will stay available.',
+      ),
+      findsOneWidget,
+    );
 
-    await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Archive'));
     await tester.pumpAndSettle();
 
     final WorkoutPlan? updatedPlan = await repository.getPlanById('plan-1');
+    expect(updatedPlan?.workouts, hasLength(2));
+    expect(updatedPlan?.workouts.first.workoutId, 'workout-a');
+    expect(updatedPlan?.workouts.first.isArchived, isTrue);
+    expect(updatedPlan?.workouts.last.workoutId, 'workout-b');
+    expect(updatedPlan?.workouts.last.isArchived, isFalse);
     expect(
-      updatedPlan?.workouts.map((Workout workout) => workout.workoutId),
-      <String>['workout-b'],
-    );
-    expect(
-      updatedPlan?.exercises.map((Exercise exercise) => exercise.exerciseId),
-      <String>['squat'],
-    );
+        updatedPlan?.exercises.map((Exercise exercise) => exercise.exerciseId),
+        <String>['push-up', 'squat']);
     expect(find.text('Plan detail plan-1'), findsOneWidget);
   });
 }

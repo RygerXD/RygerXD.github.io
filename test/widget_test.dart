@@ -78,7 +78,7 @@ void main() {
     expect(find.text('Exercise finished ding'), findsOneWidget);
   });
 
-  testWidgets('exercises tab returns to exercises after deleting a workout',
+  testWidgets('exercises tab returns to exercises after archiving a workout',
       (WidgetTester tester) async {
     final SharedPreferences sharedPreferences =
         await SharedPreferences.getInstance();
@@ -135,9 +135,9 @@ void main() {
     await tester.tap(find.text('Workout A'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byTooltip('Delete workout'));
+    await tester.tap(find.byTooltip('Archive workout'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Archive'));
     await tester.pumpAndSettle();
 
     expect(find.text('Workout not found'), findsNothing);

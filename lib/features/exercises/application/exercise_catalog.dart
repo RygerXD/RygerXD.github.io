@@ -22,6 +22,9 @@ List<ReferencedExerciseEntry> collectReferencedExercises(
   for (final WorkoutPlan plan in plans) {
     final Map<String, int> moveCountsByExerciseId = <String, int>{};
     for (final Workout workout in plan.workouts) {
+      if (workout.isArchived) {
+        continue;
+      }
       for (final WorkoutSet set in workout.sets) {
         for (final Move move in set.moves) {
           moveCountsByExerciseId.update(

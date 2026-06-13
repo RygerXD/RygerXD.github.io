@@ -7,6 +7,9 @@ class WorkoutSessions extends Table {
   TextColumn get sessionId => text()();
   TextColumn get planId => text()();
   TextColumn get workoutId => text()();
+  TextColumn get planName => text().nullable()();
+  TextColumn get workoutName => text().nullable()();
+  TextColumn get workoutSnapshotJson => text().nullable()();
   IntColumn get startedAt => integer()();
   IntColumn get endedAt => integer().nullable()();
   IntColumn get durationSeconds => integer()();
@@ -50,7 +53,7 @@ class HistoryDatabase extends _$HistoryDatabase {
   HistoryDatabase(super.e);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration {
@@ -70,6 +73,12 @@ class HistoryDatabase extends _$HistoryDatabase {
               workoutMovePerformances, workoutMovePerformances.actualWeight);
           await m.addColumn(workoutMovePerformances,
               workoutMovePerformances.actualWeightUnit);
+        }
+        if (from < 5) {
+          await m.addColumn(workoutSessions, workoutSessions.planName);
+          await m.addColumn(workoutSessions, workoutSessions.workoutName);
+          await m.addColumn(
+              workoutSessions, workoutSessions.workoutSnapshotJson);
         }
       },
     );
