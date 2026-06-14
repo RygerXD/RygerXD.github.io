@@ -34,7 +34,7 @@ class WorkoutMovePerformances extends Table {
   TextColumn get sessionId => text()();
   TextColumn get workoutId => text()();
   TextColumn get setId => text()();
-  IntColumn get loopIndex => integer()();
+  IntColumn get lapIndex => integer()();
   TextColumn get moveId => text()();
   TextColumn get exerciseId => text()();
   IntColumn get repCount => integer()();
@@ -53,7 +53,7 @@ class HistoryDatabase extends _$HistoryDatabase {
   HistoryDatabase(super.e);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration {
@@ -79,6 +79,10 @@ class HistoryDatabase extends _$HistoryDatabase {
           await m.addColumn(workoutSessions, workoutSessions.workoutName);
           await m.addColumn(
               workoutSessions, workoutSessions.workoutSnapshotJson);
+        }
+        if (from < 6) {
+          await m.deleteTable('workout_move_performances');
+          await m.createTable(workoutMovePerformances);
         }
       },
     );

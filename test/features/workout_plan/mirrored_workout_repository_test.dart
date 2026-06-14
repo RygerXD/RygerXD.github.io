@@ -6,7 +6,7 @@ import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_mo
 
 void main() {
   const WorkoutPlan samplePlan = WorkoutPlan(
-    schemaVersion: 1,
+    schemaVersion: 2,
     planId: 'plan-1',
     name: 'Plan 1',
     workouts: <Workout>[
@@ -16,8 +16,8 @@ void main() {
         sets: <WorkoutSet>[
           WorkoutSet(
             setId: 's-1',
-            loopCount: 1,
-            restBetweenLoopsSeconds: 30,
+            lapCount: 1,
+            restBetweenLapsSeconds: 30,
             moves: <Move>[
               Move(
                 moveId: 'm-1',
@@ -39,7 +39,8 @@ void main() {
   );
 
   group('MirroredWorkoutRepository', () {
-    test('reads from secondary and seeds primary when primary is empty', () async {
+    test('reads from secondary and seeds primary when primary is empty',
+        () async {
       final InMemoryWorkoutRepository primary = InMemoryWorkoutRepository();
       final InMemoryWorkoutRepository secondary = InMemoryWorkoutRepository();
       await secondary.savePlan(samplePlan);
@@ -58,7 +59,8 @@ void main() {
       expect(primaryLoaded.single.planId, 'plan-1');
     });
 
-    test('savePlan persists in primary even when secondary save fails', () async {
+    test('savePlan persists in primary even when secondary save fails',
+        () async {
       final InMemoryWorkoutRepository primary = InMemoryWorkoutRepository();
       final _ThrowingWorkoutRepository secondary = _ThrowingWorkoutRepository();
 

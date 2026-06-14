@@ -128,7 +128,7 @@ class WorkoutSummaryScreen extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
                 child: Text(
                   optionalText(plan.description) ??
-                      'Review the exercises, timing, and set loops before you start.',
+                      'Review the exercises, timing, and set laps before you start.',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
@@ -401,7 +401,7 @@ class _SetPreview extends StatelessWidget {
                 )
               else
                 const Spacer(),
-              if (set.loopCount > 1) _LoopBadge(loopCount: set.loopCount),
+              if (set.lapCount > 1) _LapBadge(lapCount: set.lapCount),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
@@ -418,10 +418,10 @@ class _SetPreview extends StatelessWidget {
   }
 }
 
-class _LoopBadge extends StatelessWidget {
-  const _LoopBadge({required this.loopCount});
+class _LapBadge extends StatelessWidget {
+  const _LapBadge({required this.lapCount});
 
-  final int loopCount;
+  final int lapCount;
 
   @override
   Widget build(BuildContext context) {
@@ -436,7 +436,7 @@ class _LoopBadge extends StatelessWidget {
           vertical: AppSpacing.sm,
         ),
         child: Text(
-          'x$loopCount Laps',
+          'x$lapCount Laps',
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w800,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,

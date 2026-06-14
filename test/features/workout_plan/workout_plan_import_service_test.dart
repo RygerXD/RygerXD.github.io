@@ -7,7 +7,8 @@ import 'package:workout_app_rewrite/features/workout_plan/data/in_memory_workout
 
 void main() {
   group('WorkoutPlanImportService', () {
-    WorkoutPlanImportService buildService(InMemoryWorkoutRepository repository) {
+    WorkoutPlanImportService buildService(
+        InMemoryWorkoutRepository repository) {
       return WorkoutPlanImportService(
         parser: const WorkoutPlanParser(),
         repository: repository,
@@ -18,16 +19,19 @@ void main() {
       final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
       final WorkoutPlanImportService service = buildService(repository);
 
-      service.validateRemoteImportUri(Uri.parse('https://example.com/plan.json'));
+      service
+          .validateRemoteImportUri(Uri.parse('https://example.com/plan.json'));
       expect(
-        () => service.validateRemoteImportUri(Uri.parse('http://example.com/plan.json')),
+        () => service
+            .validateRemoteImportUri(Uri.parse('http://example.com/plan.json')),
         throwsA(isA<ImportPolicyException>()),
       );
     });
 
     test('enforces max payload size', () async {
       final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
-      final WorkoutPlanImportService smallLimitService = WorkoutPlanImportService(
+      final WorkoutPlanImportService smallLimitService =
+          WorkoutPlanImportService(
         parser: const WorkoutPlanParser(),
         repository: repository,
         maxImportBytes: 10,
@@ -43,7 +47,7 @@ void main() {
       final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
       final WorkoutPlanImportService service = buildService(repository);
       final String validPayload = jsonEncode(<String, dynamic>{
-        'schemaVersion': 1,
+        'schemaVersion': 2,
         'planId': 'plan-1',
         'name': 'Plan 1',
         'exercises': <Map<String, dynamic>>[
@@ -59,8 +63,8 @@ void main() {
             'sets': <Map<String, dynamic>>[
               <String, dynamic>{
                 'setId': 's-1',
-                'loopCount': 1,
-                'restBetweenLoopsSeconds': 30,
+                'lapCount': 1,
+                'restBetweenLapsSeconds': 30,
                 'moves': <Map<String, dynamic>>[
                   <String, dynamic>{
                     'moveId': 'm-1',

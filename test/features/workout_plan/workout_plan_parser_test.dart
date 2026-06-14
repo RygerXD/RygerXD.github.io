@@ -150,7 +150,7 @@ void main() {
 }
 
 Map<String, dynamic> _planJson({
-  int schemaVersion = 1,
+  int schemaVersion = 2,
   String exerciseId = 'ex-1',
   String exerciseName = 'Squat',
   Map<String, dynamic> move = const <String, dynamic>{},
@@ -174,8 +174,8 @@ Map<String, dynamic> _planJson({
         'sets': <Map<String, dynamic>>[
           <String, dynamic>{
             'setId': 's-1',
-            'loopCount': 1,
-            'restBetweenLoopsSeconds': 30,
+            'lapCount': 1,
+            'restBetweenLapsSeconds': 30,
             'moves': <Map<String, dynamic>>[
               <String, dynamic>{
                 'moveId': 'm-1',

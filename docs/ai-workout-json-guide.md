@@ -18,7 +18,7 @@ Convert the workout below into an importable Workout App JSON file.
 
 Output rules:
 - Return only valid JSON. Do not wrap it in Markdown.
-- Use schemaVersion 1.
+- Use schemaVersion 2.
 - Create one root object with planId, name, description, author, tags,
   exercises, and workouts.
 - Use stable lowercase kebab-case IDs for planId, workoutId, setId, moveId,
@@ -32,8 +32,8 @@ Output rules:
   durationSeconds.
 - Use type "stopwatch" only when the athlete should count up manually; do not
   include durationSeconds for stopwatch moves.
-- For each set, set loopCount to the number of rounds and
-  restBetweenLoopsSeconds to the rest between repeated rounds.
+- For each set, set lapCount to the number of rounds and
+  restBetweenLapsSeconds to the rest between repeated rounds.
 - If a single move should be performed for multiple sets before advancing, add
   setCount with the number of sets for that move.
 - Include prepTimeSeconds and finishTimeSeconds on moves only when the workout
@@ -56,7 +56,7 @@ Plan metadata:
 
 ```json
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "planId": "plan-id",
   "name": "Plan name",
   "description": "Short description",
@@ -80,8 +80,8 @@ Plan metadata:
         {
           "setId": "set-id",
           "name": "Optional set name",
-          "loopCount": 3,
-          "restBetweenLoopsSeconds": 60,
+          "lapCount": 3,
+          "restBetweenLapsSeconds": 60,
           "moves": [
             {
               "moveId": "move-id",
@@ -135,12 +135,12 @@ executions.
 Before importing, check that:
 
 - The file is valid JSON with one root object.
-- `schemaVersion` is `1`.
+- `schemaVersion` is `2`.
 - `planId`, `name`, `workouts`, and `exercises` are present.
 - `workouts` has at least one workout.
 - `exercises` has at least one exercise.
 - Every workout has at least one set.
-- Every set has `loopCount` of at least `1` and at least one move.
+- Every set has `lapCount` of at least `1` and at least one move.
 - Every `move.exerciseId` exists in the top-level `exercises` list.
 - If present, move `setCount` is at least `1`.
 - Reps moves have `repCount` of at least `1`.
@@ -166,7 +166,7 @@ The importable JSON can be:
 
 ```json
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "planId": "beginner-full-body",
   "name": "Beginner Full Body",
   "description": "Three-round beginner full body workout.",
@@ -192,8 +192,8 @@ The importable JSON can be:
         {
           "setId": "main-circuit",
           "name": "Main Circuit",
-          "loopCount": 3,
-          "restBetweenLoopsSeconds": 60,
+          "lapCount": 3,
+          "restBetweenLapsSeconds": 60,
           "moves": [
             {
               "moveId": "squat-12",

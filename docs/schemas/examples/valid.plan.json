@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "planId": "plan-beginner-a",
   "name": "Beginner Strength A",
   "description": "Simple full body routine",
@@ -24,8 +24,8 @@
       "sets": [
         {
           "setId": "set-1",
-          "loopCount": 3,
-          "restBetweenLoopsSeconds": 60,
+          "lapCount": 3,
+          "restBetweenLapsSeconds": 60,
           "moves": [
             {
               "moveId": "move-1",

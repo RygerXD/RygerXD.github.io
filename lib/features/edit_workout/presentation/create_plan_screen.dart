@@ -121,7 +121,7 @@ class _CreatePlanScreenState extends ConsumerState<CreatePlanScreen> {
             tags: tags,
           ) ??
           WorkoutPlan(
-            schemaVersion: 1,
+            schemaVersion: 2,
             planId: const Uuid().v4(),
             name: name,
             imageUrl: imageUrl,

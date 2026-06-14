@@ -74,8 +74,8 @@ class ActiveWorkoutController extends Notifier<WorkoutState> {
   void startPrepNow() => _run((WorkoutStateMachine m) => m.startPrepNow());
   void completeMove() => _run((WorkoutStateMachine m) => m.completeMove());
   void completeRest() => _run((WorkoutStateMachine m) => m.completeRest());
-  void completeRestBetweenLoops() =>
-      _run((WorkoutStateMachine m) => m.completeRestBetweenLoops());
+  void completeRestBetweenLaps() =>
+      _run((WorkoutStateMachine m) => m.completeRestBetweenLaps());
   void skipMove() => _run((WorkoutStateMachine m) => m.skipMove());
   void skipRest() => _run((WorkoutStateMachine m) => m.skipRest());
   void pause() => _run((WorkoutStateMachine m) => m.pause());

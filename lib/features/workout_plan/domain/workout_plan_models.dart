@@ -179,31 +179,31 @@ class Move {
 class WorkoutSet {
   const WorkoutSet({
     required this.setId,
-    required this.loopCount,
-    required this.restBetweenLoopsSeconds,
+    required this.lapCount,
+    required this.restBetweenLapsSeconds,
     required this.moves,
     this.name,
   });
 
   final String setId;
   final String? name;
-  final int loopCount;
-  final int restBetweenLoopsSeconds;
+  final int lapCount;
+  final int restBetweenLapsSeconds;
   final List<Move> moves;
 
   WorkoutSet copyWith({
     String? setId,
     Object? name = _copyWithUnset,
-    int? loopCount,
-    int? restBetweenLoopsSeconds,
+    int? lapCount,
+    int? restBetweenLapsSeconds,
     List<Move>? moves,
   }) {
     return WorkoutSet(
       setId: setId ?? this.setId,
       name: identical(name, _copyWithUnset) ? this.name : name as String?,
-      loopCount: loopCount ?? this.loopCount,
-      restBetweenLoopsSeconds:
-          restBetweenLoopsSeconds ?? this.restBetweenLoopsSeconds,
+      lapCount: lapCount ?? this.lapCount,
+      restBetweenLapsSeconds:
+          restBetweenLapsSeconds ?? this.restBetweenLapsSeconds,
       moves: moves ?? this.moves,
     );
   }
@@ -212,8 +212,8 @@ class WorkoutSet {
     return WorkoutSet(
       setId: json['setId'] as String,
       name: json['name'] as String?,
-      loopCount: json['loopCount'] as int,
-      restBetweenLoopsSeconds: json['restBetweenLoopsSeconds'] as int,
+      lapCount: json['lapCount'] as int,
+      restBetweenLapsSeconds: json['restBetweenLapsSeconds'] as int,
       moves: (json['moves'] as List<dynamic>)
           .cast<Map<String, dynamic>>()
           .map(Move.fromJson)
@@ -225,8 +225,8 @@ class WorkoutSet {
     return <String, dynamic>{
       'setId': setId,
       'name': name,
-      'loopCount': loopCount,
-      'restBetweenLoopsSeconds': restBetweenLoopsSeconds,
+      'lapCount': lapCount,
+      'restBetweenLapsSeconds': restBetweenLapsSeconds,
       'moves': moves.map((Move move) => move.toJson()).toList(growable: false),
     };
   }

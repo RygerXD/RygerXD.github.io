@@ -57,7 +57,7 @@ void main() {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 1,
+        schemaVersion: 2,
         planId: 'plan-1',
         name: 'Plan 1',
         imageUrl: 'https://example.com/old.gif',

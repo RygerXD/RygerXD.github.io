@@ -40,7 +40,7 @@ void main() {
 }
 
 const WorkoutPlan _samplePlan = WorkoutPlan(
-  schemaVersion: 1,
+  schemaVersion: 2,
   planId: 'plan-1',
   name: 'Plan 1: Upper/Lower',
   workouts: <Workout>[
@@ -50,8 +50,8 @@ const WorkoutPlan _samplePlan = WorkoutPlan(
       sets: <WorkoutSet>[
         WorkoutSet(
           setId: 'set-1',
-          loopCount: 1,
-          restBetweenLoopsSeconds: 30,
+          lapCount: 1,
+          restBetweenLapsSeconds: 30,
           moves: <Move>[
             Move(
               moveId: 'move-1',

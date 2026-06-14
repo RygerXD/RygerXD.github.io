@@ -34,7 +34,7 @@ class WorkoutStateMachine {
     _transitionTo(
       WorkoutPhase.prep,
       setIndex: 0,
-      loopIndex: 0,
+      lapIndex: 0,
       moveIndex: 0,
     );
   }
@@ -44,7 +44,7 @@ class WorkoutStateMachine {
     _transitionTo(
       WorkoutPhase.move,
       setIndex: _state.setIndex,
-      loopIndex: _state.loopIndex,
+      lapIndex: _state.lapIndex,
       moveIndex: _state.moveIndex,
     );
   }
@@ -57,7 +57,7 @@ class WorkoutStateMachine {
       _transitionTo(
         WorkoutPhase.rest,
         setIndex: cursor.setIndex,
-        loopIndex: cursor.loopIndex,
+        lapIndex: cursor.lapIndex,
         moveIndex: cursor.moveIndex,
       );
       return;
@@ -74,26 +74,26 @@ class WorkoutStateMachine {
   void _advanceAfterMove(_Cursor cursor) {
     final bool isLastMoveInSet =
         cursor.moveIndex == cursor.set.moves.length - 1;
-    final bool isLastLoopInSet = cursor.loopIndex == cursor.set.loopCount - 1;
+    final bool isLastLapInSet = cursor.lapIndex == cursor.set.lapCount - 1;
     final bool isLastSetInWorkout = cursor.setIndex == _workout.sets.length - 1;
 
     if (!isLastMoveInSet) {
       _transitionTo(
         WorkoutPhase.prep,
         setIndex: cursor.setIndex,
-        loopIndex: cursor.loopIndex,
+        lapIndex: cursor.lapIndex,
         moveIndex: cursor.moveIndex + 1,
       );
       return;
     }
 
-    if (!isLastLoopInSet) {
-      final int nextLoopIndex = cursor.loopIndex + 1;
-      if (cursor.set.restBetweenLoopsSeconds > 0) {
+    if (!isLastLapInSet) {
+      final int nextLapIndex = cursor.lapIndex + 1;
+      if (cursor.set.restBetweenLapsSeconds > 0) {
         _transitionTo(
-          WorkoutPhase.restBetweenLoops,
+          WorkoutPhase.restBetweenLaps,
           setIndex: cursor.setIndex,
-          loopIndex: nextLoopIndex,
+          lapIndex: nextLapIndex,
           moveIndex: 0,
         );
         return;
@@ -102,7 +102,7 @@ class WorkoutStateMachine {
       _transitionTo(
         WorkoutPhase.prep,
         setIndex: cursor.setIndex,
-        loopIndex: nextLoopIndex,
+        lapIndex: nextLapIndex,
         moveIndex: 0,
       );
       return;
@@ -112,7 +112,7 @@ class WorkoutStateMachine {
       _transitionTo(
         WorkoutPhase.prep,
         setIndex: cursor.setIndex + 1,
-        loopIndex: 0,
+        lapIndex: 0,
         moveIndex: 0,
       );
       return;
@@ -121,19 +121,19 @@ class WorkoutStateMachine {
     _transitionTo(
       WorkoutPhase.completed,
       setIndex: cursor.setIndex,
-      loopIndex: cursor.loopIndex,
+      lapIndex: cursor.lapIndex,
       moveIndex: cursor.moveIndex,
     );
   }
 
-  void completeRestBetweenLoops() {
-    _assertPhase(<WorkoutPhase>{WorkoutPhase.restBetweenLoops},
-        'completeRestBetweenLoops');
+  void completeRestBetweenLaps() {
+    _assertPhase(<WorkoutPhase>{WorkoutPhase.restBetweenLaps},
+        'completeRestBetweenLaps');
     final _Cursor cursor = _cursor();
     _transitionTo(
       WorkoutPhase.prep,
       setIndex: cursor.setIndex,
-      loopIndex: cursor.loopIndex,
+      lapIndex: cursor.lapIndex,
       moveIndex: cursor.moveIndex,
     );
   }
@@ -145,11 +145,11 @@ class WorkoutStateMachine {
 
   void skipRest() {
     _assertPhase(
-      <WorkoutPhase>{WorkoutPhase.rest, WorkoutPhase.restBetweenLoops},
+      <WorkoutPhase>{WorkoutPhase.rest, WorkoutPhase.restBetweenLaps},
       'skipRest',
     );
-    if (_state.phase == WorkoutPhase.restBetweenLoops) {
-      completeRestBetweenLoops();
+    if (_state.phase == WorkoutPhase.restBetweenLaps) {
+      completeRestBetweenLaps();
       return;
     }
     completeRest();
@@ -161,14 +161,14 @@ class WorkoutStateMachine {
         WorkoutPhase.prep,
         WorkoutPhase.move,
         WorkoutPhase.rest,
-        WorkoutPhase.restBetweenLoops,
+        WorkoutPhase.restBetweenLaps,
       },
       'pause',
     );
     _transitionTo(
       WorkoutPhase.paused,
       setIndex: _state.setIndex,
-      loopIndex: _state.loopIndex,
+      lapIndex: _state.lapIndex,
       moveIndex: _state.moveIndex,
       pausedFrom: _state.phase,
     );
@@ -184,7 +184,7 @@ class WorkoutStateMachine {
     _transitionTo(
       pausedFrom,
       setIndex: _state.setIndex,
-      loopIndex: _state.loopIndex,
+      lapIndex: _state.lapIndex,
       moveIndex: _state.moveIndex,
       clearPausedFrom: true,
     );
@@ -196,7 +196,7 @@ class WorkoutStateMachine {
         WorkoutPhase.prep,
         WorkoutPhase.move,
         WorkoutPhase.rest,
-        WorkoutPhase.restBetweenLoops,
+        WorkoutPhase.restBetweenLaps,
         WorkoutPhase.paused,
       },
       'abandon',
@@ -204,7 +204,7 @@ class WorkoutStateMachine {
     _transitionTo(
       WorkoutPhase.abandoned,
       setIndex: _state.setIndex,
-      loopIndex: _state.loopIndex,
+      lapIndex: _state.lapIndex,
       moveIndex: _state.moveIndex,
     );
   }
@@ -215,7 +215,7 @@ class WorkoutStateMachine {
         WorkoutPhase.prep,
         WorkoutPhase.move,
         WorkoutPhase.rest,
-        WorkoutPhase.restBetweenLoops,
+        WorkoutPhase.restBetweenLaps,
         WorkoutPhase.paused,
       },
       'finishEarly',
@@ -223,7 +223,7 @@ class WorkoutStateMachine {
     _transitionTo(
       WorkoutPhase.completedEarly,
       setIndex: _state.setIndex,
-      loopIndex: _state.loopIndex,
+      lapIndex: _state.lapIndex,
       moveIndex: _state.moveIndex,
     );
   }
@@ -233,7 +233,7 @@ class WorkoutStateMachine {
     final WorkoutSet set = _workout.sets[setIndex];
     return _Cursor(
       setIndex: setIndex,
-      loopIndex: _state.loopIndex,
+      lapIndex: _state.lapIndex,
       moveIndex: _state.moveIndex,
       set: set,
     );
@@ -250,7 +250,7 @@ class WorkoutStateMachine {
   void _transitionTo(
     WorkoutPhase to, {
     required int setIndex,
-    required int loopIndex,
+    required int lapIndex,
     required int moveIndex,
     WorkoutPhase? pausedFrom,
     bool clearPausedFrom = false,
@@ -259,7 +259,7 @@ class WorkoutStateMachine {
     _state = _state.copyWith(
       phase: to,
       setIndex: setIndex,
-      loopIndex: loopIndex,
+      lapIndex: lapIndex,
       moveIndex: moveIndex,
       pausedFrom: pausedFrom,
       clearPausedFrom: clearPausedFrom,
@@ -271,7 +271,7 @@ class WorkoutStateMachine {
         to: to,
         timestampUtc: DateTime.now().toUtc(),
         setIndex: setIndex,
-        loopIndex: loopIndex,
+        lapIndex: lapIndex,
         moveIndex: moveIndex,
       ),
     );
@@ -281,13 +281,13 @@ class WorkoutStateMachine {
 class _Cursor {
   const _Cursor({
     required this.setIndex,
-    required this.loopIndex,
+    required this.lapIndex,
     required this.moveIndex,
     required this.set,
   });
 
   final int setIndex;
-  final int loopIndex;
+  final int lapIndex;
   final int moveIndex;
   final WorkoutSet set;
 }

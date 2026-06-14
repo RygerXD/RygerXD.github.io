@@ -143,7 +143,7 @@ void main() {
 }
 
 const WorkoutPlan _samplePlan = WorkoutPlan(
-  schemaVersion: 1,
+  schemaVersion: 2,
   planId: 'plan-1',
   name: 'Plan 1',
   workouts: <Workout>[
@@ -153,8 +153,8 @@ const WorkoutPlan _samplePlan = WorkoutPlan(
       sets: <WorkoutSet>[
         WorkoutSet(
           setId: 'set-1',
-          loopCount: 1,
-          restBetweenLoopsSeconds: 30,
+          lapCount: 1,
+          restBetweenLapsSeconds: 30,
           moves: <Move>[
             Move(
               moveId: 'move-1',
@@ -176,7 +176,7 @@ const WorkoutPlan _samplePlan = WorkoutPlan(
 );
 
 const WorkoutPlan _stalePlan = WorkoutPlan(
-  schemaVersion: 1,
+  schemaVersion: 2,
   planId: 'stale-plan',
   name: 'Stale Plan',
   workouts: <Workout>[
@@ -207,7 +207,7 @@ Future<void> _seedHistory(HistoryDatabase database) async {
       sessionId: 'session-1',
       workoutId: 'workout-1',
       setId: 'set-1',
-      loopIndex: 0,
+      lapIndex: 0,
       moveId: 'move-1',
       exerciseId: 'exercise-1',
       repCount: 10,
@@ -255,7 +255,7 @@ Map<String, dynamic> _backupJson() {
           'sessionId': 'session-1',
           'workoutId': 'workout-1',
           'setId': 'set-1',
-          'loopIndex': 0,
+          'lapIndex': 0,
           'moveId': 'move-1',
           'exerciseId': 'exercise-1',
           'repCount': 10,

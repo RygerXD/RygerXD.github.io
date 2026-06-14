@@ -36,14 +36,14 @@ void main() {
     await repHistoryService.saveReps(
       workoutId: 'workout-1',
       setId: 'set-1',
-      loopIndex: 0,
+      lapIndex: 0,
       exerciseId: 'exercise-1',
       reps: 16,
     );
     await repHistoryService.saveWeight(
       workoutId: 'workout-1',
       setId: 'set-1',
-      loopIndex: 0,
+      lapIndex: 0,
       exerciseId: 'exercise-1',
       weightUnit: WeightUnit.lb.name,
       weight: 40,
@@ -119,7 +119,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('Left Pushups'), findsOneWidget);
-    expect(find.text('1 / 2 - Loop 1/1'), findsOneWidget);
+    expect(find.text('1 / 2 - Lap 1/1'), findsOneWidget);
     expect(find.text('ACTUAL REPS / SIDE'), findsOneWidget);
     expect(find.text('ACTUAL WEIGHT'), findsOneWidget);
 
@@ -127,13 +127,13 @@ void main() {
     await tester.pump();
 
     expect(find.text('Next: Right Pushups'), findsOneWidget);
-    expect(find.text('2 / 2 - Loop 1/1'), findsOneWidget);
+    expect(find.text('2 / 2 - Lap 1/1'), findsOneWidget);
   });
 }
 
 WorkoutPlan _planWithMove(Move move) {
   return WorkoutPlan(
-    schemaVersion: 1,
+    schemaVersion: 2,
     planId: 'plan-1',
     name: 'Plan 1',
     workouts: <Workout>[
@@ -143,8 +143,8 @@ WorkoutPlan _planWithMove(Move move) {
         sets: <WorkoutSet>[
           WorkoutSet(
             setId: 'set-1',
-            loopCount: 1,
-            restBetweenLoopsSeconds: 0,
+            lapCount: 1,
+            restBetweenLapsSeconds: 0,
             moves: <Move>[move],
           ),
         ],

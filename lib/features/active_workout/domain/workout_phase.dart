@@ -3,7 +3,7 @@ enum WorkoutPhase {
   prep,
   move,
   rest,
-  restBetweenLoops,
+  restBetweenLaps,
   paused,
   completed,
   completedEarly,

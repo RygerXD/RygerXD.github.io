@@ -58,8 +58,8 @@ void main() {
         sets: <WorkoutSet>[
           WorkoutSet(
             setId: 's-1',
-            loopCount: 1,
-            restBetweenLoopsSeconds: 0,
+            lapCount: 1,
+            restBetweenLapsSeconds: 0,
             moves: <Move>[
               Move(
                 moveId: 'm-1',
@@ -107,8 +107,8 @@ void main() {
         sets: <WorkoutSet>[
           WorkoutSet(
             setId: 's-1',
-            loopCount: 2,
-            restBetweenLoopsSeconds: 30,
+            lapCount: 2,
+            restBetweenLapsSeconds: 30,
             moves: <Move>[move],
           ),
         ],

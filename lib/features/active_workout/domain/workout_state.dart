@@ -5,7 +5,7 @@ class WorkoutState {
     required this.phase,
     required this.workoutIndex,
     required this.setIndex,
-    required this.loopIndex,
+    required this.lapIndex,
     required this.moveIndex,
     required this.transitionCount,
     this.pausedFrom,
@@ -15,7 +15,7 @@ class WorkoutState {
       : phase = WorkoutPhase.idle,
         workoutIndex = 0,
         setIndex = 0,
-        loopIndex = 0,
+        lapIndex = 0,
         moveIndex = 0,
         transitionCount = 0,
         pausedFrom = null;
@@ -23,7 +23,7 @@ class WorkoutState {
   final WorkoutPhase phase;
   final int workoutIndex;
   final int setIndex;
-  final int loopIndex;
+  final int lapIndex;
   final int moveIndex;
   final int transitionCount;
   final WorkoutPhase? pausedFrom;
@@ -37,7 +37,7 @@ class WorkoutState {
     WorkoutPhase? phase,
     int? workoutIndex,
     int? setIndex,
-    int? loopIndex,
+    int? lapIndex,
     int? moveIndex,
     int? transitionCount,
     WorkoutPhase? pausedFrom,
@@ -47,7 +47,7 @@ class WorkoutState {
       phase: phase ?? this.phase,
       workoutIndex: workoutIndex ?? this.workoutIndex,
       setIndex: setIndex ?? this.setIndex,
-      loopIndex: loopIndex ?? this.loopIndex,
+      lapIndex: lapIndex ?? this.lapIndex,
       moveIndex: moveIndex ?? this.moveIndex,
       transitionCount: transitionCount ?? this.transitionCount,
       pausedFrom: clearPausedFrom ? null : pausedFrom ?? this.pausedFrom,

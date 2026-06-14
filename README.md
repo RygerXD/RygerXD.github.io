@@ -5,7 +5,7 @@
 - GoRouter shell navigation (`Home`, `Library`, `Settings`).
 - Design tokenized theme setup.
 - Core workout plan domain models and parser/validator with `schemaVersion` enforcement.
-- Active workout state machine with explicit transitions (`prep`, `move`, `rest`, `restBetweenLoops`, `paused`, terminal states).
+- Active workout state machine with explicit transitions (`prep`, `move`, `rest`, `restBetweenLaps`, `paused`, terminal states).
 - Repository interface and in-memory implementation.
 - JSON schema and example plans:
   - `docs/schemas/workout-plan.schema.json`

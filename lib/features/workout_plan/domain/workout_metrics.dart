@@ -11,12 +11,12 @@ int estimateWorkoutSeconds(Workout workout) {
 
 int estimateSetSeconds(WorkoutSet set) {
   int total = 0;
-  for (int loop = 0; loop < set.loopCount; loop += 1) {
+  for (int lap = 0; lap < set.lapCount; lap += 1) {
     for (final Move move in set.moves) {
       total += estimateMoveSeconds(move);
     }
-    if (loop < set.loopCount - 1) {
-      total += set.restBetweenLoopsSeconds;
+    if (lap < set.lapCount - 1) {
+      total += set.restBetweenLapsSeconds;
     }
   }
   return total;
@@ -55,7 +55,7 @@ int countWorkoutMoves(Workout workout) {
                   moveTotal +
                   (effectiveMoveSetCount(move) * effectiveMoveSideCount(move)),
             ) *
-            set.loopCount),
+            set.lapCount),
   );
 }
 

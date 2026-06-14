@@ -116,7 +116,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     final String statusLabel = activeWorkoutPhaseLabel(displayPhase);
     final bool isPaused = state.phase == WorkoutPhase.paused;
     final bool isPrep = displayPhase == WorkoutPhase.prep;
-    final bool isRest = displayPhase == WorkoutPhase.restBetweenLoops ||
+    final bool isRest = displayPhase == WorkoutPhase.restBetweenLaps ||
         displayPhase == WorkoutPhase.rest;
     final bool isMove = displayPhase == WorkoutPhase.move;
     final bool hasTrackedWeight = currentMove.targetWeight != null &&
@@ -154,7 +154,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                         Text(
-                          '${state.moveIndex + 1} / ${currentSet.moves.length} - Loop ${state.loopIndex + 1}/${currentSet.loopCount}',
+                          '${state.moveIndex + 1} / ${currentSet.moves.length} - Lap ${state.lapIndex + 1}/${currentSet.lapCount}',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],
@@ -342,8 +342,8 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                               : 'SKIP REST',
                           color: Colors.green,
                           onPressed: () => _runGuarded(() {
-                            if (displayPhase == WorkoutPhase.restBetweenLoops) {
-                              controller.completeRestBetweenLoops();
+                            if (displayPhase == WorkoutPhase.restBetweenLaps) {
+                              controller.completeRestBetweenLaps();
                             } else {
                               controller.completeRest();
                             }
@@ -473,8 +473,8 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
 
     await _playAudioCue();
 
-    if (displayPhase == WorkoutPhase.restBetweenLoops) {
-      return _runGuarded(() => controller.completeRestBetweenLoops());
+    if (displayPhase == WorkoutPhase.restBetweenLaps) {
+      return _runGuarded(() => controller.completeRestBetweenLaps());
     }
     if (displayPhase == WorkoutPhase.rest) {
       return _runGuarded(() => controller.completeRest());
@@ -569,7 +569,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
           await ref.read(repHistoryServiceProvider).saveReps(
                 workoutId: workout.workoutId,
                 setId: currentSet.setId,
-                loopIndex: state.loopIndex,
+                lapIndex: state.lapIndex,
                 exerciseId: currentMove.exerciseId,
                 reps: repsToSave,
               );
@@ -579,7 +579,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
           await ref.read(repHistoryServiceProvider).saveDuration(
                 workoutId: workout.workoutId,
                 setId: currentSet.setId,
-                loopIndex: state.loopIndex,
+                lapIndex: state.lapIndex,
                 exerciseId: currentMove.exerciseId,
                 seconds: elapsedSeconds,
               );
@@ -589,7 +589,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
           await ref.read(repHistoryServiceProvider).saveWeight(
                 workoutId: workout.workoutId,
                 setId: currentSet.setId,
-                loopIndex: state.loopIndex,
+                lapIndex: state.lapIndex,
                 exerciseId: currentMove.exerciseId,
                 weightUnit: weightUnit.name,
                 weight: _currentWeight,
@@ -601,7 +601,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                 sessionId: sessionId,
                 workoutId: workout.workoutId,
                 setId: currentSet.setId,
-                loopIndex: state.loopIndex,
+                lapIndex: state.lapIndex,
                 moveId: currentMove.moveId,
                 exerciseId: currentMove.exerciseId,
                 repCount: repsToSave ?? 0,
@@ -653,14 +653,14 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     }
 
     final String moveKey =
-        '${next.setIndex}:${next.loopIndex}:${next.moveIndex}:${move.moveId}';
+        '${next.setIndex}:${next.lapIndex}:${next.moveIndex}:${move.moveId}';
     final bool moveChanged = moveKey != _lastMoveKey;
     final bool resumedFromPause = previous?.phase == WorkoutPhase.paused &&
         next.phase != WorkoutPhase.paused;
     final bool phaseChanged = previous?.phase != next.phase;
     final bool positionChanged = previous == null ||
         previous.setIndex != next.setIndex ||
-        previous.loopIndex != next.loopIndex ||
+        previous.lapIndex != next.lapIndex ||
         previous.moveIndex != next.moveIndex;
     final bool shouldResetTimer = !resumedFromPause &&
         next.phase != WorkoutPhase.paused &&
@@ -743,7 +743,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
         return ref.read(repHistoryServiceProvider).getLastReps(
               workoutId: workout.workoutId,
               setId: set.setId,
-              loopIndex: state.loopIndex,
+              lapIndex: state.lapIndex,
               exerciseId: move.exerciseId,
             );
       },
@@ -771,7 +771,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
         return ref.read(repHistoryServiceProvider).getLastWeight(
               workoutId: workout.workoutId,
               setId: set.setId,
-              loopIndex: state.loopIndex,
+              lapIndex: state.lapIndex,
               exerciseId: move.exerciseId,
               weightUnit: unit.name,
             );
@@ -795,7 +795,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
         return ref.read(repHistoryServiceProvider).getLastDuration(
               workoutId: workout.workoutId,
               setId: set.setId,
-              loopIndex: state.loopIndex,
+              lapIndex: state.lapIndex,
               exerciseId: move.exerciseId,
             );
       },
@@ -838,8 +838,8 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     if (phase == WorkoutPhase.move) {
       return effectiveMoveDurationSeconds(move);
     }
-    if (phase == WorkoutPhase.restBetweenLoops) {
-      return set.restBetweenLoopsSeconds;
+    if (phase == WorkoutPhase.restBetweenLaps) {
+      return set.restBetweenLapsSeconds;
     }
     if (phase == WorkoutPhase.rest) {
       return move.finishTimeSeconds;
@@ -887,7 +887,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     }
 
     final String metronomeKey =
-        '${state.setIndex}:${state.loopIndex}:${state.moveIndex}:${move.moveId}:$bpm';
+        '${state.setIndex}:${state.lapIndex}:${state.moveIndex}:${move.moveId}:$bpm';
     if (_activeMetronomeKey == metronomeKey && _metronomeTimer != null) {
       return;
     }
@@ -976,7 +976,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     }
 
     final String countdownKey =
-        '${state.setIndex}:${state.loopIndex}:${state.moveIndex}:${currentMove?.moveId}:$seconds';
+        '${state.setIndex}:${state.lapIndex}:${state.moveIndex}:${currentMove?.moveId}:$seconds';
     if (lastKey == countdownKey) {
       return;
     }

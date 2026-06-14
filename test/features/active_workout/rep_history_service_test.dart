@@ -4,7 +4,7 @@ import 'package:workout_app_rewrite/features/active_workout/application/rep_hist
 
 void main() {
   group('RepHistoryService', () {
-    test('saves and retrieves reps by workout/set/loop/exercise key', () async {
+    test('saves and retrieves reps by workout/set/lap/exercise key', () async {
       SharedPreferences.setMockInitialValues(<String, Object>{});
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       final RepHistoryService service = RepHistoryService(prefs);
@@ -12,7 +12,7 @@ void main() {
       await service.saveReps(
         workoutId: 'w1',
         setId: 's1',
-        loopIndex: 0,
+        lapIndex: 0,
         exerciseId: 'e1',
         reps: 12,
       );
@@ -20,14 +20,14 @@ void main() {
       final int? stored = await service.getLastReps(
         workoutId: 'w1',
         setId: 's1',
-        loopIndex: 0,
+        lapIndex: 0,
         exerciseId: 'e1',
       );
 
       expect(stored, 12);
     });
 
-    test('stores separate values per loop', () async {
+    test('stores separate values per lap', () async {
       SharedPreferences.setMockInitialValues(<String, Object>{});
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       final RepHistoryService service = RepHistoryService(prefs);
@@ -35,33 +35,33 @@ void main() {
       await service.saveReps(
         workoutId: 'w1',
         setId: 's1',
-        loopIndex: 0,
+        lapIndex: 0,
         exerciseId: 'e1',
         reps: 10,
       );
       await service.saveReps(
         workoutId: 'w1',
         setId: 's1',
-        loopIndex: 1,
+        lapIndex: 1,
         exerciseId: 'e1',
         reps: 8,
       );
 
-      final int? loop0 = await service.getLastReps(
+      final int? lap0 = await service.getLastReps(
         workoutId: 'w1',
         setId: 's1',
-        loopIndex: 0,
+        lapIndex: 0,
         exerciseId: 'e1',
       );
-      final int? loop1 = await service.getLastReps(
+      final int? lap1 = await service.getLastReps(
         workoutId: 'w1',
         setId: 's1',
-        loopIndex: 1,
+        lapIndex: 1,
         exerciseId: 'e1',
       );
 
-      expect(loop0, 10);
-      expect(loop1, 8);
+      expect(lap0, 10);
+      expect(lap1, 8);
     });
 
     test('falls back to empty data on malformed storage', () async {
@@ -74,14 +74,14 @@ void main() {
       final int? stored = await service.getLastReps(
         workoutId: 'w1',
         setId: 's1',
-        loopIndex: 0,
+        lapIndex: 0,
         exerciseId: 'e1',
       );
 
       expect(stored, isNull);
     });
 
-    test('saves and retrieves weight by workout/set/loop/exercise/unit key',
+    test('saves and retrieves weight by workout/set/lap/exercise/unit key',
         () async {
       SharedPreferences.setMockInitialValues(<String, Object>{});
       final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -90,7 +90,7 @@ void main() {
       await service.saveWeight(
         workoutId: 'w1',
         setId: 's1',
-        loopIndex: 0,
+        lapIndex: 0,
         exerciseId: 'e1',
         weightUnit: 'lb',
         weight: 45.5,
@@ -99,7 +99,7 @@ void main() {
       final double? stored = await service.getLastWeight(
         workoutId: 'w1',
         setId: 's1',
-        loopIndex: 0,
+        lapIndex: 0,
         exerciseId: 'e1',
         weightUnit: 'lb',
       );
@@ -115,7 +115,7 @@ void main() {
       await service.saveWeight(
         workoutId: 'w1',
         setId: 's1',
-        loopIndex: 0,
+        lapIndex: 0,
         exerciseId: 'e1',
         weightUnit: 'lb',
         weight: 100,
@@ -123,7 +123,7 @@ void main() {
       await service.saveWeight(
         workoutId: 'w1',
         setId: 's1',
-        loopIndex: 0,
+        lapIndex: 0,
         exerciseId: 'e1',
         weightUnit: 'kg',
         weight: 45,
@@ -132,14 +132,14 @@ void main() {
       final double? pounds = await service.getLastWeight(
         workoutId: 'w1',
         setId: 's1',
-        loopIndex: 0,
+        lapIndex: 0,
         exerciseId: 'e1',
         weightUnit: 'lb',
       );
       final double? kilos = await service.getLastWeight(
         workoutId: 'w1',
         setId: 's1',
-        loopIndex: 0,
+        lapIndex: 0,
         exerciseId: 'e1',
         weightUnit: 'kg',
       );
@@ -148,7 +148,7 @@ void main() {
       expect(kilos, 45);
     });
 
-    test('saves and retrieves duration by workout/set/loop/exercise key',
+    test('saves and retrieves duration by workout/set/lap/exercise key',
         () async {
       SharedPreferences.setMockInitialValues(<String, Object>{});
       final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -157,7 +157,7 @@ void main() {
       await service.saveDuration(
         workoutId: 'w1',
         setId: 's1',
-        loopIndex: 0,
+        lapIndex: 0,
         exerciseId: 'e1',
         seconds: 75,
       );
@@ -165,7 +165,7 @@ void main() {
       final int? stored = await service.getLastDuration(
         workoutId: 'w1',
         setId: 's1',
-        loopIndex: 0,
+        lapIndex: 0,
         exerciseId: 'e1',
       );
 

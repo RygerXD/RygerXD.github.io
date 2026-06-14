@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "planId": "growingannanas-25-minute-beginner-no-equipment",
   "name": "25-Minute No-Equipment Beginner Routine",
   "description": "A no-repeat beginner routine by growingannanas with two working rounds and a cool-down.",
@@ -146,8 +146,8 @@
         {
           "setId": "round-1-strength-steady-cardio",
           "name": "Round 1: Strength & Steady Cardio",
-          "loopCount": 1,
-          "restBetweenLoopsSeconds": 0,
+          "lapCount": 1,
+          "restBetweenLapsSeconds": 0,
           "moves": [
             {
               "moveId": "round-1-standing-jacks",
@@ -266,8 +266,8 @@
         {
           "setId": "round-2-core-focus-fast-paced-hiit",
           "name": "Round 2: Core Focus & Fast-Paced HIIT",
-          "loopCount": 1,
-          "restBetweenLoopsSeconds": 0,
+          "lapCount": 1,
+          "restBetweenLapsSeconds": 0,
           "moves": [
             {
               "moveId": "round-2-crunches",
@@ -360,8 +360,8 @@
         {
           "setId": "cool-down-stretches",
           "name": "Cool Down Stretches",
-          "loopCount": 1,
-          "restBetweenLoopsSeconds": 0,
+          "lapCount": 1,
+          "restBetweenLapsSeconds": 0,
           "moves": [
             {
               "moveId": "cool-down-childs-pose",

@@ -51,7 +51,7 @@ Move? nextMoveDuringRestPhase({
   required WorkoutState state,
   required Workout workout,
 }) {
-  if (phase == WorkoutPhase.restBetweenLoops) {
+  if (phase == WorkoutPhase.restBetweenLaps) {
     return _moveAt(
       workout: workout,
       setIndex: state.setIndex,
@@ -71,7 +71,7 @@ Move? nextMoveDuringRestPhase({
   if (nextMoveIndex < currentSet.moves.length) {
     return currentSet.moves[nextMoveIndex];
   }
-  if (state.loopIndex + 1 < currentSet.loopCount) {
+  if (state.lapIndex + 1 < currentSet.lapCount) {
     return currentSet.moves.isEmpty ? null : currentSet.moves.first;
   }
   return _moveAt(
@@ -85,7 +85,7 @@ Color activeWorkoutPhaseColor(WorkoutPhase phase) {
   if (phase == WorkoutPhase.prep) {
     return Colors.orange;
   }
-  if (phase == WorkoutPhase.restBetweenLoops || phase == WorkoutPhase.rest) {
+  if (phase == WorkoutPhase.restBetweenLaps || phase == WorkoutPhase.rest) {
     return Colors.green;
   }
   return Colors.blue;
@@ -98,7 +98,7 @@ String activeWorkoutPhaseLabel(WorkoutPhase phase) {
   if (phase == WorkoutPhase.rest) {
     return 'Cooldown';
   }
-  if (phase == WorkoutPhase.restBetweenLoops) {
+  if (phase == WorkoutPhase.restBetweenLaps) {
     return 'Rest';
   }
   return 'Go!';

@@ -13,7 +13,7 @@ void main() {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 1,
+        schemaVersion: 2,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[],
@@ -64,7 +64,7 @@ void main() {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 1,
+        schemaVersion: 2,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[],
@@ -241,7 +241,7 @@ void main() {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 1,
+        schemaVersion: 2,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[],
@@ -294,7 +294,7 @@ void main() {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 1,
+        schemaVersion: 2,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[],
@@ -401,7 +401,7 @@ void main() {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 1,
+        schemaVersion: 2,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[
@@ -411,8 +411,8 @@ void main() {
             sets: <WorkoutSet>[
               WorkoutSet(
                 setId: 'set-1',
-                loopCount: 1,
-                restBetweenLoopsSeconds: 30,
+                lapCount: 1,
+                restBetweenLapsSeconds: 30,
                 moves: <Move>[
                   Move(
                     moveId: 'move-1',
@@ -653,7 +653,7 @@ void main() {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 1,
+        schemaVersion: 2,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[],
@@ -719,7 +719,7 @@ void main() {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 1,
+        schemaVersion: 2,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[
@@ -729,8 +729,8 @@ void main() {
             sets: <WorkoutSet>[
               WorkoutSet(
                 setId: 'set-1',
-                loopCount: 1,
-                restBetweenLoopsSeconds: 30,
+                lapCount: 1,
+                restBetweenLapsSeconds: 30,
                 moves: <Move>[
                   Move(
                     moveId: 'move-1',
@@ -785,7 +785,7 @@ void main() {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 1,
+        schemaVersion: 2,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[
@@ -795,8 +795,8 @@ void main() {
             sets: <WorkoutSet>[
               WorkoutSet(
                 setId: 'source-set',
-                loopCount: 1,
-                restBetweenLoopsSeconds: 30,
+                lapCount: 1,
+                restBetweenLapsSeconds: 30,
                 moves: <Move>[
                   Move(
                     moveId: 'source-move',
@@ -884,11 +884,11 @@ void main() {
         'https://example.com/burpee.gif');
   });
 
-  testWidgets('saves set names and loop counts', (WidgetTester tester) async {
+  testWidgets('saves set names and lap counts', (WidgetTester tester) async {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 1,
+        schemaVersion: 2,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[],
@@ -916,21 +916,24 @@ void main() {
 
     await tester.enterText(find.byType(TextField).at(0), 'Workout A');
     await tester.enterText(find.byType(TextField).at(2), 'Warmup');
-    await tester.enterText(find.byType(TextField).at(3), '3');
+    await tester.tap(find.byTooltip('Increase laps'));
+    await tester.pump();
+    await tester.tap(find.byTooltip('Increase laps'));
+    await tester.pump();
     await tester.tap(find.text('SAVE'));
     await tester.pumpAndSettle();
 
     final WorkoutPlan? updatedPlan = await repository.getPlanById('plan-1');
     final WorkoutSet savedSet = updatedPlan!.workouts.single.sets.single;
     expect(savedSet.name, 'Warmup');
-    expect(savedSet.loopCount, 3);
+    expect(savedSet.lapCount, 3);
   });
 
   testWidgets('reorders moves inside a set', (WidgetTester tester) async {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 1,
+        schemaVersion: 2,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[
@@ -940,8 +943,8 @@ void main() {
             sets: <WorkoutSet>[
               WorkoutSet(
                 setId: 'set-1',
-                loopCount: 1,
-                restBetweenLoopsSeconds: 30,
+                lapCount: 1,
+                restBetweenLapsSeconds: 30,
                 moves: <Move>[
                   Move(
                     moveId: 'move-1',

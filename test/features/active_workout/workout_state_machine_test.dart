@@ -7,7 +7,7 @@ void main() {
   group('WorkoutStateMachine', () {
     test('runs basic start -> move -> complete flow', () {
       final WorkoutStateMachine machine =
-          WorkoutStateMachine(workout: _singleSetWorkout(loopCount: 1));
+          WorkoutStateMachine(workout: _singleSetWorkout(lapCount: 1));
       machine.start();
       expect(machine.state.phase, WorkoutPhase.prep);
 
@@ -21,7 +21,7 @@ void main() {
 
     test('supports pause and resume', () {
       final WorkoutStateMachine machine =
-          WorkoutStateMachine(workout: _singleSetWorkout(loopCount: 1));
+          WorkoutStateMachine(workout: _singleSetWorkout(lapCount: 1));
       machine.start();
       machine.startPrepNow();
       machine.pause();
@@ -31,18 +31,18 @@ void main() {
       expect(machine.state.phase, WorkoutPhase.move);
     });
 
-    test('transitions through rest_between_loops when looping', () {
+    test('transitions through rest_between_laps when lapping', () {
       final WorkoutStateMachine machine =
-          WorkoutStateMachine(workout: _singleSetWorkout(loopCount: 2));
+          WorkoutStateMachine(workout: _singleSetWorkout(lapCount: 2));
       machine.start();
       machine.startPrepNow();
 
       machine.completeMove();
-      expect(machine.state.phase, WorkoutPhase.restBetweenLoops);
+      expect(machine.state.phase, WorkoutPhase.restBetweenLaps);
 
-      machine.completeRestBetweenLoops();
+      machine.completeRestBetweenLaps();
       expect(machine.state.phase, WorkoutPhase.prep);
-      expect(machine.state.loopIndex, 1);
+      expect(machine.state.lapIndex, 1);
 
       machine.startPrepNow();
       machine.completeMove();
@@ -51,7 +51,7 @@ void main() {
 
     test('throws for invalid transition', () {
       final WorkoutStateMachine machine =
-          WorkoutStateMachine(workout: _singleSetWorkout(loopCount: 1));
+          WorkoutStateMachine(workout: _singleSetWorkout(lapCount: 1));
       expect(() => machine.completeMove(),
           throwsA(isA<InvalidTransitionException>()));
     });
@@ -63,8 +63,8 @@ void main() {
         sets: <WorkoutSet>[
           WorkoutSet(
             setId: 's1',
-            loopCount: 1,
-            restBetweenLoopsSeconds: 30,
+            lapCount: 1,
+            restBetweenLapsSeconds: 30,
             moves: const <Move>[
               Move(
                 moveId: 'm1',
@@ -76,8 +76,8 @@ void main() {
           ),
           WorkoutSet(
             setId: 's2',
-            loopCount: 1,
-            restBetweenLoopsSeconds: 30,
+            lapCount: 1,
+            restBetweenLapsSeconds: 30,
             moves: const <Move>[
               Move(
                 moveId: 'm2',
@@ -99,15 +99,15 @@ void main() {
       expect(machine.state.moveIndex, 0);
     });
 
-    test('returns to prep between moves in the same loop', () {
+    test('returns to prep between moves in the same lap', () {
       final Workout workout = Workout(
         workoutId: 'w3',
         title: 'W3',
         sets: <WorkoutSet>[
           WorkoutSet(
             setId: 's1',
-            loopCount: 1,
-            restBetweenLoopsSeconds: 0,
+            lapCount: 1,
+            restBetweenLapsSeconds: 0,
             moves: const <Move>[
               Move(
                 moveId: 'm1',
@@ -136,7 +136,7 @@ void main() {
 
     test('expands a move set count into repeated move executions', () {
       final WorkoutStateMachine machine = WorkoutStateMachine(
-        workout: _singleSetWorkout(loopCount: 1, setCount: 2),
+        workout: _singleSetWorkout(lapCount: 1, setCount: 2),
       );
       machine.start();
       expect(machine.workout.sets.single.moves, hasLength(2));
@@ -155,7 +155,7 @@ void main() {
       for (final MoveType type in MoveType.values) {
         final WorkoutStateMachine machine = WorkoutStateMachine(
           workout: _singleSetWorkout(
-            loopCount: 1,
+            lapCount: 1,
             moveType: type,
             repeatEachSide: true,
           ),
@@ -180,7 +180,7 @@ void main() {
 
     test('runs left then right for each-side moves', () {
       final WorkoutStateMachine machine = WorkoutStateMachine(
-        workout: _singleSetWorkout(loopCount: 1, repeatEachSide: true),
+        workout: _singleSetWorkout(lapCount: 1, repeatEachSide: true),
       );
       machine.start();
       expect(machine.workout.sets.single.moves.first.side, MoveSide.left);
@@ -203,8 +203,8 @@ void main() {
         sets: <WorkoutSet>[
           WorkoutSet(
             setId: 's1',
-            loopCount: 1,
-            restBetweenLoopsSeconds: 0,
+            lapCount: 1,
+            restBetweenLapsSeconds: 0,
             moves: const <Move>[
               Move(
                 moveId: 'm1',
@@ -236,9 +236,9 @@ void main() {
       expect(machine.state.moveIndex, 1);
     });
 
-    test('returns to loop rest after cooldown at the end of a loop', () {
+    test('returns to lap rest after cooldown at the end of a lap', () {
       final WorkoutStateMachine machine = WorkoutStateMachine(
-        workout: _singleSetWorkout(loopCount: 2, finishTimeSeconds: 10),
+        workout: _singleSetWorkout(lapCount: 2, finishTimeSeconds: 10),
       );
       machine.start();
       machine.startPrepNow();
@@ -246,15 +246,15 @@ void main() {
       expect(machine.state.phase, WorkoutPhase.rest);
 
       machine.completeRest();
-      expect(machine.state.phase, WorkoutPhase.restBetweenLoops);
-      expect(machine.state.loopIndex, 1);
+      expect(machine.state.phase, WorkoutPhase.restBetweenLaps);
+      expect(machine.state.lapIndex, 1);
       expect(machine.state.moveIndex, 0);
     });
   });
 }
 
 Workout _singleSetWorkout({
-  required int loopCount,
+  required int lapCount,
   int finishTimeSeconds = 0,
   int setCount = 1,
   MoveType moveType = MoveType.reps,
@@ -266,8 +266,8 @@ Workout _singleSetWorkout({
     sets: <WorkoutSet>[
       WorkoutSet(
         setId: 's1',
-        loopCount: loopCount,
-        restBetweenLoopsSeconds: 30,
+        lapCount: lapCount,
+        restBetweenLapsSeconds: 30,
         moves: <Move>[
           Move(
             moveId: 'm1',

@@ -89,8 +89,8 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
         WorkoutSet(
           setId: const Uuid().v4(),
           name: 'Set ${_sets.length + 1}',
-          loopCount: 1,
-          restBetweenLoopsSeconds: 60,
+          lapCount: 1,
+          restBetweenLapsSeconds: 60,
           moves: <Move>[],
         ),
       );
@@ -231,15 +231,11 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
     );
   }
 
-  void _updateSetLoopCount(int setIndex, String value) {
-    final int? loopCount = int.tryParse(value);
-    if (loopCount == null || loopCount < 1) {
-      return;
-    }
-
+  void _updateSetLapCount(int setIndex, int lapCount) {
+    final int clampedLapCount = lapCount.clamp(1, 99).toInt();
     _updateSet(
       setIndex,
-      (WorkoutSet set) => set.copyWith(loopCount: loopCount),
+      (WorkoutSet set) => set.copyWith(lapCount: clampedLapCount),
     );
   }
 
@@ -408,18 +404,16 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
                                 ),
                               ),
                               const SizedBox(width: AppSpacing.sm),
-                              Expanded(
-                                child: TextFormField(
-                                  key: ValueKey<String>(
-                                      'set-loops-${set.setId}'),
-                                  initialValue: set.loopCount.toString(),
-                                  decoration: const InputDecoration(
-                                    labelText: 'Loops',
-                                    border: OutlineInputBorder(),
-                                  ),
-                                  keyboardType: TextInputType.number,
-                                  onChanged: (String value) =>
-                                      _updateSetLoopCount(setIndex, value),
+                              SizedBox(
+                                width: 112,
+                                child: _CountStepper(
+                                  value: set.lapCount,
+                                  singularLabel: 'lap',
+                                  pluralLabel: 'laps',
+                                  decreaseTooltip: 'Decrease laps',
+                                  increaseTooltip: 'Increase laps',
+                                  onChanged: (int lapCount) =>
+                                      _updateSetLapCount(setIndex, lapCount),
                                 ),
                               ),
                               const SizedBox(width: AppSpacing.sm),
@@ -663,6 +657,36 @@ class _MoveSetCountControl extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return _CountStepper(
+      value: setCount,
+      singularLabel: 'set',
+      pluralLabel: 'sets',
+      decreaseTooltip: 'Decrease sets',
+      increaseTooltip: 'Increase sets',
+      onChanged: onChanged,
+    );
+  }
+}
+
+class _CountStepper extends StatelessWidget {
+  const _CountStepper({
+    required this.value,
+    required this.singularLabel,
+    required this.pluralLabel,
+    required this.decreaseTooltip,
+    required this.increaseTooltip,
+    required this.onChanged,
+  });
+
+  final int value;
+  final String singularLabel;
+  final String pluralLabel;
+  final String decreaseTooltip;
+  final String increaseTooltip;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
     final ColorScheme colorScheme = Theme.of(context).colorScheme;
     final TextStyle? labelStyle = Theme.of(context)
         .textTheme
@@ -677,7 +701,7 @@ class _MoveSetCountControl extends StatelessWidget {
           SizedBox.square(
             dimension: 36,
             child: IconButton(
-              tooltip: 'Decrease sets',
+              tooltip: decreaseTooltip,
               icon: const Icon(Icons.remove),
               iconSize: 20,
               padding: EdgeInsets.zero,
@@ -685,7 +709,7 @@ class _MoveSetCountControl extends StatelessWidget {
                 width: 36,
                 height: 36,
               ),
-              onPressed: setCount > 1 ? () => onChanged(setCount - 1) : null,
+              onPressed: value > 1 ? () => onChanged(value - 1) : null,
             ),
           ),
           SizedBox(
@@ -694,12 +718,12 @@ class _MoveSetCountControl extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 Text(
-                  setCount.toString(),
+                  value.toString(),
                   style: labelStyle,
                   textAlign: TextAlign.center,
                 ),
                 Text(
-                  setCount == 1 ? 'set' : 'sets',
+                  value == 1 ? singularLabel : pluralLabel,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
@@ -713,7 +737,7 @@ class _MoveSetCountControl extends StatelessWidget {
           SizedBox.square(
             dimension: 36,
             child: IconButton(
-              tooltip: 'Increase sets',
+              tooltip: increaseTooltip,
               icon: const Icon(Icons.add),
               iconSize: 20,
               padding: EdgeInsets.zero,
@@ -721,7 +745,7 @@ class _MoveSetCountControl extends StatelessWidget {
                 width: 36,
                 height: 36,
               ),
-              onPressed: setCount < 99 ? () => onChanged(setCount + 1) : null,
+              onPressed: value < 99 ? () => onChanged(value + 1) : null,
             ),
           ),
         ],

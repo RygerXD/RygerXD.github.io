@@ -38,13 +38,13 @@ class RepHistoryService {
   Future<int?> getLastReps({
     required String workoutId,
     required String setId,
-    required int loopIndex,
+    required int lapIndex,
     required String exerciseId,
   }) async {
     return _repsStore.get(_key(
       workoutId: workoutId,
       setId: setId,
-      loopIndex: loopIndex,
+      lapIndex: lapIndex,
       exerciseId: exerciseId,
     ));
   }
@@ -52,7 +52,7 @@ class RepHistoryService {
   Future<void> saveReps({
     required String workoutId,
     required String setId,
-    required int loopIndex,
+    required int lapIndex,
     required String exerciseId,
     required int reps,
   }) async {
@@ -60,7 +60,7 @@ class RepHistoryService {
       _key(
         workoutId: workoutId,
         setId: setId,
-        loopIndex: loopIndex,
+        lapIndex: lapIndex,
         exerciseId: exerciseId,
       ),
       reps,
@@ -70,14 +70,14 @@ class RepHistoryService {
   Future<double?> getLastWeight({
     required String workoutId,
     required String setId,
-    required int loopIndex,
+    required int lapIndex,
     required String exerciseId,
     required String weightUnit,
   }) async {
     return _weightStore.get(_weightKey(
       workoutId: workoutId,
       setId: setId,
-      loopIndex: loopIndex,
+      lapIndex: lapIndex,
       exerciseId: exerciseId,
       weightUnit: weightUnit,
     ));
@@ -86,7 +86,7 @@ class RepHistoryService {
   Future<void> saveWeight({
     required String workoutId,
     required String setId,
-    required int loopIndex,
+    required int lapIndex,
     required String exerciseId,
     required String weightUnit,
     required double weight,
@@ -95,7 +95,7 @@ class RepHistoryService {
       _weightKey(
         workoutId: workoutId,
         setId: setId,
-        loopIndex: loopIndex,
+        lapIndex: lapIndex,
         exerciseId: exerciseId,
         weightUnit: weightUnit,
       ),
@@ -106,13 +106,13 @@ class RepHistoryService {
   Future<int?> getLastDuration({
     required String workoutId,
     required String setId,
-    required int loopIndex,
+    required int lapIndex,
     required String exerciseId,
   }) async {
     return _durationStore.get(_key(
       workoutId: workoutId,
       setId: setId,
-      loopIndex: loopIndex,
+      lapIndex: lapIndex,
       exerciseId: exerciseId,
     ));
   }
@@ -120,7 +120,7 @@ class RepHistoryService {
   Future<void> saveDuration({
     required String workoutId,
     required String setId,
-    required int loopIndex,
+    required int lapIndex,
     required String exerciseId,
     required int seconds,
   }) async {
@@ -128,7 +128,7 @@ class RepHistoryService {
       _key(
         workoutId: workoutId,
         setId: setId,
-        loopIndex: loopIndex,
+        lapIndex: lapIndex,
         exerciseId: exerciseId,
       ),
       seconds,
@@ -138,20 +138,20 @@ class RepHistoryService {
   String _key({
     required String workoutId,
     required String setId,
-    required int loopIndex,
+    required int lapIndex,
     required String exerciseId,
   }) {
-    return '$workoutId|$setId|$loopIndex|$exerciseId';
+    return '$workoutId|$setId|$lapIndex|$exerciseId';
   }
 
   String _weightKey({
     required String workoutId,
     required String setId,
-    required int loopIndex,
+    required int lapIndex,
     required String exerciseId,
     required String weightUnit,
   }) {
-    return '$workoutId|$setId|$loopIndex|$exerciseId|$weightUnit';
+    return '$workoutId|$setId|$lapIndex|$exerciseId|$weightUnit';
   }
 
   static int? _readIntValue(Object? value) {

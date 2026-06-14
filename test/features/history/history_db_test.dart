@@ -38,7 +38,7 @@ void main() {
         sessionId: 'session-1',
         workoutId: 'workout-1',
         setId: 'set-1',
-        loopIndex: 0,
+        lapIndex: 0,
         moveId: 'move-1',
         exerciseId: 'exercise-1',
         repCount: 10,
@@ -52,7 +52,7 @@ void main() {
         sessionId: 'session-2',
         workoutId: 'workout-1',
         setId: 'set-1',
-        loopIndex: 0,
+        lapIndex: 0,
         moveId: 'move-1',
         exerciseId: 'exercise-1',
         repCount: 12,
@@ -84,7 +84,7 @@ void main() {
     addTearDown(db.close);
 
     const WorkoutPlan plan = WorkoutPlan(
-      schemaVersion: 1,
+      schemaVersion: 2,
       planId: 'plan-1',
       name: 'Plan 1',
       workouts: <Workout>[
@@ -94,8 +94,8 @@ void main() {
           sets: <WorkoutSet>[
             WorkoutSet(
               setId: 'set-1',
-              loopCount: 1,
-              restBetweenLoopsSeconds: 0,
+              lapCount: 1,
+              restBetweenLapsSeconds: 0,
               moves: <Move>[
                 Move(
                   moveId: 'move-1',

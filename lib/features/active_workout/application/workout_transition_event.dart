@@ -6,7 +6,7 @@ class WorkoutTransitionEvent {
     required this.to,
     required this.timestampUtc,
     required this.setIndex,
-    required this.loopIndex,
+    required this.lapIndex,
     required this.moveIndex,
   });
 
@@ -14,6 +14,6 @@ class WorkoutTransitionEvent {
   final WorkoutPhase to;
   final DateTime timestampUtc;
   final int setIndex;
-  final int loopIndex;
+  final int lapIndex;
   final int moveIndex;
 }

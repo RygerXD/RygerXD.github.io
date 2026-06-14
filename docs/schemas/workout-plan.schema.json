@@ -14,7 +14,7 @@
   "properties": {
     "schemaVersion": {
       "type": "integer",
-      "const": 1
+      "const": 2
     },
     "planId": {
       "type": "string",
@@ -118,8 +118,8 @@
       "additionalProperties": false,
       "required": [
         "setId",
-        "loopCount",
-        "restBetweenLoopsSeconds",
+        "lapCount",
+        "restBetweenLapsSeconds",
         "moves"
       ],
       "properties": {
@@ -131,11 +131,11 @@
           "type": "string",
           "minLength": 1
         },
-        "loopCount": {
+        "lapCount": {
           "type": "integer",
           "minimum": 1
         },
-        "restBetweenLoopsSeconds": {
+        "restBetweenLapsSeconds": {
           "type": "integer",
           "minimum": 0
         },

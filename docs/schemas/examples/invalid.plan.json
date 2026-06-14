@@ -10,8 +10,8 @@
       "sets": [
         {
           "setId": "s1",
-          "loopCount": 0,
-          "restBetweenLoopsSeconds": 20,
+          "lapCount": 0,
+          "restBetweenLapsSeconds": 20,
           "moves": [
             {
               "moveId": "m1",

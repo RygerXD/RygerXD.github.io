@@ -16,7 +16,7 @@ The application is a local-first workout planner and tracker. Users can:
 - Create and edit workout plans.
 - Create and edit workouts inside plans.
 - Define reusable exercises with optional image/GIF URLs.
-- Build workouts from sets, loops, timed moves, rep moves, stopwatch moves, prep time, cooldown time, per-side duration, target weights, and metronome cadence.
+- Build workouts from sets, laps, timed moves, rep moves, stopwatch moves, prep time, cooldown time, per-side duration, target weights, and metronome cadence.
 - Start guided workouts with timers, rest handling, audio cues, adjustable actual reps, adjustable actual weight, and move-level performance capture.
 - View weekly dashboard stats.
 - Browse plans and workouts.
@@ -143,7 +143,7 @@ Privacy note:
    - Workout plan parsing, validation, estimates, state-machine transitions, streak calculations, and history aggregation should live outside React components.
    - These modules should be portable enough to translate back into Dart later.
 
-2. Preserve the schemaVersion 1 workout plan JSON contract.
+2. Preserve the schemaVersion 2 workout plan JSON contract.
    - Do not casually rename plan/workout/set/move/exercise fields.
    - Imported files produced for the Flutter app should import into the web app.
    - Web-exported plan files should import into the Flutter app.
@@ -239,8 +239,8 @@ interface Move {
 interface WorkoutSet {
   setId: string;
   name?: string;
-  loopCount: number;
-  restBetweenLoopsSeconds: number;
+  lapCount: number;
+  restBetweenLapsSeconds: number;
   moves: Move[];
 }
 
@@ -252,7 +252,7 @@ interface Workout {
 }
 
 interface WorkoutPlan {
-  schemaVersion: 1;
+  schemaVersion: 2;
   planId: string;
   name: string;
   description?: string;
@@ -269,12 +269,12 @@ interface WorkoutPlan {
 The web parser must reject invalid imports with user-visible validation messages:
 
 - Root JSON must be an object.
-- `schemaVersion` is required and must be `1`.
+- `schemaVersion` is required and must be `2`.
 - `planId` and `name` are required non-empty strings.
 - `workouts` is required and must be a non-empty array.
 - `exercises` is required and must be a non-empty array.
 - Every workout must have a non-empty `workoutId`, non-empty `title`, and at least one set.
-- Every set must have a non-empty `setId`, `loopCount >= 1`, `restBetweenLoopsSeconds >= 0`, and at least one move.
+- Every set must have a non-empty `setId`, `lapCount >= 1`, `restBetweenLapsSeconds >= 0`, and at least one move.
 - Set `name`, if present, must not be empty after trimming.
 - Every move must have a non-empty `moveId`, non-empty `exerciseId`, and valid `type`.
 - Every move `exerciseId` must reference an exercise in the plan.
@@ -336,7 +336,7 @@ Primary key: `performanceId`
 Use the same key pattern as the Flutter app:
 
 ```text
-$sessionId|$setId|$loopIndex|$moveId
+$sessionId|$setId|$lapIndex|$moveId
 ```
 
 Fields:
@@ -345,7 +345,7 @@ Fields:
 - `sessionId`
 - `workoutId`
 - `setId`
-- `loopIndex`
+- `lapIndex`
 - `moveId`
 - `exerciseId`
 - `repCount`
@@ -359,7 +359,7 @@ Fields:
 Primary key:
 
 ```text
-$workoutId|$setId|$loopIndex|$exerciseId
+$workoutId|$setId|$lapIndex|$exerciseId
 ```
 
 Fields:
@@ -367,7 +367,7 @@ Fields:
 - `key`
 - `workoutId`
 - `setId`
-- `loopIndex`
+- `lapIndex`
 - `exerciseId`
 - `reps`
 - `updatedAt`
@@ -377,7 +377,7 @@ Fields:
 Primary key:
 
 ```text
-$workoutId|$setId|$loopIndex|$exerciseId|$weightUnit
+$workoutId|$setId|$lapIndex|$exerciseId|$weightUnit
 ```
 
 Fields:
@@ -385,7 +385,7 @@ Fields:
 - `key`
 - `workoutId`
 - `setId`
-- `loopIndex`
+- `lapIndex`
 - `exerciseId`
 - `weightUnit`
 - `weight`
@@ -396,7 +396,7 @@ Fields:
 Primary key:
 
 ```text
-$workoutId|$setId|$loopIndex|$exerciseId
+$workoutId|$setId|$lapIndex|$exerciseId
 ```
 
 Fields:
@@ -404,7 +404,7 @@ Fields:
 - `key`
 - `workoutId`
 - `setId`
-- `loopIndex`
+- `lapIndex`
 - `exerciseId`
 - `seconds`
 - `updatedAt`
@@ -561,7 +561,7 @@ Import behavior:
 - Use browser file picker restricted to `.json`.
 - Read UTF-8 text.
 - Reject files over `5 * 1024 * 1024` bytes.
-- Parse and validate using schemaVersion 1 rules.
+- Parse and validate using schemaVersion 2 rules.
 - Save valid plan by `planId`, replacing any existing plan with same id.
 - Show success toast: `Successfully imported {plan.name}`.
 - Show error toast with validation/import error.
@@ -590,7 +590,7 @@ Fields:
 Create behavior:
 
 - Generate UUID `planId`.
-- Set `schemaVersion: 1`.
+- Set `schemaVersion: 2`.
 - Save plan with empty `workouts` and empty `exercises`.
 - Navigate to `/library/detail/$planId`.
 
@@ -665,8 +665,8 @@ Create behavior:
 - Start with one empty set:
   - Generated UUID `setId`.
   - Name: `Set 1`.
-  - `loopCount: 1`.
-  - `restBetweenLoopsSeconds: 60`.
+  - `lapCount: 1`.
+  - `restBetweenLapsSeconds: 60`.
   - Empty moves.
 
 Edit behavior:
@@ -689,8 +689,8 @@ Set editing:
 - Add set.
 - Remove set.
 - Rename set; blank name saves as omitted.
-- Edit loop count; invalid or `< 1` values are ignored.
-- Preserve rest-between-loops data even though current UI does not expose an editor for it. The initial value is 60 seconds for new sets.
+- Edit lap count; invalid or `< 1` values are ignored.
+- Preserve rest-between-laps data even though current UI does not expose an editor for it. The initial value is 60 seconds for new sets.
 - Show empty set text: `No moves in this set yet.`
 
 Move list:
@@ -812,20 +812,20 @@ Content:
 - Stats:
   - Calories: always `0`.
   - Duration: `HH:MM:SS` estimate.
-  - Exercises: count of moves across loops.
+  - Exercises: count of moves across laps.
 - Description block:
   - Use plan description if present.
-  - Fallback: `Review the exercises, timing, and set loops before you start.`
+  - Fallback: `Review the exercises, timing, and set laps before you start.`
 - Exercises section:
   - Render sets in order.
   - Show set name if present.
-  - Show loop badge `x{loopCount} Laps` if loop count > 1.
+  - Show lap badge `x{lapCount} Laps` if lap count > 1.
   - Render each move with exercise thumbnail, exercise name, and target badge.
 
 Workout estimates:
 
-- Set estimate is repeated for each loop.
-- Add restBetweenLoopsSeconds between loops only, not after final loop.
+- Set estimate is repeated for each lap.
+- Add restBetweenLapsSeconds between laps only, not after final lap.
 - Reps and stopwatch active durations count as 0 for estimates.
 - Duration active time is `durationSeconds` per side when `repeatEachSide` is true.
 - Move estimate includes prep + active + cooldown for each runtime execution.
@@ -843,7 +843,7 @@ Phases:
 - `prep`
 - `move`
 - `rest`
-- `restBetweenLoops`
+- `restBetweenLaps`
 - `paused`
 - `completed`
 - `completedEarly`
@@ -868,7 +868,7 @@ The web rebuild should include finish-early only if a clear UI is designed; othe
 State cursor:
 
 - `setIndex`
-- `loopIndex`
+- `lapIndex`
 - `moveIndex`
 - `pausedFrom`
 - `transitionCount`
@@ -878,14 +878,14 @@ Transition rules:
 - `idle -> prep` on start.
 - `prep -> move` on Start Now or prep timer completion.
 - `move -> rest` after completing a move with `finishTimeSeconds > 0`.
-- `move -> prep` after completing/skipping a move when more moves remain in the current loop.
-- `move -> restBetweenLoops` after final move in a loop when more loops remain and `restBetweenLoopsSeconds > 0`.
-- `move -> prep` after final move in a loop when more loops remain and rest between loops is 0.
-- `move -> prep` after final move in final loop when another set remains.
+- `move -> prep` after completing/skipping a move when more moves remain in the current lap.
+- `move -> restBetweenLaps` after final move in a lap when more laps remain and `restBetweenLapsSeconds > 0`.
+- `move -> prep` after final move in a lap when more laps remain and rest between laps is 0.
+- `move -> prep` after final move in final lap when another set remains.
 - `move -> completed` after final move in final set.
-- `rest -> prep/restBetweenLoops/completed` according to the same after-move advancement rules.
-- `restBetweenLoops -> prep`.
-- `prep`, `move`, `rest`, `restBetweenLoops -> paused`.
+- `rest -> prep/restBetweenLaps/completed` according to the same after-move advancement rules.
+- `restBetweenLaps -> prep`.
+- `prep`, `move`, `rest`, `restBetweenLaps -> paused`.
 - `paused -> pausedFrom`.
 - Active phases -> `abandoned`.
 - Active phases -> `completedEarly` if finish-early UI is added.
@@ -899,11 +899,11 @@ Timer behavior:
 - `repeatEachSide` moves are expanded before playback into left and right runtime moves.
 - Stopwatch moves count up from 0.
 - Rest counts down from move `finishTimeSeconds`.
-- Rest-between-loops counts down from set `restBetweenLoopsSeconds`.
+- Rest-between-laps counts down from set `restBetweenLapsSeconds`.
 - When a countdown hits 0:
   - Prep auto-starts move and plays get-ready ding.
   - Duration move auto-completes and plays exercise-finished ding.
-  - Rest-between-loops auto-continues.
+  - Rest-between-laps auto-continues.
   - Rest auto-continues.
 
 Display:
@@ -912,13 +912,13 @@ Display:
   - Close button.
   - Workout title.
   - Set label: set name or `Set {setIndex + 1}`.
-  - Move/loop indicator: `{moveIndex + 1} / {moves.length} - Loop {loopIndex + 1}/{loopCount}`.
+  - Move/lap indicator: `{moveIndex + 1} / {moves.length} - Lap {lapIndex + 1}/{lapCount}`.
   - Pause/resume button.
 - Phase chip:
   - Prep: `GET READY`, orange.
   - Move: `GO!`, blue.
   - Rest: `COOLDOWN`, green.
-  - Rest between loops: `REST`, green.
+  - Rest between laps: `REST`, green.
 - Prep/rest displays:
   - Current or next exercise image if available.
   - Large timer.
@@ -933,7 +933,7 @@ Display:
 
 Reps controls:
 
-- Initial current reps = last saved reps for this workout/set/loop/exercise, otherwise target rep count, otherwise 0.
+- Initial current reps = last saved reps for this workout/set/lap/exercise, otherwise target rep count, otherwise 0.
 - Show label `ACTUAL REPS`.
 - Show recommended target.
 - Show last value if available.
@@ -943,7 +943,7 @@ Reps controls:
 Weight controls:
 
 - Show only when move has `targetWeight` and `targetWeightUnit`.
-- Initial current weight = last saved weight for workout/set/loop/exercise/unit, otherwise target weight.
+- Initial current weight = last saved weight for workout/set/lap/exercise/unit, otherwise target weight.
 - Show label `ACTUAL WEIGHT`.
 - Show recommended target.
 - Show last value if available.
@@ -1139,12 +1139,12 @@ Workout context:
 
 Series construction:
 
-- Key by `setId|loopIndex|moveId|exerciseId`.
+- Key by `setId|lapIndex|moveId|exerciseId`.
 - Sort points by session started time.
 - If workout structure is available:
-  - Iterate current workout set order, loops, and move order.
+  - Iterate current workout set order, laps, and move order.
   - Include only move keys with data.
-  - Label: `{exerciseName} - {setName}, Loop {loopIndex + 1}`.
+  - Label: `{exerciseName} - {setName}, Lap {lapIndex + 1}`.
   - Set name fallback: `Set {setIndex + 1}`.
 - If workout structure is missing:
   - Use key as label.
@@ -1297,7 +1297,7 @@ Even though current analysis export is not implemented, plan export is useful fo
 
 If implemented in the web rebuild:
 
-- Export one selected plan as schemaVersion 1 JSON.
+- Export one selected plan as schemaVersion 2 JSON.
 - Preserve all canonical fields.
 - Do not include IndexedDB-only session/history data.
 - Warn if local `app-media://` references exist.
@@ -1310,7 +1310,7 @@ Backup shape:
 
 ```ts
 interface WorkoutAppBackupV1 {
-  schemaVersion: 1;
+  schemaVersion: 2;
   exportedAt: string;
   plans: WorkoutPlan[];
   sessions: WorkoutSession[];
@@ -1356,7 +1356,7 @@ For early testing:
 - Server-side persistence.
 - Cross-device sync.
 - Analytics or telemetry.
-- Replacing schemaVersion 1.
+- Replacing schemaVersion 2.
 
 ## 12. Known Current Gaps to Preserve or Decide
 
@@ -1366,7 +1366,7 @@ These are present in the Flutter app and should be handled intentionally:
 - Analysis export icon exists but export is unavailable.
 - `finishEarly` exists in controller/state machine but is not exposed in active workout UI.
 - Plan detail delete dialog currently says `Delete Workout?` even though it deletes a plan; web rebuild should correct this copy.
-- New set defaults `restBetweenLoopsSeconds` to 60, but current workout editor does not expose a rest-between-loops editor.
+- New set defaults `restBetweenLapsSeconds` to 60, but current workout editor does not expose a rest-between-laps editor.
 - Plan creation can create a plan with zero workouts and zero exercises, even though imported plans require at least one workout and exercise.
 - Web media paste/save is unsupported in the current Flutter web path; the rebuild should implement browser-native Blob storage if local media is needed.
 
@@ -1376,14 +1376,14 @@ These are present in the Flutter app and should be handled intentionally:
 
 Cover:
 
-- Plan parser accepts valid schemaVersion 1 JSON.
+- Plan parser accepts valid schemaVersion 2 JSON.
 - Parser rejects invalid root, missing schemaVersion, unsupported schemaVersion, empty required strings, bad move references, invalid move type data, invalid metronome speed, and invalid stopwatch duration.
 - Workout estimate calculations:
   - prep + duration + cooldown.
   - repeatEachSide creates left/right runtime moves and doubles total active duration for duration moves.
-  - loop rest is counted between loops only.
+  - lap rest is counted between laps only.
   - reps and stopwatch active time are 0.
-- Move count across loops.
+- Move count across laps.
 - State machine transitions.
 - Invalid state-machine transitions do nothing or throw controlled domain errors.
 - Streak calculation.
@@ -1419,7 +1419,7 @@ Use Playwright:
   - duration move,
   - stopwatch move,
   - weighted move,
-  - looped set with rest.
+  - lapped set with rest.
 - Verify session appears in Analysis.
 - Verify weekly dashboard stats update.
 - Verify move-level progress appears after repeated sessions.
@@ -1538,7 +1538,7 @@ src/
 
 To make the eventual Flutter return practical:
 
-- Keep the schemaVersion 1 workout plan JSON as the canonical interchange format.
+- Keep the schemaVersion 2 workout plan JSON as the canonical interchange format.
 - Keep names and behavior of move types, settings enums, session statuses, and history keys aligned with Flutter.
 - Keep workout state-machine tests written in behavior terms so they can be ported back.
 - Avoid storing important data only in web-only shapes unless a migration/export path exists.
@@ -1555,7 +1555,7 @@ The web rebuild is at feature parity when:
 - Users can create, edit, and delete plans.
 - Users can create and edit workouts, sets, moves, exercises, images, weights, timers, metronome, per-side duration, and move ordering.
 - Users can start a workout and complete all current move types.
-- Active workout timers, rests, loops, pause/resume, skip, complete, abandon, and audio cues behave like the current app.
+- Active workout timers, rests, laps, pause/resume, skip, complete, abandon, and audio cues behave like the current app.
 - Completed and abandoned sessions persist.
 - Move-level reps, weights, durations, and performance records persist.
 - Dashboard weekly stats update after workout completion.

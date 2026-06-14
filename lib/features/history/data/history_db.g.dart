@@ -765,11 +765,11 @@ class $WorkoutMovePerformancesTable extends WorkoutMovePerformances
   late final GeneratedColumn<String> setId = GeneratedColumn<String>(
       'set_id', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _loopIndexMeta =
-      const VerificationMeta('loopIndex');
+  static const VerificationMeta _lapIndexMeta =
+      const VerificationMeta('lapIndex');
   @override
-  late final GeneratedColumn<int> loopIndex = GeneratedColumn<int>(
-      'loop_index', aliasedName, false,
+  late final GeneratedColumn<int> lapIndex = GeneratedColumn<int>(
+      'lap_index', aliasedName, false,
       type: DriftSqlType.int, requiredDuringInsert: true);
   static const VerificationMeta _moveIdMeta = const VerificationMeta('moveId');
   @override
@@ -818,7 +818,7 @@ class $WorkoutMovePerformancesTable extends WorkoutMovePerformances
         sessionId,
         workoutId,
         setId,
-        loopIndex,
+        lapIndex,
         moveId,
         exerciseId,
         repCount,
@@ -864,11 +864,11 @@ class $WorkoutMovePerformancesTable extends WorkoutMovePerformances
     } else if (isInserting) {
       context.missing(_setIdMeta);
     }
-    if (data.containsKey('loop_index')) {
-      context.handle(_loopIndexMeta,
-          loopIndex.isAcceptableOrUnknown(data['loop_index']!, _loopIndexMeta));
+    if (data.containsKey('lap_index')) {
+      context.handle(_lapIndexMeta,
+          lapIndex.isAcceptableOrUnknown(data['lap_index']!, _lapIndexMeta));
     } else if (isInserting) {
-      context.missing(_loopIndexMeta);
+      context.missing(_lapIndexMeta);
     }
     if (data.containsKey('move_id')) {
       context.handle(_moveIdMeta,
@@ -936,8 +936,8 @@ class $WorkoutMovePerformancesTable extends WorkoutMovePerformances
           .read(DriftSqlType.string, data['${effectivePrefix}workout_id'])!,
       setId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}set_id'])!,
-      loopIndex: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}loop_index'])!,
+      lapIndex: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}lap_index'])!,
       moveId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}move_id'])!,
       exerciseId: attachedDatabase.typeMapping
@@ -967,7 +967,7 @@ class WorkoutMovePerformanceEntity extends DataClass
   final String sessionId;
   final String workoutId;
   final String setId;
-  final int loopIndex;
+  final int lapIndex;
   final String moveId;
   final String exerciseId;
   final int repCount;
@@ -980,7 +980,7 @@ class WorkoutMovePerformanceEntity extends DataClass
       required this.sessionId,
       required this.workoutId,
       required this.setId,
-      required this.loopIndex,
+      required this.lapIndex,
       required this.moveId,
       required this.exerciseId,
       required this.repCount,
@@ -995,7 +995,7 @@ class WorkoutMovePerformanceEntity extends DataClass
     map['session_id'] = Variable<String>(sessionId);
     map['workout_id'] = Variable<String>(workoutId);
     map['set_id'] = Variable<String>(setId);
-    map['loop_index'] = Variable<int>(loopIndex);
+    map['lap_index'] = Variable<int>(lapIndex);
     map['move_id'] = Variable<String>(moveId);
     map['exercise_id'] = Variable<String>(exerciseId);
     map['rep_count'] = Variable<int>(repCount);
@@ -1016,7 +1016,7 @@ class WorkoutMovePerformanceEntity extends DataClass
       sessionId: Value(sessionId),
       workoutId: Value(workoutId),
       setId: Value(setId),
-      loopIndex: Value(loopIndex),
+      lapIndex: Value(lapIndex),
       moveId: Value(moveId),
       exerciseId: Value(exerciseId),
       repCount: Value(repCount),
@@ -1039,7 +1039,7 @@ class WorkoutMovePerformanceEntity extends DataClass
       sessionId: serializer.fromJson<String>(json['sessionId']),
       workoutId: serializer.fromJson<String>(json['workoutId']),
       setId: serializer.fromJson<String>(json['setId']),
-      loopIndex: serializer.fromJson<int>(json['loopIndex']),
+      lapIndex: serializer.fromJson<int>(json['lapIndex']),
       moveId: serializer.fromJson<String>(json['moveId']),
       exerciseId: serializer.fromJson<String>(json['exerciseId']),
       repCount: serializer.fromJson<int>(json['repCount']),
@@ -1057,7 +1057,7 @@ class WorkoutMovePerformanceEntity extends DataClass
       'sessionId': serializer.toJson<String>(sessionId),
       'workoutId': serializer.toJson<String>(workoutId),
       'setId': serializer.toJson<String>(setId),
-      'loopIndex': serializer.toJson<int>(loopIndex),
+      'lapIndex': serializer.toJson<int>(lapIndex),
       'moveId': serializer.toJson<String>(moveId),
       'exerciseId': serializer.toJson<String>(exerciseId),
       'repCount': serializer.toJson<int>(repCount),
@@ -1073,7 +1073,7 @@ class WorkoutMovePerformanceEntity extends DataClass
           String? sessionId,
           String? workoutId,
           String? setId,
-          int? loopIndex,
+          int? lapIndex,
           String? moveId,
           String? exerciseId,
           int? repCount,
@@ -1086,7 +1086,7 @@ class WorkoutMovePerformanceEntity extends DataClass
         sessionId: sessionId ?? this.sessionId,
         workoutId: workoutId ?? this.workoutId,
         setId: setId ?? this.setId,
-        loopIndex: loopIndex ?? this.loopIndex,
+        lapIndex: lapIndex ?? this.lapIndex,
         moveId: moveId ?? this.moveId,
         exerciseId: exerciseId ?? this.exerciseId,
         repCount: repCount ?? this.repCount,
@@ -1107,7 +1107,7 @@ class WorkoutMovePerformanceEntity extends DataClass
       sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
       workoutId: data.workoutId.present ? data.workoutId.value : this.workoutId,
       setId: data.setId.present ? data.setId.value : this.setId,
-      loopIndex: data.loopIndex.present ? data.loopIndex.value : this.loopIndex,
+      lapIndex: data.lapIndex.present ? data.lapIndex.value : this.lapIndex,
       moveId: data.moveId.present ? data.moveId.value : this.moveId,
       exerciseId:
           data.exerciseId.present ? data.exerciseId.value : this.exerciseId,
@@ -1133,7 +1133,7 @@ class WorkoutMovePerformanceEntity extends DataClass
           ..write('sessionId: $sessionId, ')
           ..write('workoutId: $workoutId, ')
           ..write('setId: $setId, ')
-          ..write('loopIndex: $loopIndex, ')
+          ..write('lapIndex: $lapIndex, ')
           ..write('moveId: $moveId, ')
           ..write('exerciseId: $exerciseId, ')
           ..write('repCount: $repCount, ')
@@ -1151,7 +1151,7 @@ class WorkoutMovePerformanceEntity extends DataClass
       sessionId,
       workoutId,
       setId,
-      loopIndex,
+      lapIndex,
       moveId,
       exerciseId,
       repCount,
@@ -1167,7 +1167,7 @@ class WorkoutMovePerformanceEntity extends DataClass
           other.sessionId == this.sessionId &&
           other.workoutId == this.workoutId &&
           other.setId == this.setId &&
-          other.loopIndex == this.loopIndex &&
+          other.lapIndex == this.lapIndex &&
           other.moveId == this.moveId &&
           other.exerciseId == this.exerciseId &&
           other.repCount == this.repCount &&
@@ -1183,7 +1183,7 @@ class WorkoutMovePerformancesCompanion
   final Value<String> sessionId;
   final Value<String> workoutId;
   final Value<String> setId;
-  final Value<int> loopIndex;
+  final Value<int> lapIndex;
   final Value<String> moveId;
   final Value<String> exerciseId;
   final Value<int> repCount;
@@ -1197,7 +1197,7 @@ class WorkoutMovePerformancesCompanion
     this.sessionId = const Value.absent(),
     this.workoutId = const Value.absent(),
     this.setId = const Value.absent(),
-    this.loopIndex = const Value.absent(),
+    this.lapIndex = const Value.absent(),
     this.moveId = const Value.absent(),
     this.exerciseId = const Value.absent(),
     this.repCount = const Value.absent(),
@@ -1212,7 +1212,7 @@ class WorkoutMovePerformancesCompanion
     required String sessionId,
     required String workoutId,
     required String setId,
-    required int loopIndex,
+    required int lapIndex,
     required String moveId,
     required String exerciseId,
     required int repCount,
@@ -1225,7 +1225,7 @@ class WorkoutMovePerformancesCompanion
         sessionId = Value(sessionId),
         workoutId = Value(workoutId),
         setId = Value(setId),
-        loopIndex = Value(loopIndex),
+        lapIndex = Value(lapIndex),
         moveId = Value(moveId),
         exerciseId = Value(exerciseId),
         repCount = Value(repCount),
@@ -1236,7 +1236,7 @@ class WorkoutMovePerformancesCompanion
     Expression<String>? sessionId,
     Expression<String>? workoutId,
     Expression<String>? setId,
-    Expression<int>? loopIndex,
+    Expression<int>? lapIndex,
     Expression<String>? moveId,
     Expression<String>? exerciseId,
     Expression<int>? repCount,
@@ -1251,7 +1251,7 @@ class WorkoutMovePerformancesCompanion
       if (sessionId != null) 'session_id': sessionId,
       if (workoutId != null) 'workout_id': workoutId,
       if (setId != null) 'set_id': setId,
-      if (loopIndex != null) 'loop_index': loopIndex,
+      if (lapIndex != null) 'lap_index': lapIndex,
       if (moveId != null) 'move_id': moveId,
       if (exerciseId != null) 'exercise_id': exerciseId,
       if (repCount != null) 'rep_count': repCount,
@@ -1268,7 +1268,7 @@ class WorkoutMovePerformancesCompanion
       Value<String>? sessionId,
       Value<String>? workoutId,
       Value<String>? setId,
-      Value<int>? loopIndex,
+      Value<int>? lapIndex,
       Value<String>? moveId,
       Value<String>? exerciseId,
       Value<int>? repCount,
@@ -1282,7 +1282,7 @@ class WorkoutMovePerformancesCompanion
       sessionId: sessionId ?? this.sessionId,
       workoutId: workoutId ?? this.workoutId,
       setId: setId ?? this.setId,
-      loopIndex: loopIndex ?? this.loopIndex,
+      lapIndex: lapIndex ?? this.lapIndex,
       moveId: moveId ?? this.moveId,
       exerciseId: exerciseId ?? this.exerciseId,
       repCount: repCount ?? this.repCount,
@@ -1309,8 +1309,8 @@ class WorkoutMovePerformancesCompanion
     if (setId.present) {
       map['set_id'] = Variable<String>(setId.value);
     }
-    if (loopIndex.present) {
-      map['loop_index'] = Variable<int>(loopIndex.value);
+    if (lapIndex.present) {
+      map['lap_index'] = Variable<int>(lapIndex.value);
     }
     if (moveId.present) {
       map['move_id'] = Variable<String>(moveId.value);
@@ -1346,7 +1346,7 @@ class WorkoutMovePerformancesCompanion
           ..write('sessionId: $sessionId, ')
           ..write('workoutId: $workoutId, ')
           ..write('setId: $setId, ')
-          ..write('loopIndex: $loopIndex, ')
+          ..write('lapIndex: $lapIndex, ')
           ..write('moveId: $moveId, ')
           ..write('exerciseId: $exerciseId, ')
           ..write('repCount: $repCount, ')
@@ -1770,7 +1770,7 @@ typedef $$WorkoutMovePerformancesTableCreateCompanionBuilder
   required String sessionId,
   required String workoutId,
   required String setId,
-  required int loopIndex,
+  required int lapIndex,
   required String moveId,
   required String exerciseId,
   required int repCount,
@@ -1786,7 +1786,7 @@ typedef $$WorkoutMovePerformancesTableUpdateCompanionBuilder
   Value<String> sessionId,
   Value<String> workoutId,
   Value<String> setId,
-  Value<int> loopIndex,
+  Value<int> lapIndex,
   Value<String> moveId,
   Value<String> exerciseId,
   Value<int> repCount,
@@ -1818,8 +1818,8 @@ class $$WorkoutMovePerformancesTableFilterComposer
   ColumnFilters<String> get setId => $composableBuilder(
       column: $table.setId, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<int> get loopIndex => $composableBuilder(
-      column: $table.loopIndex, builder: (column) => ColumnFilters(column));
+  ColumnFilters<int> get lapIndex => $composableBuilder(
+      column: $table.lapIndex, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get moveId => $composableBuilder(
       column: $table.moveId, builder: (column) => ColumnFilters(column));
@@ -1867,8 +1867,8 @@ class $$WorkoutMovePerformancesTableOrderingComposer
   ColumnOrderings<String> get setId => $composableBuilder(
       column: $table.setId, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<int> get loopIndex => $composableBuilder(
-      column: $table.loopIndex, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<int> get lapIndex => $composableBuilder(
+      column: $table.lapIndex, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get moveId => $composableBuilder(
       column: $table.moveId, builder: (column) => ColumnOrderings(column));
@@ -1916,8 +1916,8 @@ class $$WorkoutMovePerformancesTableAnnotationComposer
   GeneratedColumn<String> get setId =>
       $composableBuilder(column: $table.setId, builder: (column) => column);
 
-  GeneratedColumn<int> get loopIndex =>
-      $composableBuilder(column: $table.loopIndex, builder: (column) => column);
+  GeneratedColumn<int> get lapIndex =>
+      $composableBuilder(column: $table.lapIndex, builder: (column) => column);
 
   GeneratedColumn<String> get moveId =>
       $composableBuilder(column: $table.moveId, builder: (column) => column);
@@ -1976,7 +1976,7 @@ class $$WorkoutMovePerformancesTableTableManager extends RootTableManager<
             Value<String> sessionId = const Value.absent(),
             Value<String> workoutId = const Value.absent(),
             Value<String> setId = const Value.absent(),
-            Value<int> loopIndex = const Value.absent(),
+            Value<int> lapIndex = const Value.absent(),
             Value<String> moveId = const Value.absent(),
             Value<String> exerciseId = const Value.absent(),
             Value<int> repCount = const Value.absent(),
@@ -1991,7 +1991,7 @@ class $$WorkoutMovePerformancesTableTableManager extends RootTableManager<
             sessionId: sessionId,
             workoutId: workoutId,
             setId: setId,
-            loopIndex: loopIndex,
+            lapIndex: lapIndex,
             moveId: moveId,
             exerciseId: exerciseId,
             repCount: repCount,
@@ -2006,7 +2006,7 @@ class $$WorkoutMovePerformancesTableTableManager extends RootTableManager<
             required String sessionId,
             required String workoutId,
             required String setId,
-            required int loopIndex,
+            required int lapIndex,
             required String moveId,
             required String exerciseId,
             required int repCount,
@@ -2021,7 +2021,7 @@ class $$WorkoutMovePerformancesTableTableManager extends RootTableManager<
             sessionId: sessionId,
             workoutId: workoutId,
             setId: setId,
-            loopIndex: loopIndex,
+            lapIndex: lapIndex,
             moveId: moveId,
             exerciseId: exerciseId,
             repCount: repCount,

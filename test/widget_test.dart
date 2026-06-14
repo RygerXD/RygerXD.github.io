@@ -86,7 +86,7 @@ void main() {
         InMemoryWorkoutRepository();
     await workoutRepository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 1,
+        schemaVersion: 2,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[
@@ -96,8 +96,8 @@ void main() {
             sets: <WorkoutSet>[
               WorkoutSet(
                 setId: 'set-1',
-                loopCount: 1,
-                restBetweenLoopsSeconds: 0,
+                lapCount: 1,
+                restBetweenLapsSeconds: 0,
                 moves: <Move>[
                   Move(
                     moveId: 'move-1',

@@ -7,7 +7,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   const WorkoutPlan samplePlan = WorkoutPlan(
-    schemaVersion: 1,
+    schemaVersion: 2,
     planId: 'plan-1',
     name: 'Plan 1',
     workouts: <Workout>[
@@ -17,8 +17,8 @@ void main() {
         sets: <WorkoutSet>[
           WorkoutSet(
             setId: 's-1',
-            loopCount: 1,
-            restBetweenLoopsSeconds: 30,
+            lapCount: 1,
+            restBetweenLapsSeconds: 30,
             moves: <Move>[
               Move(
                 moveId: 'm-1',

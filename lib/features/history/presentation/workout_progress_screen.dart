@@ -259,7 +259,7 @@ List<_MoveSeries> _buildMoveSeries({
     }
     final String key = _moveKey(
       setId: performance.setId,
-      loopIndex: performance.loopIndex,
+      lapIndex: performance.lapIndex,
       moveId: performance.moveId,
       exerciseId: performance.exerciseId,
     );
@@ -298,12 +298,12 @@ List<_MoveSeries> _buildMoveSeries({
       setIndex < expandedWorkout.sets.length;
       setIndex += 1) {
     final WorkoutSet set = expandedWorkout.sets[setIndex];
-    for (int loopIndex = 0; loopIndex < set.loopCount; loopIndex += 1) {
+    for (int lapIndex = 0; lapIndex < set.lapCount; lapIndex += 1) {
       for (int moveIndex = 0; moveIndex < set.moves.length; moveIndex += 1) {
         final Move move = set.moves[moveIndex];
         final String key = _moveKey(
           setId: set.setId,
-          loopIndex: loopIndex,
+          lapIndex: lapIndex,
           moveId: move.moveId,
           exerciseId: move.exerciseId,
         );
@@ -317,7 +317,7 @@ List<_MoveSeries> _buildMoveSeries({
             : 'Set ${setIndex + 1}';
         series.add(
           _MoveSeries(
-            label: '$moveName - $setName, Loop ${loopIndex + 1}',
+            label: '$moveName - $setName, Lap ${lapIndex + 1}',
             points: points,
             moveType: move.type,
           ),
@@ -330,11 +330,11 @@ List<_MoveSeries> _buildMoveSeries({
 
 String _moveKey({
   required String setId,
-  required int loopIndex,
+  required int lapIndex,
   required String moveId,
   required String exerciseId,
 }) {
-  return '$setId|$loopIndex|$moveId|$exerciseId';
+  return '$setId|$lapIndex|$moveId|$exerciseId';
 }
 
 String _exerciseName(String exerciseId, WorkoutPlan? plan) {

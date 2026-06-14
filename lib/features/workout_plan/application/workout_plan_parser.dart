@@ -29,7 +29,7 @@ class WorkoutPlanParseException implements Exception {
 
 class WorkoutPlanParser {
   const WorkoutPlanParser({
-    this.supportedSchemaVersions = const <int>{1},
+    this.supportedSchemaVersions = const <int>{2},
   });
 
   final Set<int> supportedSchemaVersions;
@@ -171,10 +171,10 @@ class WorkoutPlanParser {
             message: 'set name must be non-empty when provided.',
           ));
         }
-        if (set.loopCount < 1) {
+        if (set.lapCount < 1) {
           issues.add(PlanValidationIssue(
-            path: '\$.workouts[$workoutIndex].sets[$setIndex].loopCount',
-            message: 'loopCount must be >= 1.',
+            path: '\$.workouts[$workoutIndex].sets[$setIndex].lapCount',
+            message: 'lapCount must be >= 1.',
           ));
         }
         if (set.moves.isEmpty) {
