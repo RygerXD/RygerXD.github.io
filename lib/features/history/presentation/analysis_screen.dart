@@ -5,11 +5,11 @@ import 'package:workout_app_rewrite/core/theme/tokens.dart';
 import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
 import 'package:workout_app_rewrite/features/history/application/history_providers.dart';
 import 'package:workout_app_rewrite/features/history/data/history_db.dart';
+import 'package:workout_app_rewrite/features/history/domain/workout_streak.dart';
 import 'package:workout_app_rewrite/features/history/presentation/components/analysis_session_item.dart';
 import 'package:workout_app_rewrite/features/history/presentation/components/date_group.dart';
 import 'package:workout_app_rewrite/features/history/presentation/components/empty_history.dart';
 import 'package:workout_app_rewrite/features/history/presentation/components/workout_heatmap.dart';
-import 'package:workout_app_rewrite/features/settings/application/app_settings_controller.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
 
@@ -22,7 +22,6 @@ class AnalysisScreen extends ConsumerWidget {
         ref.watch(allSessionsProvider);
     final AsyncValue<List<WorkoutPlan>> plansAsync =
         ref.watch(loadedWorkoutPlansNotifierProvider);
-    final int streakWorkoutsPerWeek = ref.watch(streakWorkoutsPerWeekProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -70,7 +69,6 @@ class AnalysisScreen extends ConsumerWidget {
               _groupSessionsByDate(sessionItems);
           final _AnalysisSummary summary = _buildSummary(
             sessionItems,
-            streakWorkoutsPerWeek: streakWorkoutsPerWeek,
           );
           final List<DateTime> workoutDates = sessionItems
               .where((AnalysisSessionItem s) => s.isCompleted)
@@ -183,9 +181,8 @@ class AnalysisScreen extends ConsumerWidget {
   }
 
   _AnalysisSummary _buildSummary(
-    List<AnalysisSessionItem> sessions, {
-    required int streakWorkoutsPerWeek,
-  }) {
+    List<AnalysisSessionItem> sessions,
+  ) {
     int weeklyDurationSeconds = 0;
     final List<AnalysisSessionItem> completedSessions = <AnalysisSessionItem>[];
 
@@ -205,67 +202,26 @@ class AnalysisScreen extends ConsumerWidget {
       }
     }
 
-    final int streakWeeks = _calculateCurrentStreakWeeks(
-      completedSessions,
-      workoutsPerWeekGoal: streakWorkoutsPerWeek,
+    final int streakDays = calculateCurrentWorkoutStreakDays(
+      completedSessions.map((AnalysisSessionItem item) => item.startedAt),
+      now: now,
     );
 
     return _AnalysisSummary(
       weeklyDurationSeconds: weeklyDurationSeconds,
-      streakWeeks: streakWeeks,
-      streakWorkoutsPerWeek: streakWorkoutsPerWeek,
+      streakDays: streakDays,
     );
-  }
-
-  int _calculateCurrentStreakWeeks(
-    List<AnalysisSessionItem> completedSessions, {
-    required int workoutsPerWeekGoal,
-  }) {
-    if (completedSessions.isEmpty) {
-      return 0;
-    }
-
-    final int requiredWorkouts = workoutsPerWeekGoal.clamp(1, 14);
-    final Map<DateTime, int> workoutsByWeek = <DateTime, int>{};
-    for (final AnalysisSessionItem item in completedSessions) {
-      final DateTime weekStart = _weekStart(item.startedAt);
-      workoutsByWeek.update(
-        weekStart,
-        (int count) => count + 1,
-        ifAbsent: () => 1,
-      );
-    }
-
-    final DateTime currentWeekStart = _weekStart(DateTime.now());
-    DateTime cursor = currentWeekStart;
-    if ((workoutsByWeek[currentWeekStart] ?? 0) < requiredWorkouts) {
-      cursor = cursor.subtract(const Duration(days: 7));
-    }
-
-    int streak = 0;
-    while ((workoutsByWeek[cursor] ?? 0) >= requiredWorkouts) {
-      streak += 1;
-      cursor = cursor.subtract(const Duration(days: 7));
-    }
-    return streak;
-  }
-
-  DateTime _weekStart(DateTime date) {
-    final DateTime day = DateTime(date.year, date.month, date.day);
-    return day.subtract(Duration(days: day.weekday - 1));
   }
 }
 
 class _AnalysisSummary {
   const _AnalysisSummary({
     required this.weeklyDurationSeconds,
-    required this.streakWeeks,
-    required this.streakWorkoutsPerWeek,
+    required this.streakDays,
   });
 
   final int weeklyDurationSeconds;
-  final int streakWeeks;
-  final int streakWorkoutsPerWeek;
+  final int streakDays;
 }
 
 class _SummaryGrid extends StatelessWidget {
@@ -292,8 +248,8 @@ class _SummaryGrid extends StatelessWidget {
         ),
         _SummaryCard(
           label: 'Streak',
-          value: '${summary.streakWeeks}w',
-          detail: _streakDetail(summary.streakWorkoutsPerWeek),
+          value: '${summary.streakDays}',
+          detail: summary.streakDays == 1 ? 'Day' : 'Days',
           icon: Icons.auto_awesome_outlined,
         ),
       ].map((Widget card) {
@@ -306,11 +262,6 @@ class _SummaryGrid extends StatelessWidget {
         );
       }).toList(growable: false),
     );
-  }
-
-  String _streakDetail(int workoutsPerWeek) {
-    final String workoutLabel = workoutsPerWeek == 1 ? 'workout' : 'workouts';
-    return '$workoutsPerWeek $workoutLabel/wk';
   }
 }
 

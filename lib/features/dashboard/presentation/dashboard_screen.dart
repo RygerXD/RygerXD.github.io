@@ -9,7 +9,7 @@ import 'package:workout_app_rewrite/core/theme/tokens.dart';
 import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
 import 'package:workout_app_rewrite/features/history/application/history_providers.dart';
 import 'package:workout_app_rewrite/features/history/data/history_db.dart';
-import 'package:workout_app_rewrite/features/settings/application/app_settings_controller.dart';
+import 'package:workout_app_rewrite/features/history/domain/workout_streak.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_metrics.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
@@ -40,7 +40,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         sessionsAsync.value ?? <WorkoutSessionEntity>[];
     final AsyncValue<List<WorkoutPlan>> plansState =
         ref.watch(loadedWorkoutPlansNotifierProvider);
-    final int streakWorkoutsPerWeek = ref.watch(streakWorkoutsPerWeekProvider);
 
     final DateTime today = DateTime(now.year, now.month, now.day);
     final DateTime startOfWeek =
@@ -61,12 +60,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       }
     }
     final int weeklyMinutes = (weeklyDurationSeconds / 60).round();
-    final int streakWeeks = _calculateCurrentStreakWeeks(
-      completedWorkoutDates,
-      workoutsPerWeekGoal: streakWorkoutsPerWeek,
-    );
-    final String streakGoalLabel =
-        '$streakWorkoutsPerWeek ${streakWorkoutsPerWeek == 1 ? 'workout' : 'workouts'}/wk';
+    final int streakDays =
+        calculateCurrentWorkoutStreakDays(completedWorkoutDates, now: now);
 
     return Column(
       children: <Widget>[
@@ -82,8 +77,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   Expanded(
                     child: _StatCard(
                       title: 'Streak',
-                      value: '${streakWeeks}w',
-                      subtitle: streakGoalLabel,
+                      value: '$streakDays',
+                      subtitle: streakDays == 1 ? 'Day' : 'Days',
                       icon: Icons.auto_awesome_outlined,
                     ),
                   ),
@@ -205,44 +200,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       return a.workout.title.compareTo(b.workout.title);
     });
     return items;
-  }
-
-  int _calculateCurrentStreakWeeks(
-    List<DateTime> completedWorkoutDates, {
-    required int workoutsPerWeekGoal,
-  }) {
-    if (completedWorkoutDates.isEmpty) {
-      return 0;
-    }
-
-    final int requiredWorkouts = workoutsPerWeekGoal.clamp(1, 14);
-    final Map<DateTime, int> workoutsByWeek = <DateTime, int>{};
-    for (final DateTime date in completedWorkoutDates) {
-      final DateTime weekStart = _weekStart(date);
-      workoutsByWeek.update(
-        weekStart,
-        (int count) => count + 1,
-        ifAbsent: () => 1,
-      );
-    }
-
-    final DateTime currentWeekStart = _weekStart(DateTime.now());
-    DateTime cursor = currentWeekStart;
-    if ((workoutsByWeek[currentWeekStart] ?? 0) < requiredWorkouts) {
-      cursor = cursor.subtract(const Duration(days: 7));
-    }
-
-    int streak = 0;
-    while ((workoutsByWeek[cursor] ?? 0) >= requiredWorkouts) {
-      streak += 1;
-      cursor = cursor.subtract(const Duration(days: 7));
-    }
-    return streak;
-  }
-
-  DateTime _weekStart(DateTime date) {
-    final DateTime day = DateTime(date.year, date.month, date.day);
-    return day.subtract(Duration(days: day.weekday - 1));
   }
 
   Future<void> _importWorkoutJson(BuildContext context) async {
