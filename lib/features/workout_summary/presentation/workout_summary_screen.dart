@@ -66,6 +66,15 @@ class WorkoutSummaryScreen extends ConsumerWidget {
             ),
             actions: <Widget>[
               IconButton(
+                tooltip: 'Export workout',
+                icon: const Icon(Icons.upload_file_outlined),
+                onPressed: () => _exportWorkoutPlan(
+                  context,
+                  ref,
+                  _singleWorkoutPlan(plan, workout),
+                ),
+              ),
+              IconButton(
                 tooltip: 'Edit workout',
                 icon: const Icon(Icons.edit_outlined),
                 onPressed: () => context.go(
@@ -180,6 +189,52 @@ class WorkoutSummaryScreen extends ConsumerWidget {
       );
     }
   }
+}
+
+Future<void> _exportWorkoutPlan(
+  BuildContext context,
+  WidgetRef ref,
+  WorkoutPlan plan,
+) async {
+  try {
+    final result = await ref.read(workoutPlanExportServiceProvider).exportPlan(
+          plan,
+        );
+    if (!context.mounted) {
+      return;
+    }
+    if (result == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Export canceled.')),
+      );
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Exported ${plan.name}')),
+    );
+  } catch (error) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error exporting workout: $error')),
+      );
+    }
+  }
+}
+
+WorkoutPlan _singleWorkoutPlan(WorkoutPlan plan, Workout workout) {
+  return plan.copyWith(
+    planId: '${plan.planId}-${workout.workoutId}',
+    name: workout.title,
+    imageUrl: workout.imageUrl ?? plan.imageUrl,
+    workouts: <Workout>[workout],
+    exercises: plan.exercises
+        .where((Exercise exercise) => workout.sets.any(
+              (WorkoutSet set) => set.moves.any(
+                (Move move) => move.exerciseId == exercise.exerciseId,
+              ),
+            ))
+        .toList(growable: false),
+  );
 }
 
 Future<bool> _confirmDeleteWorkout(

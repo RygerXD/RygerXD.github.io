@@ -9,6 +9,7 @@ import 'package:workout_app_rewrite/core/theme/tokens.dart';
 import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
 import 'package:workout_app_rewrite/features/history/application/history_providers.dart';
 import 'package:workout_app_rewrite/features/history/data/history_db.dart';
+import 'package:workout_app_rewrite/features/settings/application/app_settings_controller.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_metrics.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
@@ -39,101 +40,131 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         sessionsAsync.value ?? <WorkoutSessionEntity>[];
     final AsyncValue<List<WorkoutPlan>> plansState =
         ref.watch(loadedWorkoutPlansNotifierProvider);
+    final int streakWorkoutsPerWeek = ref.watch(streakWorkoutsPerWeekProvider);
 
     final DateTime today = DateTime(now.year, now.month, now.day);
     final DateTime startOfWeek =
         today.subtract(Duration(days: today.weekday - 1));
     final int startOfWeekMs = startOfWeek.millisecondsSinceEpoch;
 
-    int weeklyWorkouts = 0;
     int weeklyDurationSeconds = 0;
+    final List<DateTime> completedWorkoutDates = <DateTime>[];
     for (final WorkoutSessionEntity session in sessions) {
-      if (session.status == 'completed' && session.startedAt >= startOfWeekMs) {
-        weeklyWorkouts += 1;
+      if (session.status != 'completed') {
+        continue;
+      }
+      final DateTime startedAt =
+          DateTime.fromMillisecondsSinceEpoch(session.startedAt);
+      completedWorkoutDates.add(startedAt);
+      if (session.startedAt >= startOfWeekMs) {
         weeklyDurationSeconds += session.durationSeconds;
       }
     }
     final int weeklyMinutes = (weeklyDurationSeconds / 60).round();
+    final int streakWeeks = _calculateCurrentStreakWeeks(
+      completedWorkoutDates,
+      workoutsPerWeekGoal: streakWorkoutsPerWeek,
+    );
+    final String streakGoalLabel =
+        '$streakWorkoutsPerWeek ${streakWorkoutsPerWeek == 1 ? 'workout' : 'workouts'}/wk';
 
-    return ListView(
-      padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.xl, vertical: AppSpacing.xxl),
+    return Column(
       children: <Widget>[
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: _StatCard(
-                title: 'Workouts',
-                value: '$weeklyWorkouts',
-                subtitle: 'This Week',
-                icon: Icons.local_fire_department_rounded,
-              ),
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.xl,
+              vertical: AppSpacing.xxl,
             ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: _StatCard(
-                title: 'Active Time',
-                value: '$weeklyMinutes',
-                subtitle: 'Minutes',
-                icon: Icons.timer_rounded,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.xxl),
-        _HomePlanActions(
-          onImport: () => _importWorkoutJson(context),
-          onCreate: () => context.go('/library/create'),
-        ),
-        const SizedBox(height: AppSpacing.xxl),
-        _HomeModeToggle(
-          selectedMode: _listMode,
-          onChanged: (Set<_HomeListMode> selected) {
-            setState(() {
-              _listMode = selected.first;
-            });
-          },
-        ),
-        const SizedBox(height: AppSpacing.lg),
-        plansState.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (Object error, StackTrace stack) =>
-              Text('Error loading plans: $error'),
-          data: (List<WorkoutPlan> plans) {
-            if (_listMode == _HomeListMode.workouts) {
-              final List<_WorkoutListItem> workouts =
-                  _recentWorkoutItems(plans, sessions);
-              if (workouts.isEmpty) {
-                return const _EmptyHomeState(
-                  message: 'Create or import a plan to see workouts here.',
-                );
-              }
-              return Column(
-                children: workouts.map((_WorkoutListItem item) {
-                  return _WorkoutCard(
-                    item: item,
-                    onTap: () => context.go(
-                      '/library/detail/${item.plan.planId}/workout/${item.workout.workoutId}',
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: _StatCard(
+                      title: 'Streak',
+                      value: '${streakWeeks}w',
+                      subtitle: streakGoalLabel,
+                      icon: Icons.auto_awesome_outlined,
                     ),
-                  );
-                }).toList(growable: false),
-              );
-            }
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: _StatCard(
+                      title: 'Active Time',
+                      value: '$weeklyMinutes',
+                      subtitle: 'Minutes',
+                      icon: Icons.timer_rounded,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.xxl),
+              _HomeModeToggle(
+                selectedMode: _listMode,
+                onChanged: (Set<_HomeListMode> selected) {
+                  setState(() {
+                    _listMode = selected.first;
+                  });
+                },
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              plansState.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (Object error, StackTrace stack) =>
+                    Text('Error loading plans: $error'),
+                data: (List<WorkoutPlan> plans) {
+                  if (_listMode == _HomeListMode.workouts) {
+                    final List<_WorkoutListItem> workouts =
+                        _recentWorkoutItems(plans, sessions);
+                    if (workouts.isEmpty) {
+                      return const _EmptyHomeState(
+                        message:
+                            'Create or import a plan to see workouts here.',
+                      );
+                    }
+                    return Column(
+                      children: workouts.map((_WorkoutListItem item) {
+                        return _WorkoutCard(
+                          item: item,
+                          onTap: () => context.go(
+                            '/library/detail/${item.plan.planId}/workout/${item.workout.workoutId}',
+                          ),
+                        );
+                      }).toList(growable: false),
+                    );
+                  }
 
-            if (plans.isEmpty) {
-              return const _EmptyHomeState(
-                message: 'Import or create your first plan.',
-              );
-            }
-            return Column(
-              children: plans.map((WorkoutPlan plan) {
-                return _PlanCard(
-                  plan: plan,
-                  onTap: () => context.go('/library/detail/${plan.planId}'),
-                );
-              }).toList(growable: false),
-            );
-          },
+                  if (plans.isEmpty) {
+                    return const _EmptyHomeState(
+                      message: 'Import or create your first plan.',
+                    );
+                  }
+                  return Column(
+                    children: plans.map((WorkoutPlan plan) {
+                      return _PlanCard(
+                        plan: plan,
+                        onTap: () =>
+                            context.go('/library/detail/${plan.planId}'),
+                      );
+                    }).toList(growable: false),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+        SafeArea(
+          top: false,
+          minimum: const EdgeInsets.fromLTRB(
+            AppSpacing.xl,
+            AppSpacing.sm,
+            AppSpacing.xl,
+            AppSpacing.lg,
+          ),
+          child: _HomePlanActions(
+            onImport: () => _importWorkoutJson(context),
+            onCreate: () => context.go('/library/create'),
+          ),
         ),
       ],
     );
@@ -174,6 +205,44 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       return a.workout.title.compareTo(b.workout.title);
     });
     return items;
+  }
+
+  int _calculateCurrentStreakWeeks(
+    List<DateTime> completedWorkoutDates, {
+    required int workoutsPerWeekGoal,
+  }) {
+    if (completedWorkoutDates.isEmpty) {
+      return 0;
+    }
+
+    final int requiredWorkouts = workoutsPerWeekGoal.clamp(1, 14);
+    final Map<DateTime, int> workoutsByWeek = <DateTime, int>{};
+    for (final DateTime date in completedWorkoutDates) {
+      final DateTime weekStart = _weekStart(date);
+      workoutsByWeek.update(
+        weekStart,
+        (int count) => count + 1,
+        ifAbsent: () => 1,
+      );
+    }
+
+    final DateTime currentWeekStart = _weekStart(DateTime.now());
+    DateTime cursor = currentWeekStart;
+    if ((workoutsByWeek[currentWeekStart] ?? 0) < requiredWorkouts) {
+      cursor = cursor.subtract(const Duration(days: 7));
+    }
+
+    int streak = 0;
+    while ((workoutsByWeek[cursor] ?? 0) >= requiredWorkouts) {
+      streak += 1;
+      cursor = cursor.subtract(const Duration(days: 7));
+    }
+    return streak;
+  }
+
+  DateTime _weekStart(DateTime date) {
+    final DateTime day = DateTime(date.year, date.month, date.day);
+    return day.subtract(Duration(days: day.weekday - 1));
   }
 
   Future<void> _importWorkoutJson(BuildContext context) async {

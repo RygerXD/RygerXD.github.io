@@ -130,14 +130,6 @@ class WorkoutDetailScreen extends ConsumerWidget {
                   onTap: () => context.go(
                     '/library/detail/$planId/workout/${workout.workoutId}',
                   ),
-                  onExport: () => _exportWorkoutPlan(
-                    context,
-                    ref,
-                    _singleWorkoutPlan(plan, workout),
-                  ),
-                  onEdit: () => context.go(
-                    '/library/detail/$planId/edit-workout?workoutId=${workout.workoutId}',
-                  ),
                 );
               }),
             ],
@@ -152,14 +144,10 @@ class _PlanWorkoutCard extends StatelessWidget {
   const _PlanWorkoutCard({
     required this.workout,
     required this.onTap,
-    required this.onExport,
-    required this.onEdit,
   });
 
   final Workout workout;
   final VoidCallback onTap;
-  final VoidCallback onExport;
-  final VoidCallback onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -236,17 +224,9 @@ class _PlanWorkoutCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              IconButton(
-                tooltip: 'Export workout',
-                icon: const Icon(Icons.upload_file_outlined),
-                color: colors.primary,
-                onPressed: onExport,
-              ),
-              IconButton(
-                tooltip: 'Edit workout',
-                icon: const Icon(Icons.edit_outlined),
-                color: colors.primary,
-                onPressed: onEdit,
+              Icon(
+                Icons.chevron_right,
+                color: colors.onSurfaceVariant,
               ),
             ],
           ),
@@ -293,20 +273,4 @@ Future<void> _exportWorkoutPlan(
       );
     }
   }
-}
-
-WorkoutPlan _singleWorkoutPlan(WorkoutPlan plan, Workout workout) {
-  return plan.copyWith(
-    planId: '${plan.planId}-${workout.workoutId}',
-    name: workout.title,
-    imageUrl: workout.imageUrl ?? plan.imageUrl,
-    workouts: <Workout>[workout],
-    exercises: plan.exercises
-        .where((Exercise exercise) => workout.sets.any(
-              (WorkoutSet set) => set.moves.any(
-                (Move move) => move.exerciseId == exercise.exerciseId,
-              ),
-            ))
-        .toList(growable: false),
-  );
 }

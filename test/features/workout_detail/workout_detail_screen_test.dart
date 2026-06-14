@@ -74,17 +74,9 @@ void main() {
     expect(find.text('1mins'), findsOneWidget);
     expect(find.text('1 Set'), findsOneWidget);
     expect(find.byTooltip('Export plan'), findsOneWidget);
-    expect(find.byTooltip('Export workout'), findsOneWidget);
-
-    await tester.tap(find.byTooltip('Export workout'));
-    await tester.pumpAndSettle();
-
-    expect(exportService.exportedPlan?.planId, 'plan-1-workout-1');
-    expect(exportService.exportedPlan?.name, 'Leg Day');
-    expect(exportService.exportedPlan?.workouts.single.workoutId, 'workout-1');
-    expect(
-        exportService.exportedPlan?.exercises.single.exerciseId, 'exercise-1');
-    expect(find.text('Exported Leg Day'), findsOneWidget);
+    expect(find.byTooltip('Export workout'), findsNothing);
+    expect(find.byTooltip('Edit workout'), findsNothing);
+    expect(exportService.exportedPlan, isNull);
   });
 
   testWidgets('confirms before deleting workout plan',

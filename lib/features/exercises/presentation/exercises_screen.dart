@@ -199,13 +199,6 @@ class _ExerciseCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: AppSpacing.sm),
-              IconButton(
-                tooltip: 'Edit exercise',
-                icon: const Icon(Icons.edit_outlined),
-                color: colors.primary,
-                onPressed: onTap,
-              ),
             ],
           ),
         ),

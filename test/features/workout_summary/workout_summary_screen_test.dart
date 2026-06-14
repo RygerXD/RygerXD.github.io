@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_export_service.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
 import 'package:workout_app_rewrite/features/workout_plan/data/in_memory_workout_repository.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
@@ -11,6 +12,8 @@ void main() {
   testWidgets('shows workout summary before start',
       (WidgetTester tester) async {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
+    final _FakeWorkoutPlanExportService exportService =
+        _FakeWorkoutPlanExportService();
     await repository.savePlan(
       const WorkoutPlan(
         schemaVersion: 1,
@@ -56,6 +59,7 @@ void main() {
     final ProviderContainer container = ProviderContainer(
       overrides: <Override>[
         workoutRepositoryProvider.overrideWithValue(repository),
+        workoutPlanExportServiceProvider.overrideWithValue(exportService),
       ],
     );
     addTearDown(container.dispose);
@@ -92,6 +96,20 @@ void main() {
     expect(find.text('00:30'), findsOneWidget);
     expect(find.text('12 reps'), findsOneWidget);
     expect(find.widgetWithText(FilledButton, 'START'), findsOneWidget);
+    expect(find.byTooltip('Export workout'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Export workout'));
+    await tester.pumpAndSettle();
+
+    expect(exportService.exportedPlan?.planId, 'plan-1-workout-a');
+    expect(exportService.exportedPlan?.name, 'Workout A');
+    expect(exportService.exportedPlan?.workouts.single.workoutId, 'workout-a');
+    expect(
+      exportService.exportedPlan?.exercises
+          .map((Exercise exercise) => exercise.exerciseId),
+      <String>['squat', 'push-up'],
+    );
+    expect(find.text('Exported Workout A'), findsOneWidget);
   });
 
   testWidgets('confirms before archiving workout from active plan views',
@@ -216,4 +234,17 @@ void main() {
         <String>['push-up', 'squat']);
     expect(find.text('Plan detail plan-1'), findsOneWidget);
   });
+}
+
+class _FakeWorkoutPlanExportService extends WorkoutPlanExportService {
+  WorkoutPlan? exportedPlan;
+
+  @override
+  Future<WorkoutPlanExportResult?> exportPlan(WorkoutPlan plan) async {
+    exportedPlan = plan;
+    return const WorkoutPlanExportResult(
+      fileName: 'workout-a.workout.plan.json',
+      path: 'C:\\workout-a.workout.plan.json',
+    );
+  }
 }

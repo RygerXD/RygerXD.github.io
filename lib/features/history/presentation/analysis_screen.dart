@@ -186,7 +186,6 @@ class AnalysisScreen extends ConsumerWidget {
     List<AnalysisSessionItem> sessions, {
     required int streakWorkoutsPerWeek,
   }) {
-    int weeklyCompletedSessions = 0;
     int weeklyDurationSeconds = 0;
     final List<AnalysisSessionItem> completedSessions = <AnalysisSessionItem>[];
 
@@ -202,7 +201,6 @@ class AnalysisScreen extends ConsumerWidget {
       completedSessions.add(item);
       if (item.startedAt
           .isAfter(startOfWeek.subtract(const Duration(milliseconds: 1)))) {
-        weeklyCompletedSessions += 1;
         weeklyDurationSeconds += item.session.durationSeconds;
       }
     }
@@ -213,7 +211,6 @@ class AnalysisScreen extends ConsumerWidget {
     );
 
     return _AnalysisSummary(
-      weeklyCompletedSessions: weeklyCompletedSessions,
       weeklyDurationSeconds: weeklyDurationSeconds,
       streakWeeks: streakWeeks,
       streakWorkoutsPerWeek: streakWorkoutsPerWeek,
@@ -261,13 +258,11 @@ class AnalysisScreen extends ConsumerWidget {
 
 class _AnalysisSummary {
   const _AnalysisSummary({
-    required this.weeklyCompletedSessions,
     required this.weeklyDurationSeconds,
     required this.streakWeeks,
     required this.streakWorkoutsPerWeek,
   });
 
-  final int weeklyCompletedSessions;
   final int weeklyDurationSeconds;
   final int streakWeeks;
   final int streakWorkoutsPerWeek;
@@ -284,12 +279,6 @@ class _SummaryGrid extends StatelessWidget {
       spacing: AppSpacing.md,
       runSpacing: AppSpacing.md,
       children: <Widget>[
-        _SummaryCard(
-          label: 'Workouts',
-          value: '${summary.weeklyCompletedSessions}',
-          detail: 'This Week',
-          icon: Icons.local_fire_department_rounded,
-        ),
         _SummaryCard(
           label: 'Active Time',
           value: formatDuration(

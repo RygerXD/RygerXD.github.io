@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workout_app_rewrite/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:workout_app_rewrite/features/history/application/history_providers.dart';
 import 'package:workout_app_rewrite/features/history/data/history_db.dart';
@@ -10,8 +11,14 @@ import 'package:workout_app_rewrite/features/workout_plan/data/in_memory_workout
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
 
 void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+  });
+
   testWidgets('shows workouts by most recent completion with estimates',
       (WidgetTester tester) async {
+    final SharedPreferences sharedPreferences =
+        await SharedPreferences.getInstance();
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
@@ -70,6 +77,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: <Override>[
+          sharedPreferencesProvider.overrideWithValue(sharedPreferences),
           workoutRepositoryProvider.overrideWithValue(repository),
           allSessionsProvider.overrideWith(
             (ref) => Stream<List<WorkoutSessionEntity>>.value(
@@ -111,6 +119,8 @@ void main() {
   });
 
   testWidgets('toggles from workouts to plans', (WidgetTester tester) async {
+    final SharedPreferences sharedPreferences =
+        await SharedPreferences.getInstance();
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
@@ -147,6 +157,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: <Override>[
+          sharedPreferencesProvider.overrideWithValue(sharedPreferences),
           workoutRepositoryProvider.overrideWithValue(repository),
           allSessionsProvider.overrideWith(
             (ref) => Stream<List<WorkoutSessionEntity>>.value(
@@ -172,6 +183,8 @@ void main() {
 
   testWidgets('workout tap opens the summary route instead of active workout',
       (WidgetTester tester) async {
+    final SharedPreferences sharedPreferences =
+        await SharedPreferences.getInstance();
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
@@ -228,6 +241,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: <Override>[
+          sharedPreferencesProvider.overrideWithValue(sharedPreferences),
           workoutRepositoryProvider.overrideWithValue(repository),
           allSessionsProvider.overrideWith(
             (ref) => Stream<List<WorkoutSessionEntity>>.value(
