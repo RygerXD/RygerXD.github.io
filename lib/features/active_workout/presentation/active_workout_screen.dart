@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
+import 'package:workout_app_rewrite/core/widgets/confirm_destructive_action.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/active_workout_controller.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/metronome_audio.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/metronome_rep_counter.dart';
@@ -987,26 +988,15 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   }
 
   Future<bool> _confirmExit() async {
-    final bool? shouldAbandon = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: const Text('Abandon Workout?'),
-        content: const Text('Progress for this workout session will be lost.'),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('CANCEL'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('ABANDON'),
-          ),
-        ],
-      ),
+    final bool shouldAbandon = await confirmDestructiveAction(
+      context,
+      title: 'Abandon Workout?',
+      message: 'Progress for this workout session will be lost.',
+      cancelLabel: 'CANCEL',
+      confirmLabel: 'ABANDON',
     );
 
-    if (shouldAbandon == true) {
+    if (shouldAbandon) {
       ref.read(activeWorkoutControllerProvider.notifier).abandon();
       return true;
     }

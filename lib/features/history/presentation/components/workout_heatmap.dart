@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
+import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
 
 class WorkoutHeatmap extends StatefulWidget {
   const WorkoutHeatmap({
@@ -223,7 +224,7 @@ class _WorkoutHeatmapState extends State<WorkoutHeatmap> {
         continue;
       }
       if (_isSameDay(day.date, rangeStart) || day.date.day == 1) {
-        return _monthAbbreviation(day.date.month);
+        return formatMonthName(day.date.month);
       }
     }
     return null;
@@ -233,24 +234,6 @@ class _WorkoutHeatmapState extends State<WorkoutHeatmap> {
     return first.year == second.year &&
         first.month == second.month &&
         first.day == second.day;
-  }
-
-  String _monthAbbreviation(int month) {
-    const List<String> months = <String>[
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return months[month - 1];
   }
 }
 

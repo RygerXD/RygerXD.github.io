@@ -55,11 +55,18 @@ String formatDate(
   DateTime date, {
   MonthNameStyle monthStyle = MonthNameStyle.short,
 }) {
+  return '${formatMonthName(date.month, monthStyle: monthStyle)} ${date.day}, ${date.year}';
+}
+
+String formatMonthName(
+  int month, {
+  MonthNameStyle monthStyle = MonthNameStyle.short,
+}) {
   final List<String> months = switch (monthStyle) {
     MonthNameStyle.short => _shortMonthNames,
     MonthNameStyle.long => _longMonthNames,
   };
-  return '${months[date.month - 1]} ${date.day}, ${date.year}';
+  return months[month - 1];
 }
 
 String formatRelativeDateLabel(DateTime date, {DateTime? now}) {

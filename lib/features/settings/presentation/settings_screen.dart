@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
+import 'package:workout_app_rewrite/core/widgets/confirm_destructive_action.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/metronome_audio.dart';
 import 'package:workout_app_rewrite/features/settings/application/app_settings_controller.dart';
 import 'package:workout_app_rewrite/features/settings/application/data_backup_service.dart';
@@ -341,28 +342,13 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   static Future<bool> _confirmRestore(BuildContext context) async {
-    final bool? confirmed = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: const Text('Restore backup?'),
-          content: const Text(
-            'This will replace current plans, workout history, and settings.',
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Restore'),
-            ),
-          ],
-        );
-      },
+    return confirmDestructiveAction(
+      context,
+      title: 'Restore backup?',
+      message:
+          'This will replace current plans, workout history, and settings.',
+      confirmLabel: 'Restore',
     );
-    return confirmed ?? false;
   }
 }
 

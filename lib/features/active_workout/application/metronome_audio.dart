@@ -7,52 +7,52 @@ class WorkoutAudio {
   static Future<void> playMetronomeClick({
     required MetronomeClickSound sound,
     required double volume,
-  }) async {
-    await _play(
+  }) =>
+      _play(
         volume,
         (double volume) =>
-            platform.playMetronomeClick(sound: sound, volume: volume));
-  }
+            platform.playMetronomeClick(sound: sound, volume: volume),
+      );
 
   static Future<void> playGetReadyDing({
     required GetReadyDingSound sound,
     required double volume,
-  }) async {
-    await _play(
+  }) =>
+      _play(
         volume,
         (double volume) =>
-            platform.playGetReadyDing(sound: sound, volume: volume));
-  }
+            platform.playGetReadyDing(sound: sound, volume: volume),
+      );
 
   static Future<void> playGetReadyCountdown({
     required CountdownSound sound,
     required double volume,
-  }) async {
-    await _play(
+  }) =>
+      _play(
         volume,
         (double volume) =>
-            platform.playGetReadyCountdown(sound: sound, volume: volume));
-  }
+            platform.playGetReadyCountdown(sound: sound, volume: volume),
+      );
 
   static Future<void> playMoveCountdown({
     required CountdownSound sound,
     required double volume,
-  }) async {
-    await _play(
+  }) =>
+      _play(
         volume,
         (double volume) =>
-            platform.playMoveCountdown(sound: sound, volume: volume));
-  }
+            platform.playMoveCountdown(sound: sound, volume: volume),
+      );
 
   static Future<void> playMoveFinishedDing({
     required MoveFinishedDingSound sound,
     required double volume,
-  }) async {
-    await _play(
+  }) =>
+      _play(
         volume,
         (double volume) =>
-            platform.playMoveFinishedDing(sound: sound, volume: volume));
-  }
+            platform.playMoveFinishedDing(sound: sound, volume: volume),
+      );
 
   static Future<void> _play(
     double volume,

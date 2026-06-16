@@ -8,52 +8,47 @@ web.AudioContext? _audioContext;
 Future<void> playMetronomeClick({
   required MetronomeClickSound sound,
   required double volume,
-}) async {
-  await _playProfile(
-    profile: _SoundProfile.forMetronomeClick(sound),
-    volume: volume,
-  );
-}
+}) =>
+    _playProfile(
+      profile: _SoundProfile.forMetronomeClick(sound),
+      volume: volume,
+    );
 
 Future<void> playGetReadyDing({
   required GetReadyDingSound sound,
   required double volume,
-}) async {
-  await _playProfile(
-    profile: _SoundProfile.forGetReadyDing(sound),
-    volume: volume,
-  );
-}
+}) =>
+    _playProfile(
+      profile: _SoundProfile.forGetReadyDing(sound),
+      volume: volume,
+    );
 
 Future<void> playGetReadyCountdown({
   required CountdownSound sound,
   required double volume,
-}) async {
-  await _playProfile(
-    profile: _SoundProfile.forGetReadyCountdown(sound),
-    volume: volume,
-  );
-}
+}) =>
+    _playProfile(
+      profile: _SoundProfile.forGetReadyCountdown(sound),
+      volume: volume,
+    );
 
 Future<void> playMoveCountdown({
   required CountdownSound sound,
   required double volume,
-}) async {
-  await _playProfile(
-    profile: _SoundProfile.forMoveCountdown(sound),
-    volume: volume,
-  );
-}
+}) =>
+    _playProfile(
+      profile: _SoundProfile.forMoveCountdown(sound),
+      volume: volume,
+    );
 
 Future<void> playMoveFinishedDing({
   required MoveFinishedDingSound sound,
   required double volume,
-}) async {
-  await _playProfile(
-    profile: _SoundProfile.forMoveFinishedDing(sound),
-    volume: volume,
-  );
-}
+}) =>
+    _playProfile(
+      profile: _SoundProfile.forMoveFinishedDing(sound),
+      volume: volume,
+    );
 
 Future<void> _playProfile({
   required _SoundProfile profile,
