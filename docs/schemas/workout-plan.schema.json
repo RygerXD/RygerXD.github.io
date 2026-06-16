@@ -14,7 +14,7 @@
   "properties": {
     "schemaVersion": {
       "type": "integer",
-      "const": 2
+      "const": 3
     },
     "planId": {
       "type": "string",
@@ -118,8 +118,6 @@
       "additionalProperties": false,
       "required": [
         "setId",
-        "lapCount",
-        "restBetweenLapsSeconds",
         "moves"
       ],
       "properties": {
@@ -133,11 +131,13 @@
         },
         "lapCount": {
           "type": "integer",
-          "minimum": 1
+          "minimum": 1,
+          "default": 1
         },
         "restBetweenLapsSeconds": {
           "type": "integer",
-          "minimum": 0
+          "minimum": 0,
+          "default": 0
         },
         "moves": {
           "type": "array",
@@ -227,8 +227,17 @@
               "repCount"
             ],
             "not": {
-              "required": [
-                "metronomeSpeed"
+              "anyOf": [
+                {
+                  "required": [
+                    "durationSeconds"
+                  ]
+                },
+                {
+                  "required": [
+                    "metronomeSpeed"
+                  ]
+                }
               ]
             }
           }
@@ -244,7 +253,12 @@
           "then": {
             "required": [
               "durationSeconds"
-            ]
+            ],
+            "not": {
+              "required": [
+                "repCount"
+              ]
+            }
           }
         },
         {
@@ -260,6 +274,11 @@
               "anyOf": [
                 {
                   "required": [
+                    "repCount"
+                  ]
+                },
+                {
+                  "required": [
                     "durationSeconds"
                   ]
                 },
@@ -272,7 +291,15 @@
             }
           }
         }
-      ]
+      ],
+      "dependentRequired": {
+        "targetWeight": [
+          "targetWeightUnit"
+        ],
+        "targetWeightUnit": [
+          "targetWeight"
+        ]
+      }
     }
   }
 }

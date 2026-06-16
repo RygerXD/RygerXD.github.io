@@ -29,7 +29,7 @@ class WorkoutPlanParseException implements Exception {
 
 class WorkoutPlanParser {
   const WorkoutPlanParser({
-    this.supportedSchemaVersions = const <int>{2},
+    this.supportedSchemaVersions = const <int>{workoutPlanSchemaVersion},
   });
 
   final Set<int> supportedSchemaVersions;
@@ -221,12 +221,26 @@ class WorkoutPlanParser {
               message: 'rep-based move requires repCount >= 1.',
             ));
           }
+          if (move.type == MoveType.reps && move.durationSeconds != null) {
+            issues.add(PlanValidationIssue(
+              path:
+                  '\$.workouts[$workoutIndex].sets[$setIndex].moves[$moveIndex].durationSeconds',
+              message: 'rep-based moves should not set durationSeconds.',
+            ));
+          }
           if (move.type == MoveType.duration &&
               (move.durationSeconds == null || move.durationSeconds! < 1)) {
             issues.add(PlanValidationIssue(
               path:
                   '\$.workouts[$workoutIndex].sets[$setIndex].moves[$moveIndex].durationSeconds',
               message: 'time-based move requires durationSeconds >= 1.',
+            ));
+          }
+          if (move.type == MoveType.duration && move.repCount != null) {
+            issues.add(PlanValidationIssue(
+              path:
+                  '\$.workouts[$workoutIndex].sets[$setIndex].moves[$moveIndex].repCount',
+              message: 'time-based moves should not set repCount.',
             ));
           }
           if (move.metronomeSpeed != null) {
@@ -246,12 +260,27 @@ class WorkoutPlanParser {
               ));
             }
           }
+          if (move.type == MoveType.stopwatch && move.repCount != null) {
+            issues.add(PlanValidationIssue(
+              path:
+                  '\$.workouts[$workoutIndex].sets[$setIndex].moves[$moveIndex].repCount',
+              message: 'stopwatch moves should not set repCount.',
+            ));
+          }
           if (move.type == MoveType.stopwatch && move.durationSeconds != null) {
             issues.add(PlanValidationIssue(
               path:
                   '\$.workouts[$workoutIndex].sets[$setIndex].moves[$moveIndex].durationSeconds',
               message:
                   'stopwatch moves count up and should not set durationSeconds.',
+            ));
+          }
+          if ((move.targetWeight == null) != (move.targetWeightUnit == null)) {
+            issues.add(PlanValidationIssue(
+              path:
+                  '\$.workouts[$workoutIndex].sets[$setIndex].moves[$moveIndex].targetWeight',
+              message:
+                  'targetWeight and targetWeightUnit must be provided together.',
             ));
           }
         }

@@ -12,7 +12,7 @@ void main() {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 2,
+        schemaVersion: 3,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[
@@ -122,7 +122,7 @@ void main() {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 2,
+        schemaVersion: 3,
         planId: 'plan-1',
         name: 'Deleted Plan',
         workouts: <Workout>[
@@ -153,7 +153,7 @@ void main() {
     );
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 2,
+        schemaVersion: 3,
         planId: 'plan-2',
         name: 'Remaining Plan',
         workouts: <Workout>[

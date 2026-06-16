@@ -20,7 +20,9 @@ class WorkoutPlanExportService {
   Future<WorkoutPlanExportResult?> exportPlan(WorkoutPlan plan) async {
     final String fileName = _fileNameFor(plan);
     final Uint8List bytes = Uint8List.fromList(
-      utf8.encode(const JsonEncoder.withIndent('  ').convert(plan.toJson())),
+      utf8.encode(
+        const JsonEncoder.withIndent('  ').convert(_exportableJson(plan)),
+      ),
     );
 
     final String? path = await FilePicker.platform.saveFile(
@@ -48,5 +50,15 @@ class WorkoutPlanExportService {
         .replaceAll(RegExp(r'^-|-$'), '')
         .toLowerCase();
     return '${slug.isEmpty ? plan.planId : slug}.plan.json';
+  }
+
+  Map<String, dynamic> _exportableJson(WorkoutPlan plan) {
+    return plan
+        .copyWith(
+          workouts: plan.workouts
+              .where((Workout workout) => !workout.isArchived)
+              .toList(growable: false),
+        )
+        .toJson();
   }
 }

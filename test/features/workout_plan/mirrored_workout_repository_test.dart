@@ -6,7 +6,7 @@ import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_mo
 
 void main() {
   const WorkoutPlan samplePlan = WorkoutPlan(
-    schemaVersion: 2,
+    schemaVersion: 3,
     planId: 'plan-1',
     name: 'Plan 1',
     workouts: <Workout>[

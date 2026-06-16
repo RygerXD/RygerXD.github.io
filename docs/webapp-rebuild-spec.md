@@ -143,7 +143,7 @@ Privacy note:
    - Workout plan parsing, validation, estimates, state-machine transitions, streak calculations, and history aggregation should live outside React components.
    - These modules should be portable enough to translate back into Dart later.
 
-2. Preserve the schemaVersion 2 workout plan JSON contract.
+2. Preserve the schemaVersion 3 workout plan JSON contract.
    - Do not casually rename plan/workout/set/move/exercise fields.
    - Imported files produced for the Flutter app should import into the web app.
    - Web-exported plan files should import into the Flutter app.
@@ -239,8 +239,8 @@ interface Move {
 interface WorkoutSet {
   setId: string;
   name?: string;
-  lapCount: number;
-  restBetweenLapsSeconds: number;
+  lapCount?: number;
+  restBetweenLapsSeconds?: number;
   moves: Move[];
 }
 
@@ -252,7 +252,7 @@ interface Workout {
 }
 
 interface WorkoutPlan {
-  schemaVersion: 2;
+  schemaVersion: 3;
   planId: string;
   name: string;
   description?: string;
@@ -269,12 +269,14 @@ interface WorkoutPlan {
 The web parser must reject invalid imports with user-visible validation messages:
 
 - Root JSON must be an object.
-- `schemaVersion` is required and must be `2`.
+- `schemaVersion` is required and must be `3`.
 - `planId` and `name` are required non-empty strings.
 - `workouts` is required and must be a non-empty array.
 - `exercises` is required and must be a non-empty array.
 - Every workout must have a non-empty `workoutId`, non-empty `title`, and at least one set.
-- Every set must have a non-empty `setId`, `lapCount >= 1`, `restBetweenLapsSeconds >= 0`, and at least one move.
+- Every set must have a non-empty `setId` and at least one move.
+- If present, `lapCount` must be `>= 1`; it defaults to `1`.
+- If present, `restBetweenLapsSeconds` must be `>= 0`; it defaults to `0`.
 - Set `name`, if present, must not be empty after trimming.
 - Every move must have a non-empty `moveId`, non-empty `exerciseId`, and valid `type`.
 - Every move `exerciseId` must reference an exercise in the plan.
@@ -561,7 +563,7 @@ Import behavior:
 - Use browser file picker restricted to `.json`.
 - Read UTF-8 text.
 - Reject files over `5 * 1024 * 1024` bytes.
-- Parse and validate using schemaVersion 2 rules.
+- Parse and validate using schemaVersion 3 rules.
 - Save valid plan by `planId`, replacing any existing plan with same id.
 - Show success toast: `Successfully imported {plan.name}`.
 - Show error toast with validation/import error.
@@ -590,7 +592,7 @@ Fields:
 Create behavior:
 
 - Generate UUID `planId`.
-- Set `schemaVersion: 2`.
+- Set `schemaVersion: 3`.
 - Save plan with empty `workouts` and empty `exercises`.
 - Navigate to `/library/detail/$planId`.
 
@@ -666,7 +668,7 @@ Create behavior:
   - Generated UUID `setId`.
   - Name: `Set 1`.
   - `lapCount: 1`.
-  - `restBetweenLapsSeconds: 60`.
+  - `restBetweenLapsSeconds: 0`.
   - Empty moves.
 
 Edit behavior:
@@ -690,7 +692,7 @@ Set editing:
 - Remove set.
 - Rename set; blank name saves as omitted.
 - Edit lap count; invalid or `< 1` values are ignored.
-- Preserve rest-between-laps data even though current UI does not expose an editor for it. The initial value is 60 seconds for new sets.
+- Edit rest-between-laps seconds; invalid values are ignored and values below `0` are clamped to `0`. The initial value is `0` seconds for new sets.
 - Show empty set text: `No moves in this set yet.`
 
 Move list:
@@ -1297,8 +1299,8 @@ Even though current analysis export is not implemented, plan export is useful fo
 
 If implemented in the web rebuild:
 
-- Export one selected plan as schemaVersion 2 JSON.
-- Preserve all canonical fields.
+- Export one selected plan as schemaVersion 3 JSON.
+- Emit sparse canonical JSON: omit unknown optional fields, nulls, and default values.
 - Do not include IndexedDB-only session/history data.
 - Warn if local `app-media://` references exist.
 
@@ -1310,7 +1312,7 @@ Backup shape:
 
 ```ts
 interface WorkoutAppBackupV1 {
-  schemaVersion: 2;
+  schemaVersion: 3;
   exportedAt: string;
   plans: WorkoutPlan[];
   sessions: WorkoutSession[];
@@ -1356,7 +1358,7 @@ For early testing:
 - Server-side persistence.
 - Cross-device sync.
 - Analytics or telemetry.
-- Replacing schemaVersion 2.
+- Replacing schemaVersion 3.
 
 ## 12. Known Current Gaps to Preserve or Decide
 
@@ -1366,7 +1368,7 @@ These are present in the Flutter app and should be handled intentionally:
 - Analysis export icon exists but export is unavailable.
 - `finishEarly` exists in controller/state machine but is not exposed in active workout UI.
 - Plan detail delete dialog currently says `Delete Workout?` even though it deletes a plan; web rebuild should correct this copy.
-- New set defaults `restBetweenLapsSeconds` to 60, but current workout editor does not expose a rest-between-laps editor.
+- New set defaults `restBetweenLapsSeconds` to 0, and the workout editor exposes a rest-between-laps seconds editor.
 - Plan creation can create a plan with zero workouts and zero exercises, even though imported plans require at least one workout and exercise.
 - Web media paste/save is unsupported in the current Flutter web path; the rebuild should implement browser-native Blob storage if local media is needed.
 
@@ -1376,7 +1378,7 @@ These are present in the Flutter app and should be handled intentionally:
 
 Cover:
 
-- Plan parser accepts valid schemaVersion 2 JSON.
+- Plan parser accepts valid schemaVersion 3 JSON.
 - Parser rejects invalid root, missing schemaVersion, unsupported schemaVersion, empty required strings, bad move references, invalid move type data, invalid metronome speed, and invalid stopwatch duration.
 - Workout estimate calculations:
   - prep + duration + cooldown.
@@ -1538,7 +1540,7 @@ src/
 
 To make the eventual Flutter return practical:
 
-- Keep the schemaVersion 2 workout plan JSON as the canonical interchange format.
+- Keep the schemaVersion 3 workout plan JSON as the canonical interchange format.
 - Keep names and behavior of move types, settings enums, session statuses, and history keys aligned with Flutter.
 - Keep workout state-machine tests written in behavior terms so they can be ported back.
 - Avoid storing important data only in web-only shapes unless a migration/export path exists.

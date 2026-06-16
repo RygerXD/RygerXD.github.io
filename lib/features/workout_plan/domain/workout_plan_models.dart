@@ -14,7 +14,15 @@ enum MoveSide {
   right,
 }
 
+const int workoutPlanSchemaVersion = 3;
+
 const Object _copyWithUnset = Object();
+
+void _putIfNotNull(Map<String, dynamic> json, String key, Object? value) {
+  if (value != null) {
+    json[key] = value;
+  }
+}
 
 class Exercise {
   const Exercise({
@@ -57,12 +65,13 @@ class Exercise {
   }
 
   Map<String, dynamic> toJson() {
-    return <String, dynamic>{
+    final Map<String, dynamic> json = <String, dynamic>{
       'exerciseId': exerciseId,
       'name': name,
-      'imageUrl': imageUrl,
-      'description': description,
     };
+    _putIfNotNull(json, 'imageUrl', imageUrl);
+    _putIfNotNull(json, 'description', description);
+    return json;
   }
 }
 
@@ -159,29 +168,44 @@ class Move {
   }
 
   Map<String, dynamic> toJson() {
-    return <String, dynamic>{
+    final Map<String, dynamic> json = <String, dynamic>{
       'moveId': moveId,
       'exerciseId': exerciseId,
       'type': type.name,
-      'repCount': repCount,
-      'durationSeconds': durationSeconds,
-      'prepTimeSeconds': prepTimeSeconds,
-      'finishTimeSeconds': finishTimeSeconds,
-      'setCount': setCount,
-      'repeatEachSide': repeatEachSide,
-      'targetWeight': targetWeight,
-      'targetWeightUnit': targetWeightUnit?.name,
-      'metronomeSpeed': metronomeSpeed,
     };
+    switch (type) {
+      case MoveType.reps:
+        _putIfNotNull(json, 'repCount', repCount);
+      case MoveType.duration:
+        _putIfNotNull(json, 'durationSeconds', durationSeconds);
+        _putIfNotNull(json, 'metronomeSpeed', metronomeSpeed);
+      case MoveType.stopwatch:
+        break;
+    }
+    if (prepTimeSeconds != 0) {
+      json['prepTimeSeconds'] = prepTimeSeconds;
+    }
+    if (finishTimeSeconds != 0) {
+      json['finishTimeSeconds'] = finishTimeSeconds;
+    }
+    if (setCount != 1) {
+      json['setCount'] = setCount;
+    }
+    if (repeatEachSide) {
+      json['repeatEachSide'] = true;
+    }
+    _putIfNotNull(json, 'targetWeight', targetWeight);
+    _putIfNotNull(json, 'targetWeightUnit', targetWeightUnit?.name);
+    return json;
   }
 }
 
 class WorkoutSet {
   const WorkoutSet({
     required this.setId,
-    required this.lapCount,
-    required this.restBetweenLapsSeconds,
     required this.moves,
+    this.lapCount = 1,
+    this.restBetweenLapsSeconds = 0,
     this.name,
   });
 
@@ -212,8 +236,8 @@ class WorkoutSet {
     return WorkoutSet(
       setId: json['setId'] as String,
       name: json['name'] as String?,
-      lapCount: json['lapCount'] as int,
-      restBetweenLapsSeconds: json['restBetweenLapsSeconds'] as int,
+      lapCount: (json['lapCount'] as int?) ?? 1,
+      restBetweenLapsSeconds: (json['restBetweenLapsSeconds'] as int?) ?? 0,
       moves: (json['moves'] as List<dynamic>)
           .cast<Map<String, dynamic>>()
           .map(Move.fromJson)
@@ -222,13 +246,19 @@ class WorkoutSet {
   }
 
   Map<String, dynamic> toJson() {
-    return <String, dynamic>{
+    final Map<String, dynamic> json = <String, dynamic>{
       'setId': setId,
-      'name': name,
-      'lapCount': lapCount,
-      'restBetweenLapsSeconds': restBetweenLapsSeconds,
-      'moves': moves.map((Move move) => move.toJson()).toList(growable: false),
     };
+    _putIfNotNull(json, 'name', name);
+    if (lapCount != 1) {
+      json['lapCount'] = lapCount;
+    }
+    if (restBetweenLapsSeconds != 0) {
+      json['restBetweenLapsSeconds'] = restBetweenLapsSeconds;
+    }
+    json['moves'] =
+        moves.map((Move move) => move.toJson()).toList(growable: false);
+    return json;
   }
 }
 
@@ -283,14 +313,15 @@ class Workout {
   }
 
   Map<String, dynamic> toJson() {
-    return <String, dynamic>{
+    final Map<String, dynamic> json = <String, dynamic>{
       'workoutId': workoutId,
       'title': title,
-      'imageUrl': imageUrl,
-      'archivedAt': archivedAt,
-      'sets':
-          sets.map((WorkoutSet set) => set.toJson()).toList(growable: false),
     };
+    _putIfNotNull(json, 'imageUrl', imageUrl);
+    _putIfNotNull(json, 'archivedAt', archivedAt);
+    json['sets'] =
+        sets.map((WorkoutSet set) => set.toJson()).toList(growable: false);
+    return json;
   }
 }
 
@@ -369,20 +400,23 @@ class WorkoutPlan {
   }
 
   Map<String, dynamic> toJson() {
-    return <String, dynamic>{
+    final Map<String, dynamic> json = <String, dynamic>{
       'schemaVersion': schemaVersion,
       'planId': planId,
       'name': name,
-      'description': description,
-      'author': author,
-      'imageUrl': imageUrl,
-      'tags': tags,
-      'workouts': workouts
-          .map((Workout workout) => workout.toJson())
-          .toList(growable: false),
-      'exercises': exercises
-          .map((Exercise exercise) => exercise.toJson())
-          .toList(growable: false),
     };
+    _putIfNotNull(json, 'description', description);
+    _putIfNotNull(json, 'author', author);
+    _putIfNotNull(json, 'imageUrl', imageUrl);
+    if (tags.isNotEmpty) {
+      json['tags'] = tags;
+    }
+    json['workouts'] = workouts
+        .map((Workout workout) => workout.toJson())
+        .toList(growable: false);
+    json['exercises'] = exercises
+        .map((Exercise exercise) => exercise.toJson())
+        .toList(growable: false);
+    return json;
   }
 }

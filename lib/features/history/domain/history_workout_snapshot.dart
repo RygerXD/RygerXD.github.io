@@ -17,7 +17,7 @@ class HistoryWorkoutSnapshot {
 
   WorkoutPlan toWorkoutPlan() {
     return WorkoutPlan(
-      schemaVersion: 2,
+      schemaVersion: 3,
       planId: planId,
       name: planName,
       workouts: <Workout>[workout],

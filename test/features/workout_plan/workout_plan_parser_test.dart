@@ -24,9 +24,24 @@ void main() {
 
     test('throws on unsupported schemaVersion', () {
       expect(
-        () => parser.parseFromJson(_planJson(schemaVersion: 3)),
+        () => parser.parseFromJson(_planJson(schemaVersion: 4)),
         throwsA(isA<WorkoutPlanParseException>()),
       );
+    });
+
+    test('defaults omitted set timing fields', () {
+      final Map<String, dynamic> json = _planJson();
+      final Map<String, dynamic> set = (json['workouts'] as List<dynamic>)
+          .single['sets']
+          .single as Map<String, dynamic>;
+      set.remove('lapCount');
+      set.remove('restBetweenLapsSeconds');
+
+      final WorkoutSet parsed =
+          parser.parseFromJson(json).workouts.single.sets.single;
+
+      expect(parsed.lapCount, 1);
+      expect(parsed.restBetweenLapsSeconds, 0);
     });
 
     test('throws when move references unknown exercise', () {
@@ -100,6 +115,20 @@ void main() {
       );
     });
 
+    test('throws when a move includes fields for another move type', () {
+      expect(
+        () => parser.parseFromJson(_planJson(
+          exerciseName: 'Jumping Jacks',
+          move: <String, dynamic>{
+            'type': 'duration',
+            'durationSeconds': 30,
+            'repCount': 10,
+          },
+        )),
+        throwsA(isA<WorkoutPlanParseException>()),
+      );
+    });
+
     test('parses each-side rep moves', () {
       final Move move = parser
           .parseFromJson(_planJson(
@@ -150,11 +179,22 @@ void main() {
 }
 
 Map<String, dynamic> _planJson({
-  int schemaVersion = 2,
+  int schemaVersion = 3,
   String exerciseId = 'ex-1',
   String exerciseName = 'Squat',
   Map<String, dynamic> move = const <String, dynamic>{},
 }) {
+  final Map<String, dynamic> moveJson = <String, dynamic>{
+    'moveId': 'm-1',
+    'exerciseId': exerciseId,
+    'type': 'reps',
+    'repCount': 10,
+    ...move,
+  };
+  if (moveJson['type'] != 'reps' && !move.containsKey('repCount')) {
+    moveJson.remove('repCount');
+  }
+
   return <String, dynamic>{
     'schemaVersion': schemaVersion,
     'planId': 'plan-1',
@@ -176,15 +216,7 @@ Map<String, dynamic> _planJson({
             'setId': 's-1',
             'lapCount': 1,
             'restBetweenLapsSeconds': 30,
-            'moves': <Map<String, dynamic>>[
-              <String, dynamic>{
-                'moveId': 'm-1',
-                'exerciseId': exerciseId,
-                'type': 'reps',
-                'repCount': 10,
-                ...move,
-              },
-            ],
+            'moves': <Map<String, dynamic>>[moveJson],
           },
         ],
       },

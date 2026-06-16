@@ -13,7 +13,7 @@ void main() {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 2,
+        schemaVersion: 3,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[],
@@ -58,13 +58,24 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Unknown Exercise'), findsNothing);
+
+    await tester.tap(find.text('Existing'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('Push Up'),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('adds BPM to duration moves', (WidgetTester tester) async {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 2,
+        schemaVersion: 3,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[],
@@ -241,7 +252,7 @@ void main() {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 2,
+        schemaVersion: 3,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[],
@@ -294,7 +305,7 @@ void main() {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 2,
+        schemaVersion: 3,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[],
@@ -401,7 +412,7 @@ void main() {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 2,
+        schemaVersion: 3,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[
@@ -653,7 +664,7 @@ void main() {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 2,
+        schemaVersion: 3,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[],
@@ -719,7 +730,7 @@ void main() {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 2,
+        schemaVersion: 3,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[
@@ -785,7 +796,7 @@ void main() {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 2,
+        schemaVersion: 3,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[
@@ -884,11 +895,12 @@ void main() {
         'https://example.com/burpee.gif');
   });
 
-  testWidgets('saves set names and lap counts', (WidgetTester tester) async {
+  testWidgets('saves set names, lap counts, and rest between laps',
+      (WidgetTester tester) async {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 2,
+        schemaVersion: 3,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[],
@@ -916,6 +928,7 @@ void main() {
 
     await tester.enterText(find.byType(TextField).at(0), 'Workout A');
     await tester.enterText(find.byType(TextField).at(2), 'Warmup');
+    await tester.enterText(find.byType(TextFormField).last, '45');
     await tester.tap(find.byTooltip('Increase laps'));
     await tester.pump();
     await tester.tap(find.byTooltip('Increase laps'));
@@ -927,13 +940,56 @@ void main() {
     final WorkoutSet savedSet = updatedPlan!.workouts.single.sets.single;
     expect(savedSet.name, 'Warmup');
     expect(savedSet.lapCount, 3);
+    expect(savedSet.restBetweenLapsSeconds, 45);
+  });
+
+  testWidgets('new sets default rest between laps to zero',
+      (WidgetTester tester) async {
+    final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
+    await repository.savePlan(
+      const WorkoutPlan(
+        schemaVersion: 3,
+        planId: 'plan-1',
+        name: 'Plan 1',
+        workouts: <Workout>[],
+        exercises: <Exercise>[],
+      ),
+    );
+
+    final ProviderContainer container = ProviderContainer(
+      overrides: <Override>[
+        workoutRepositoryProvider.overrideWithValue(repository),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container.read(loadedWorkoutPlansNotifierProvider.future);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(
+          home: EditWorkoutScreen(planId: 'plan-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField).at(0), 'Workout A');
+    await tester.tap(find.text('SAVE'));
+    await tester.pumpAndSettle();
+
+    final WorkoutPlan? updatedPlan = await repository.getPlanById('plan-1');
+    expect(
+      updatedPlan!.workouts.single.sets.single.restBetweenLapsSeconds,
+      0,
+    );
   });
 
   testWidgets('reorders moves inside a set', (WidgetTester tester) async {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 2,
+        schemaVersion: 3,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[

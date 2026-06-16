@@ -90,7 +90,7 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
           setId: const Uuid().v4(),
           name: 'Set ${_sets.length + 1}',
           lapCount: 1,
-          restBetweenLapsSeconds: 60,
+          restBetweenLapsSeconds: 0,
           moves: <Move>[],
         ),
       );
@@ -181,15 +181,51 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
   Future<void> _showExistingMovesPicker(int setIndex) async {
     final List<WorkoutPlan> plans =
         ref.read(loadedWorkoutPlansNotifierProvider).value ?? <WorkoutPlan>[];
+    final List<WorkoutPlan> pickerPlans = _plansWithDraftWorkout(plans);
 
     final Exercise? selectedExercise = await showDialog<Exercise>(
       context: context,
-      builder: (BuildContext context) => ExistingMovePickerDialog(plans: plans),
+      builder: (BuildContext context) =>
+          ExistingMovePickerDialog(plans: pickerPlans),
     );
 
     if (selectedExercise != null && mounted) {
       _showAddMoveDialog(setIndex, initialExercise: selectedExercise);
     }
+  }
+
+  List<WorkoutPlan> _plansWithDraftWorkout(List<WorkoutPlan> plans) {
+    final List<WorkoutPlan> pickerPlans = List<WorkoutPlan>.from(plans);
+    final int planIndex = pickerPlans.indexWhere(
+      (WorkoutPlan plan) => plan.planId == widget.planId,
+    );
+    if (planIndex == -1) {
+      return pickerPlans;
+    }
+
+    final WorkoutPlan plan = pickerPlans[planIndex];
+    final Workout draftWorkout = Workout(
+      workoutId: widget.workoutId ?? '__draft-workout__',
+      title: _titleController.text.trim().isEmpty
+          ? 'Draft Workout'
+          : _titleController.text.trim(),
+      imageUrl: optionalText(_imageUrlController.text),
+      sets: List<WorkoutSet>.from(_sets),
+    );
+    final List<Workout> workouts = List<Workout>.from(plan.workouts);
+    final int workoutIndex = workouts.indexWhere(
+      (Workout workout) => workout.workoutId == draftWorkout.workoutId,
+    );
+    if (workoutIndex >= 0) {
+      workouts[workoutIndex] = draftWorkout;
+    } else {
+      workouts.add(draftWorkout);
+    }
+    pickerPlans[planIndex] = plan.copyWith(
+      exercises: _mergedExercises(plan),
+      workouts: workouts,
+    );
+    return pickerPlans;
   }
 
   void _upsertExerciseInPlan(Exercise exercise) {
@@ -236,6 +272,19 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
     _updateSet(
       setIndex,
       (WorkoutSet set) => set.copyWith(lapCount: clampedLapCount),
+    );
+  }
+
+  void _updateSetRestBetweenLapsSeconds(int setIndex, String value) {
+    final int? seconds = int.tryParse(value);
+    if (seconds == null) {
+      return;
+    }
+    _updateSet(
+      setIndex,
+      (WorkoutSet set) => set.copyWith(
+        restBetweenLapsSeconds: seconds.clamp(0, 3600).toInt(),
+      ),
     );
   }
 
@@ -422,6 +471,31 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
                                 onPressed: () => _removeSet(setIndex),
                               ),
                             ],
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: SizedBox(
+                              width: 180,
+                              child: TextFormField(
+                                key: ValueKey<String>(
+                                  'set-rest-between-laps-${set.setId}',
+                                ),
+                                initialValue:
+                                    set.restBetweenLapsSeconds.toString(),
+                                decoration: const InputDecoration(
+                                  labelText: 'Rest Between Laps',
+                                  suffixText: 'sec',
+                                  border: OutlineInputBorder(),
+                                ),
+                                keyboardType: TextInputType.number,
+                                onChanged: (String value) =>
+                                    _updateSetRestBetweenLapsSeconds(
+                                  setIndex,
+                                  value,
+                                ),
+                              ),
+                            ),
                           ),
                           const Divider(),
                           if (set.moves.isEmpty)

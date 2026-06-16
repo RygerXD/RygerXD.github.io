@@ -143,7 +143,7 @@ void main() {
 }
 
 const WorkoutPlan _samplePlan = WorkoutPlan(
-  schemaVersion: 2,
+  schemaVersion: 3,
   planId: 'plan-1',
   name: 'Plan 1',
   workouts: <Workout>[
@@ -176,7 +176,7 @@ const WorkoutPlan _samplePlan = WorkoutPlan(
 );
 
 const WorkoutPlan _stalePlan = WorkoutPlan(
-  schemaVersion: 2,
+  schemaVersion: 3,
   planId: 'stale-plan',
   name: 'Stale Plan',
   workouts: <Workout>[

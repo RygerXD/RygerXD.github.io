@@ -35,12 +35,30 @@ void main() {
       expect(json['name'], 'Plan 1: Upper/Lower');
       expect(json['workouts'], hasLength(1));
       expect(json['exercises'], hasLength(1));
+      expect(json.containsKey('description'), isFalse);
+      expect(json.containsKey('tags'), isFalse);
+
+      final Map<String, dynamic> workout =
+          (json['workouts'] as List<dynamic>).single as Map<String, dynamic>;
+      expect(workout.containsKey('imageUrl'), isFalse);
+      expect(workout.containsKey('archivedAt'), isFalse);
+
+      final Map<String, dynamic> set =
+          (workout['sets'] as List<dynamic>).single as Map<String, dynamic>;
+      expect(set.containsKey('lapCount'), isFalse);
+
+      final Map<String, dynamic> move =
+          (set['moves'] as List<dynamic>).single as Map<String, dynamic>;
+      expect(move.containsKey('durationSeconds'), isFalse);
+      expect(move.containsKey('finishTimeSeconds'), isFalse);
+      expect(move.containsKey('setCount'), isFalse);
+      expect(move.containsKey('repeatEachSide'), isFalse);
     });
   });
 }
 
 const WorkoutPlan _samplePlan = WorkoutPlan(
-  schemaVersion: 2,
+  schemaVersion: 3,
   planId: 'plan-1',
   name: 'Plan 1: Upper/Lower',
   workouts: <Workout>[
@@ -51,10 +69,28 @@ const WorkoutPlan _samplePlan = WorkoutPlan(
         WorkoutSet(
           setId: 'set-1',
           lapCount: 1,
-          restBetweenLapsSeconds: 30,
+          restBetweenLapsSeconds: 0,
           moves: <Move>[
             Move(
               moveId: 'move-1',
+              exerciseId: 'exercise-1',
+              type: MoveType.reps,
+              repCount: 10,
+            ),
+          ],
+        ),
+      ],
+    ),
+    Workout(
+      workoutId: 'archived-workout',
+      title: 'Archived Workout',
+      archivedAt: 1,
+      sets: <WorkoutSet>[
+        WorkoutSet(
+          setId: 'archived-set',
+          moves: <Move>[
+            Move(
+              moveId: 'archived-move',
               exerciseId: 'exercise-1',
               type: MoveType.reps,
               repCount: 10,

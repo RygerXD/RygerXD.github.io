@@ -16,7 +16,7 @@ void main() {
         _FakeWorkoutPlanExportService();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 2,
+        schemaVersion: 3,
         planId: 'plan-1',
         name: 'Plan 1',
         description: 'Preview this workout before starting.',
@@ -117,7 +117,7 @@ void main() {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 2,
+        schemaVersion: 3,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[

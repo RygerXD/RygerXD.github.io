@@ -18,7 +18,7 @@ Convert the workout below into an importable Workout App JSON file.
 
 Output rules:
 - Return only valid JSON. Do not wrap it in Markdown.
-- Use schemaVersion 2.
+- Use schemaVersion 3.
 - Create one root object with planId, name, description, author, tags,
   exercises, and workouts.
 - Use stable lowercase kebab-case IDs for planId, workoutId, setId, moveId,
@@ -32,8 +32,8 @@ Output rules:
   durationSeconds.
 - Use type "stopwatch" only when the athlete should count up manually; do not
   include durationSeconds for stopwatch moves.
-- For each set, set lapCount to the number of rounds and
-  restBetweenLapsSeconds to the rest between repeated rounds.
+- For each set, include lapCount only when it is more than 1 and
+  restBetweenLapsSeconds only when there is rest between repeated rounds.
 - If a single move should be performed for multiple sets before advancing, add
   setCount with the number of sets for that move.
 - Include prepTimeSeconds and finishTimeSeconds on moves only when the workout
@@ -56,7 +56,7 @@ Plan metadata:
 
 ```json
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "planId": "plan-id",
   "name": "Plan name",
   "description": "Short description",
@@ -103,9 +103,9 @@ Plan metadata:
 ```
 
 Optional fields can be omitted when they do not apply: `description`, `author`,
-`imageUrl`, `tags`, set `name`, `prepTimeSeconds`, `finishTimeSeconds`,
-`setCount`, `repeatEachSide`, `targetWeight`, `targetWeightUnit`, and
-`metronomeSpeed`.
+`imageUrl`, `tags`, set `name`, `lapCount`, `restBetweenLapsSeconds`,
+`prepTimeSeconds`, `finishTimeSeconds`, `setCount`, `repeatEachSide`,
+`targetWeight`, `targetWeightUnit`, and `metronomeSpeed`.
 
 ## Move types
 
@@ -116,6 +116,7 @@ Use exactly one of these `type` values for every move:
 - `stopwatch`: A count-up movement. Do not include `durationSeconds`.
 
 `prepTimeSeconds` and `finishTimeSeconds` default to `0` when omitted.
+`lapCount` defaults to `1`, and `restBetweenLapsSeconds` defaults to `0`.
 `setCount` defaults to `1`; use a larger value when one exercise should be
 completed for multiple sets before moving to the next exercise.
 
@@ -135,12 +136,13 @@ executions.
 Before importing, check that:
 
 - The file is valid JSON with one root object.
-- `schemaVersion` is `2`.
+- `schemaVersion` is `3`.
 - `planId`, `name`, `workouts`, and `exercises` are present.
 - `workouts` has at least one workout.
 - `exercises` has at least one exercise.
 - Every workout has at least one set.
-- Every set has `lapCount` of at least `1` and at least one move.
+- If present, every set `lapCount` is at least `1`.
+- Every set has at least one move.
 - Every `move.exerciseId` exists in the top-level `exercises` list.
 - If present, move `setCount` is at least `1`.
 - Reps moves have `repCount` of at least `1`.
@@ -166,7 +168,7 @@ The importable JSON can be:
 
 ```json
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "planId": "beginner-full-body",
   "name": "Beginner Full Body",
   "description": "Three-round beginner full body workout.",

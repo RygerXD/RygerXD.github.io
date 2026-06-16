@@ -7,7 +7,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   const WorkoutPlan samplePlan = WorkoutPlan(
-    schemaVersion: 2,
+    schemaVersion: 3,
     planId: 'plan-1',
     name: 'Plan 1',
     workouts: <Workout>[
