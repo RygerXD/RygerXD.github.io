@@ -76,8 +76,8 @@ class HistoryService {
     required String workoutId,
     required String setId,
     required int lapIndex,
+    required String workoutMoveId,
     required String moveId,
-    required String exerciseId,
     required int repCount,
     double? actualWeight,
     String? actualWeightUnit,
@@ -86,13 +86,13 @@ class HistoryService {
   }) async {
     await _db.insertMovePerformance(
       WorkoutMovePerformanceEntity(
-        performanceId: '$sessionId|$setId|$lapIndex|$moveId',
+        performanceId: '$sessionId|$setId|$lapIndex|$workoutMoveId',
         sessionId: sessionId,
         workoutId: workoutId,
         setId: setId,
         lapIndex: lapIndex,
+        workoutMoveId: workoutMoveId,
         moveId: moveId,
-        exerciseId: exerciseId,
         repCount: repCount,
         actualWeight: actualWeight,
         actualWeightUnit: actualWeightUnit,

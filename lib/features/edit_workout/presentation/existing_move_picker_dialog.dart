@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:workout_app_rewrite/core/media/media_thumbnail.dart';
 import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
-import 'package:workout_app_rewrite/features/exercises/application/exercise_catalog.dart';
+import 'package:workout_app_rewrite/features/moves/application/move_catalog.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
 
 class ExistingMovePickerDialog extends StatefulWidget {
@@ -19,7 +19,7 @@ class ExistingMovePickerDialog extends StatefulWidget {
 
 class _ExistingMovePickerDialogState extends State<ExistingMovePickerDialog> {
   final TextEditingController _searchController = TextEditingController();
-  late final List<Exercise> _exercises = _collectExercises();
+  late final List<Move> _moves = _collectMoves();
   String _query = '';
 
   @override
@@ -30,10 +30,10 @@ class _ExistingMovePickerDialogState extends State<ExistingMovePickerDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final List<Exercise> filteredExercises = _filteredExercises();
+    final List<Move> filteredMoves = _filteredMoves();
 
     return AlertDialog(
-      title: const Text('Select Existing Exercise'),
+      title: const Text('Select Existing Move'),
       content: SizedBox(
         width: double.maxFinite,
         child: Column(
@@ -42,7 +42,7 @@ class _ExistingMovePickerDialogState extends State<ExistingMovePickerDialog> {
             TextField(
               controller: _searchController,
               decoration: const InputDecoration(
-                labelText: 'Search exercises',
+                labelText: 'Search moves',
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.search),
               ),
@@ -55,21 +55,21 @@ class _ExistingMovePickerDialogState extends State<ExistingMovePickerDialog> {
             ),
             const SizedBox(height: 12),
             Flexible(
-              child: _exercises.isEmpty
-                  ? const Center(child: Text('No existing exercises found.'))
-                  : filteredExercises.isEmpty
-                      ? const Center(child: Text('No matching exercises.'))
+              child: _moves.isEmpty
+                  ? const Center(child: Text('No existing moves found.'))
+                  : filteredMoves.isEmpty
+                      ? const Center(child: Text('No matching moves.'))
                       : ListView.builder(
                           shrinkWrap: true,
-                          itemCount: filteredExercises.length,
+                          itemCount: filteredMoves.length,
                           itemBuilder: (BuildContext context, int index) {
-                            final Exercise exercise = filteredExercises[index];
+                            final Move move = filteredMoves[index];
                             return ListTile(
-                              leading: _ExerciseThumbnail(
-                                imageUrl: optionalText(exercise.imageUrl),
+                              leading: _MoveThumbnail(
+                                imageUrl: optionalText(move.imageUrl),
                               ),
-                              title: Text(exercise.name),
-                              onTap: () => Navigator.of(context).pop(exercise),
+                              title: Text(move.name),
+                              onTap: () => Navigator.of(context).pop(move),
                             );
                           },
                         ),
@@ -86,21 +86,21 @@ class _ExistingMovePickerDialogState extends State<ExistingMovePickerDialog> {
     );
   }
 
-  List<Exercise> _collectExercises() {
-    return collectUniqueReferencedExercisesByName(widget.plans);
+  List<Move> _collectMoves() {
+    return collectUniqueReferencedMovesByName(widget.plans);
   }
 
-  List<Exercise> _filteredExercises() {
-    return filterByFuzzyExerciseName<Exercise>(
-      entries: _exercises,
+  List<Move> _filteredMoves() {
+    return filterByFuzzyMoveName<Move>(
+      entries: _moves,
       query: _query,
-      exerciseFor: (Exercise exercise) => exercise,
+      moveFor: (Move move) => move,
     );
   }
 }
 
-class _ExerciseThumbnail extends StatelessWidget {
-  const _ExerciseThumbnail({
+class _MoveThumbnail extends StatelessWidget {
+  const _MoveThumbnail({
     required this.imageUrl,
   });
 

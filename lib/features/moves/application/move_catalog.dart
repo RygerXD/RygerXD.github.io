@@ -1,34 +1,33 @@
 import 'package:workout_app_rewrite/core/utils/fuzzy_search.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
 
-class ReferencedExerciseEntry {
-  const ReferencedExerciseEntry({
-    required this.exercise,
+class ReferencedMoveEntry {
+  const ReferencedMoveEntry({
+    required this.move,
     required this.planNames,
     required this.moveCount,
   });
 
-  final Exercise exercise;
+  final Move move;
   final List<String> planNames;
   final int moveCount;
 }
 
-List<ReferencedExerciseEntry> collectReferencedExercises(
+List<ReferencedMoveEntry> collectReferencedMoves(
   List<WorkoutPlan> plans,
 ) {
-  final Map<String, _MutableExerciseEntry> entries =
-      <String, _MutableExerciseEntry>{};
+  final Map<String, _MutableMoveEntry> entries = <String, _MutableMoveEntry>{};
 
   for (final WorkoutPlan plan in plans) {
-    final Map<String, int> moveCountsByExerciseId = <String, int>{};
+    final Map<String, int> moveCountsByMoveId = <String, int>{};
     for (final Workout workout in plan.workouts) {
       if (workout.isArchived) {
         continue;
       }
       for (final WorkoutSet set in workout.sets) {
-        for (final Move move in set.moves) {
-          moveCountsByExerciseId.update(
-            move.exerciseId,
+        for (final WorkoutMove move in set.moves) {
+          moveCountsByMoveId.update(
+            move.moveId,
             (int count) => count + 1,
             ifAbsent: () => 1,
           );
@@ -36,48 +35,47 @@ List<ReferencedExerciseEntry> collectReferencedExercises(
       }
     }
 
-    for (final Exercise exercise in plan.exercises) {
-      final int moveCount = moveCountsByExerciseId[exercise.exerciseId] ?? 0;
+    for (final Move move in plan.moves) {
+      final int moveCount = moveCountsByMoveId[move.moveId] ?? 0;
       if (moveCount == 0) {
         continue;
       }
-      final _MutableExerciseEntry entry = entries.putIfAbsent(
-        exercise.exerciseId,
-        () => _MutableExerciseEntry(exercise: exercise),
+      final _MutableMoveEntry entry = entries.putIfAbsent(
+        move.moveId,
+        () => _MutableMoveEntry(move: move),
       );
       entry.planNames.add(plan.name);
       entry.moveCount += moveCount;
     }
   }
 
-  final List<ReferencedExerciseEntry> result = entries.values
-      .map((_MutableExerciseEntry entry) => entry.toEntry())
+  final List<ReferencedMoveEntry> result = entries.values
+      .map((_MutableMoveEntry entry) => entry.toEntry())
       .toList(growable: false);
   result.sort(
-    (ReferencedExerciseEntry a, ReferencedExerciseEntry b) =>
-        a.exercise.name.toLowerCase().compareTo(b.exercise.name.toLowerCase()),
+    (ReferencedMoveEntry a, ReferencedMoveEntry b) =>
+        a.move.name.toLowerCase().compareTo(b.move.name.toLowerCase()),
   );
   return result;
 }
 
-List<Exercise> collectUniqueReferencedExercisesByName(
+List<Move> collectUniqueReferencedMovesByName(
   List<WorkoutPlan> plans,
 ) {
-  final Map<String, Exercise> exercisesByName = <String, Exercise>{};
-  for (final ReferencedExerciseEntry entry
-      in collectReferencedExercises(plans)) {
-    final String key = entry.exercise.name.trim().toLowerCase();
-    exercisesByName.putIfAbsent(key, () => entry.exercise);
+  final Map<String, Move> movesByName = <String, Move>{};
+  for (final ReferencedMoveEntry entry in collectReferencedMoves(plans)) {
+    final String key = entry.move.name.trim().toLowerCase();
+    movesByName.putIfAbsent(key, () => entry.move);
   }
 
-  return exercisesByName.values.toList(growable: false)
-    ..sort((Exercise a, Exercise b) => a.name.compareTo(b.name));
+  return movesByName.values.toList(growable: false)
+    ..sort((Move a, Move b) => a.name.compareTo(b.name));
 }
 
-List<T> filterByFuzzyExerciseName<T>({
+List<T> filterByFuzzyMoveName<T>({
   required List<T> entries,
   required String query,
-  required Exercise Function(T entry) exerciseFor,
+  required Move Function(T entry) moveFor,
 }) {
   final String normalizedQuery = query.trim().toLowerCase();
   if (normalizedQuery.isEmpty) {
@@ -86,15 +84,15 @@ List<T> filterByFuzzyExerciseName<T>({
 
   final List<_ScoredEntry<T>> matches = <_ScoredEntry<T>>[];
   for (final T entry in entries) {
-    final Exercise exercise = exerciseFor(entry);
+    final Move move = moveFor(entry);
     final int? score = fuzzyScore(
-      exercise.name.toLowerCase(),
+      move.name.toLowerCase(),
       normalizedQuery,
     );
     if (score != null) {
       matches.add(_ScoredEntry<T>(
         entry: entry,
-        exerciseName: exercise.name,
+        moveName: move.name,
         score: score,
       ));
     }
@@ -105,7 +103,7 @@ List<T> filterByFuzzyExerciseName<T>({
     if (scoreCompare != 0) {
       return scoreCompare;
     }
-    return a.exerciseName.compareTo(b.exerciseName);
+    return a.moveName.compareTo(b.moveName);
   });
 
   return matches
@@ -113,20 +111,20 @@ List<T> filterByFuzzyExerciseName<T>({
       .toList(growable: false);
 }
 
-class _MutableExerciseEntry {
-  _MutableExerciseEntry({
-    required this.exercise,
+class _MutableMoveEntry {
+  _MutableMoveEntry({
+    required this.move,
   });
 
-  final Exercise exercise;
+  final Move move;
   final Set<String> planNames = <String>{};
   int moveCount = 0;
 
-  ReferencedExerciseEntry toEntry() {
+  ReferencedMoveEntry toEntry() {
     final List<String> sortedPlanNames = planNames.toList(growable: false)
       ..sort();
-    return ReferencedExerciseEntry(
-      exercise: exercise,
+    return ReferencedMoveEntry(
+      move: move,
       planNames: sortedPlanNames,
       moveCount: moveCount,
     );
@@ -136,11 +134,11 @@ class _MutableExerciseEntry {
 class _ScoredEntry<T> {
   const _ScoredEntry({
     required this.entry,
-    required this.exerciseName,
+    required this.moveName,
     required this.score,
   });
 
   final T entry;
-  final String exerciseName;
+  final String moveName;
   final int score;
 }

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:workout_app_rewrite/core/media/exercise_media_image.dart';
 import 'package:workout_app_rewrite/core/media/media_thumbnail.dart';
+import 'package:workout_app_rewrite/core/media/move_media_image.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
 import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
 import 'package:workout_app_rewrite/core/widgets/confirm_destructive_action.dart';
@@ -46,9 +46,8 @@ class WorkoutSummaryScreen extends ConsumerWidget {
           );
         }
 
-        final Map<String, Exercise> exercisesById = <String, Exercise>{
-          for (final Exercise exercise in plan.exercises)
-            exercise.exerciseId: exercise,
+        final Map<String, Move> movesById = <String, Move>{
+          for (final Move move in plan.moves) move.moveId: move,
         };
         final int estimatedSeconds = estimateWorkoutSeconds(workout);
 
@@ -120,7 +119,7 @@ class WorkoutSummaryScreen extends ConsumerWidget {
               const SizedBox(height: AppSpacing.xl),
               _StatsRow(
                 duration: formatClockDuration(estimatedSeconds),
-                exerciseCount: countWorkoutMoves(workout),
+                moveCount: countWorkoutMoves(workout),
               ),
               const SizedBox(height: AppSpacing.xxl),
               const Divider(height: 1),
@@ -128,7 +127,7 @@ class WorkoutSummaryScreen extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
                 child: Text(
                   optionalText(plan.description) ??
-                      'Review the exercises, timing, and set laps before you start.',
+                      'Review the moves, timing, and set laps before you start.',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
@@ -137,7 +136,7 @@ class WorkoutSummaryScreen extends ConsumerWidget {
               const Divider(height: 1),
               const SizedBox(height: AppSpacing.xl),
               Text(
-                'Exercises',
+                'Moves',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
@@ -146,7 +145,7 @@ class WorkoutSummaryScreen extends ConsumerWidget {
               ...workout.sets.map((WorkoutSet set) {
                 return _SetPreview(
                   set: set,
-                  exercisesById: exercisesById,
+                  movesById: movesById,
                 );
               }),
             ],
@@ -227,10 +226,11 @@ WorkoutPlan _singleWorkoutPlan(WorkoutPlan plan, Workout workout) {
     name: workout.title,
     imageUrl: workout.imageUrl ?? plan.imageUrl,
     workouts: <Workout>[workout],
-    exercises: plan.exercises
-        .where((Exercise exercise) => workout.sets.any(
+    moves: plan.moves
+        .where((Move planMove) => workout.sets.any(
               (WorkoutSet set) => set.moves.any(
-                (Move move) => move.exerciseId == exercise.exerciseId,
+                (WorkoutMove workoutMove) =>
+                    workoutMove.moveId == planMove.moveId,
               ),
             ))
         .toList(growable: false),
@@ -275,7 +275,7 @@ class _WorkoutHero extends StatelessWidget {
                       color: colors.onPrimaryContainer,
                       size: 56,
                     )
-                  : ExerciseMediaImage(
+                  : MoveMediaImage(
                       source: imageUrl,
                       fit: BoxFit.cover,
                       errorPlaceholder: Icon(
@@ -303,11 +303,11 @@ class _WorkoutHero extends StatelessWidget {
 class _StatsRow extends StatelessWidget {
   const _StatsRow({
     required this.duration,
-    required this.exerciseCount,
+    required this.moveCount,
   });
 
   final String duration;
-  final int exerciseCount;
+  final int moveCount;
 
   @override
   Widget build(BuildContext context) {
@@ -327,8 +327,8 @@ class _StatsRow extends StatelessWidget {
         ),
         Expanded(
           child: _SummaryStat(
-            label: 'Exercises',
-            value: '$exerciseCount',
+            label: 'Moves',
+            value: '$moveCount',
           ),
         ),
       ],
@@ -373,11 +373,11 @@ class _SummaryStat extends StatelessWidget {
 class _SetPreview extends StatelessWidget {
   const _SetPreview({
     required this.set,
-    required this.exercisesById,
+    required this.movesById,
   });
 
   final WorkoutSet set;
-  final Map<String, Exercise> exercisesById;
+  final Map<String, Move> movesById;
 
   @override
   Widget build(BuildContext context) {
@@ -405,11 +405,11 @@ class _SetPreview extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          ...set.moves.map((Move move) {
-            final Exercise? exercise = exercisesById[move.exerciseId];
+          ...set.moves.map((WorkoutMove workoutMove) {
+            final Move? move = movesById[workoutMove.moveId];
             return _MovePreviewRow(
+              workoutMove: workoutMove,
               move: move,
-              exercise: exercise,
             );
           }),
         ],
@@ -449,18 +449,18 @@ class _LapBadge extends StatelessWidget {
 
 class _MovePreviewRow extends StatelessWidget {
   const _MovePreviewRow({
+    required this.workoutMove,
     required this.move,
-    required this.exercise,
   });
 
-  final Move move;
-  final Exercise? exercise;
+  final WorkoutMove workoutMove;
+  final Move? move;
 
   @override
   Widget build(BuildContext context) {
     final ColorScheme colors = Theme.of(context).colorScheme;
-    final String exerciseName = exercise?.name ?? 'Unknown Exercise';
-    final String? imageUrl = optionalText(exercise?.imageUrl);
+    final String moveName = move?.name ?? 'Unknown Move';
+    final String? imageUrl = optionalText(move?.imageUrl);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
@@ -476,7 +476,7 @@ class _MovePreviewRow extends StatelessWidget {
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Text(
-              exerciseName,
+              moveName,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -485,7 +485,7 @@ class _MovePreviewRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSpacing.sm),
-          _MoveTargetBadge(label: formatMoveTarget(move)),
+          _MoveTargetBadge(label: formatMoveTarget(workoutMove)),
         ],
       ),
     );

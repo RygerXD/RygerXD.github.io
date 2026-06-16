@@ -21,9 +21,9 @@ void main() {
     final SharedPreferences preferences = await SharedPreferences.getInstance();
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     final WorkoutPlan plan = _planWithMove(
-      const Move(
+      const WorkoutMove(
+        workoutMoveId: 'move-1',
         moveId: 'move-1',
-        exerciseId: 'exercise-1',
         type: MoveType.reps,
         repCount: 15,
         targetWeight: 35,
@@ -37,14 +37,14 @@ void main() {
       workoutId: 'workout-1',
       setId: 'set-1',
       lapIndex: 0,
-      exerciseId: 'exercise-1',
+      moveId: 'move-1',
       reps: 16,
     );
     await repHistoryService.saveWeight(
       workoutId: 'workout-1',
       setId: 'set-1',
       lapIndex: 0,
-      exerciseId: 'exercise-1',
+      moveId: 'move-1',
       weightUnit: WeightUnit.lb.name,
       weight: 40,
     );
@@ -85,9 +85,9 @@ void main() {
     final SharedPreferences preferences = await SharedPreferences.getInstance();
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     final WorkoutPlan plan = _planWithMove(
-      const Move(
+      const WorkoutMove(
+        workoutMoveId: 'move-1',
         moveId: 'move-1',
-        exerciseId: 'exercise-1',
         type: MoveType.reps,
         repCount: 15,
         repeatEachSide: true,
@@ -131,9 +131,9 @@ void main() {
   });
 }
 
-WorkoutPlan _planWithMove(Move move) {
+WorkoutPlan _planWithMove(WorkoutMove move) {
   return WorkoutPlan(
-    schemaVersion: 3,
+    schemaVersion: 4,
     planId: 'plan-1',
     name: 'Plan 1',
     workouts: <Workout>[
@@ -145,14 +145,14 @@ WorkoutPlan _planWithMove(Move move) {
             setId: 'set-1',
             lapCount: 1,
             restBetweenLapsSeconds: 0,
-            moves: <Move>[move],
+            moves: <WorkoutMove>[move],
           ),
         ],
       ),
     ],
-    exercises: const <Exercise>[
-      Exercise(
-        exerciseId: 'exercise-1',
+    moves: const <Move>[
+      Move(
+        moveId: 'move-1',
         name: 'Pushups',
         imageUrl: 'missing-pushup.gif',
       ),

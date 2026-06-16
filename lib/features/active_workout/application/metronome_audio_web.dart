@@ -35,22 +35,22 @@ Future<void> playGetReadyCountdown({
   );
 }
 
-Future<void> playExerciseCountdown({
+Future<void> playMoveCountdown({
   required CountdownSound sound,
   required double volume,
 }) async {
   await _playProfile(
-    profile: _SoundProfile.forExerciseCountdown(sound),
+    profile: _SoundProfile.forMoveCountdown(sound),
     volume: volume,
   );
 }
 
-Future<void> playExerciseFinishedDing({
-  required ExerciseFinishedDingSound sound,
+Future<void> playMoveFinishedDing({
+  required MoveFinishedDingSound sound,
   required double volume,
 }) async {
   await _playProfile(
-    profile: _SoundProfile.forExerciseFinishedDing(sound),
+    profile: _SoundProfile.forMoveFinishedDing(sound),
     volume: volume,
   );
 }
@@ -150,7 +150,7 @@ class _SoundProfile {
           ]),
       };
 
-  static _SoundProfile forExerciseCountdown(CountdownSound sound) =>
+  static _SoundProfile forMoveCountdown(CountdownSound sound) =>
       switch (sound) {
         CountdownSound.click => const _SoundProfile(0.06, <_Tone>[
             _Tone(1450, 'square'),
@@ -170,22 +170,21 @@ class _SoundProfile {
           ]),
       };
 
-  static _SoundProfile forExerciseFinishedDing(
-          ExerciseFinishedDingSound sound) =>
+  static _SoundProfile forMoveFinishedDing(MoveFinishedDingSound sound) =>
       switch (sound) {
-        ExerciseFinishedDingSound.classic => const _SoundProfile(0.2, <_Tone>[
+        MoveFinishedDingSound.classic => const _SoundProfile(0.2, <_Tone>[
             _Tone(1175, 'sine'),
             _Tone(2350, 'sine'),
           ]),
-        ExerciseFinishedDingSound.bright => const _SoundProfile(0.18, <_Tone>[
+        MoveFinishedDingSound.bright => const _SoundProfile(0.18, <_Tone>[
             _Tone(1760, 'sine'),
             _Tone(3520, 'sine'),
           ]),
-        ExerciseFinishedDingSound.soft => const _SoundProfile(0.24, <_Tone>[
+        MoveFinishedDingSound.soft => const _SoundProfile(0.24, <_Tone>[
             _Tone(660, 'triangle'),
             _Tone(1320, 'sine'),
           ]),
-        ExerciseFinishedDingSound.bell => const _SoundProfile(0.28, <_Tone>[
+        MoveFinishedDingSound.bell => const _SoundProfile(0.28, <_Tone>[
             _Tone(1480, 'sine'),
             _Tone(2220, 'sine'),
             _Tone(2960, 'sine'),

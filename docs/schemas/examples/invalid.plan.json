@@ -2,7 +2,7 @@
   "schemaVersion": 99,
   "planId": "",
   "name": "Invalid Plan",
-  "exercises": [],
+  "moves": [],
   "workouts": [
     {
       "workoutId": "w1",
@@ -14,8 +14,8 @@
           "restBetweenLapsSeconds": 20,
           "moves": [
             {
-              "moveId": "m1",
-              "exerciseId": "missing-exercise",
+              "workoutMoveId": "m1",
+              "moveId": "missing-move",
               "type": "reps"
             }
           ]

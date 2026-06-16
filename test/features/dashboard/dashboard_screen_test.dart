@@ -22,7 +22,7 @@ void main() {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 3,
+        schemaVersion: 4,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[
@@ -34,10 +34,10 @@ void main() {
                 setId: 'set-a',
                 lapCount: 1,
                 restBetweenLapsSeconds: 0,
-                moves: <Move>[
-                  Move(
+                moves: <WorkoutMove>[
+                  WorkoutMove(
+                    workoutMoveId: 'move-a',
                     moveId: 'move-a',
-                    exerciseId: 'exercise-a',
                     type: MoveType.duration,
                     durationSeconds: 30,
                   ),
@@ -54,10 +54,10 @@ void main() {
                 setId: 'set-b',
                 lapCount: 1,
                 restBetweenLapsSeconds: 0,
-                moves: <Move>[
-                  Move(
+                moves: <WorkoutMove>[
+                  WorkoutMove(
+                    workoutMoveId: 'move-b',
                     moveId: 'move-b',
-                    exerciseId: 'exercise-b',
                     type: MoveType.duration,
                     prepTimeSeconds: 5,
                     durationSeconds: 65,
@@ -67,9 +67,9 @@ void main() {
             ],
           ),
         ],
-        exercises: <Exercise>[
-          Exercise(exerciseId: 'exercise-a', name: 'A'),
-          Exercise(exerciseId: 'exercise-b', name: 'B'),
+        moves: <Move>[
+          Move(moveId: 'move-a', name: 'A'),
+          Move(moveId: 'move-b', name: 'B'),
         ],
       ),
     );
@@ -124,7 +124,7 @@ void main() {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 3,
+        schemaVersion: 4,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[
@@ -136,10 +136,10 @@ void main() {
                 setId: 'set-a',
                 lapCount: 1,
                 restBetweenLapsSeconds: 0,
-                moves: <Move>[
-                  Move(
+                moves: <WorkoutMove>[
+                  WorkoutMove(
+                    workoutMoveId: 'move-a',
                     moveId: 'move-a',
-                    exerciseId: 'exercise-a',
                     type: MoveType.duration,
                     durationSeconds: 30,
                   ),
@@ -148,8 +148,8 @@ void main() {
             ],
           ),
         ],
-        exercises: <Exercise>[
-          Exercise(exerciseId: 'exercise-a', name: 'A'),
+        moves: <Move>[
+          Move(moveId: 'move-a', name: 'A'),
         ],
       ),
     );
@@ -188,7 +188,7 @@ void main() {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 3,
+        schemaVersion: 4,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[
@@ -200,10 +200,10 @@ void main() {
                 setId: 'set-a',
                 lapCount: 1,
                 restBetweenLapsSeconds: 0,
-                moves: <Move>[
-                  Move(
+                moves: <WorkoutMove>[
+                  WorkoutMove(
+                    workoutMoveId: 'move-a',
                     moveId: 'move-a',
-                    exerciseId: 'exercise-a',
                     type: MoveType.duration,
                     durationSeconds: 30,
                   ),
@@ -212,8 +212,8 @@ void main() {
             ],
           ),
         ],
-        exercises: <Exercise>[
-          Exercise(exerciseId: 'exercise-a', name: 'A'),
+        moves: <Move>[
+          Move(moveId: 'move-a', name: 'A'),
         ],
       ),
     );

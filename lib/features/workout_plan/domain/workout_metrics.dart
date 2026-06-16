@@ -12,7 +12,7 @@ int estimateWorkoutSeconds(Workout workout) {
 int estimateSetSeconds(WorkoutSet set) {
   int total = 0;
   for (int lap = 0; lap < set.lapCount; lap += 1) {
-    for (final Move move in set.moves) {
+    for (final WorkoutMove move in set.moves) {
       total += estimateMoveSeconds(move);
     }
     if (lap < set.lapCount - 1) {
@@ -22,7 +22,7 @@ int estimateSetSeconds(WorkoutSet set) {
   return total;
 }
 
-int estimateMoveSeconds(Move move) {
+int estimateMoveSeconds(WorkoutMove move) {
   final int activeSeconds = switch (move.type) {
     MoveType.duration => move.durationSeconds ?? 0,
     MoveType.reps || MoveType.stopwatch => 0,
@@ -32,7 +32,7 @@ int estimateMoveSeconds(Move move) {
       effectiveMoveSideCount(move);
 }
 
-int effectiveMoveDurationSeconds(Move move) {
+int effectiveMoveDurationSeconds(WorkoutMove move) {
   final int durationSeconds = move.durationSeconds ?? 0;
   if (move.type != MoveType.duration) {
     return 0;
@@ -40,7 +40,7 @@ int effectiveMoveDurationSeconds(Move move) {
   return move.repeatEachSide ? durationSeconds * 2 : durationSeconds;
 }
 
-int effectiveMoveSideCount(Move move) {
+int effectiveMoveSideCount(WorkoutMove move) {
   return move.repeatEachSide ? 2 : 1;
 }
 
@@ -51,7 +51,7 @@ int countWorkoutMoves(Workout workout) {
         total +
         (set.moves.fold<int>(
               0,
-              (int moveTotal, Move move) =>
+              (int moveTotal, WorkoutMove move) =>
                   moveTotal +
                   (effectiveMoveSetCount(move) * effectiveMoveSideCount(move)),
             ) *
@@ -94,7 +94,7 @@ String formatClockDuration(int seconds) {
   return '$hours:$minutes:$remainingSeconds';
 }
 
-String formatMoveTarget(Move move) {
+String formatMoveTarget(WorkoutMove move) {
   final String baseTarget = switch (move.type) {
     MoveType.reps => '${move.repCount ?? 0} reps',
     MoveType.duration => formatShortClockDuration(move.durationSeconds ?? 0),
@@ -106,7 +106,7 @@ String formatMoveTarget(Move move) {
   return setCount > 1 ? '$setCount sets x $target' : target;
 }
 
-String? formatMoveTargetWeight(Move move) {
+String? formatMoveTargetWeight(WorkoutMove move) {
   final double? weight = move.targetWeight;
   final WeightUnit? unit = move.targetWeightUnit;
   if (weight == null || unit == null) {
@@ -115,7 +115,7 @@ String? formatMoveTargetWeight(Move move) {
   return '${formatWeight(weight)}${_formatWeightUnit(unit)}';
 }
 
-String _withTargetWeight(String label, Move move) {
+String _withTargetWeight(String label, WorkoutMove move) {
   final String? targetWeight = formatMoveTargetWeight(move);
   if (targetWeight == null) {
     return label;
@@ -123,7 +123,7 @@ String _withTargetWeight(String label, Move move) {
   return '$label, $targetWeight';
 }
 
-String _withEachSide(String label, Move move) {
+String _withEachSide(String label, WorkoutMove move) {
   return move.repeatEachSide ? '$label / side' : label;
 }
 

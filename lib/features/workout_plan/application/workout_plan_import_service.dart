@@ -30,7 +30,8 @@ class WorkoutPlanImportService {
   Future<WorkoutPlan> importFromJsonString(String payload) async {
     final int bytes = payload.codeUnits.length;
     if (bytes > maxImportBytes) {
-      throw ImportPolicyException('Plan exceeds max size of $maxImportBytes bytes.');
+      throw ImportPolicyException(
+          'Plan exceeds max size of $maxImportBytes bytes.');
     }
     final WorkoutPlan plan = _parser.parseFromString(payload);
     await _repository.savePlan(plan);
@@ -46,6 +47,7 @@ class WorkoutPlanImportService {
     if (allowHttp && isHttp) {
       return;
     }
-    throw const ImportPolicyException('Only https:// URLs are allowed by default.');
+    throw const ImportPolicyException(
+        'Only https:// URLs are allowed by default.');
   }
 }

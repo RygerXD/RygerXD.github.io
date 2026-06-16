@@ -20,7 +20,8 @@ class DriftWorkoutRepository implements WorkoutRepository {
 
     for (final WorkoutPlanEntity entity in entities) {
       try {
-        final Map<String, dynamic> jsonMap = jsonDecode(entity.jsonPayload) as Map<String, dynamic>;
+        final Map<String, dynamic> jsonMap =
+            jsonDecode(entity.jsonPayload) as Map<String, dynamic>;
         plans.add(WorkoutPlan.fromJson(jsonMap));
       } catch (e) {
         // Ignore corrupted JSON
@@ -35,7 +36,8 @@ class DriftWorkoutRepository implements WorkoutRepository {
     for (final WorkoutPlanEntity entity in entities) {
       if (entity.planId == planId) {
         try {
-          final Map<String, dynamic> jsonMap = jsonDecode(entity.jsonPayload) as Map<String, dynamic>;
+          final Map<String, dynamic> jsonMap =
+              jsonDecode(entity.jsonPayload) as Map<String, dynamic>;
           return WorkoutPlan.fromJson(jsonMap);
         } catch (e) {
           return null;

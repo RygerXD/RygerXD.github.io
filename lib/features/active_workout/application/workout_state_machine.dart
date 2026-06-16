@@ -52,7 +52,7 @@ class WorkoutStateMachine {
   void completeMove() {
     _assertPhase(<WorkoutPhase>{WorkoutPhase.move}, 'completeMove');
     final _Cursor cursor = _cursor();
-    final Move move = cursor.set.moves[cursor.moveIndex];
+    final WorkoutMove move = cursor.set.moves[cursor.moveIndex];
     if (move.finishTimeSeconds > 0) {
       _transitionTo(
         WorkoutPhase.rest,

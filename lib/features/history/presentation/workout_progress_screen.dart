@@ -260,8 +260,8 @@ List<_MoveSeries> _buildMoveSeries({
     final String key = _moveKey(
       setId: performance.setId,
       lapIndex: performance.lapIndex,
+      workoutMoveId: performance.workoutMoveId,
       moveId: performance.moveId,
-      exerciseId: performance.exerciseId,
     );
     pointsByKey.putIfAbsent(key, () => <_MovePoint>[]).add(
           _MovePoint(
@@ -300,12 +300,12 @@ List<_MoveSeries> _buildMoveSeries({
     final WorkoutSet set = expandedWorkout.sets[setIndex];
     for (int lapIndex = 0; lapIndex < set.lapCount; lapIndex += 1) {
       for (int moveIndex = 0; moveIndex < set.moves.length; moveIndex += 1) {
-        final Move move = set.moves[moveIndex];
+        final WorkoutMove move = set.moves[moveIndex];
         final String key = _moveKey(
           setId: set.setId,
           lapIndex: lapIndex,
+          workoutMoveId: move.workoutMoveId,
           moveId: move.moveId,
-          exerciseId: move.exerciseId,
         );
         final List<_MovePoint>? points = pointsByKey[key];
         if (points == null || points.isEmpty) {
@@ -331,30 +331,30 @@ List<_MoveSeries> _buildMoveSeries({
 String _moveKey({
   required String setId,
   required int lapIndex,
+  required String workoutMoveId,
   required String moveId,
-  required String exerciseId,
 }) {
-  return '$setId|$lapIndex|$moveId|$exerciseId';
+  return '$setId|$lapIndex|$workoutMoveId|$moveId';
 }
 
-String _exerciseName(String exerciseId, WorkoutPlan? plan) {
+String _planMoveName(String moveId, WorkoutPlan? plan) {
   if (plan == null) {
-    return exerciseId;
+    return moveId;
   }
-  for (final Exercise exercise in plan.exercises) {
-    if (exercise.exerciseId == exerciseId) {
-      return exercise.name;
+  for (final Move move in plan.moves) {
+    if (move.moveId == moveId) {
+      return move.name;
     }
   }
-  return exerciseId;
+  return moveId;
 }
 
-String _moveName(Move move, WorkoutPlan? plan) {
-  final String exerciseName = _exerciseName(move.exerciseId, plan);
+String _moveName(WorkoutMove move, WorkoutPlan? plan) {
+  final String moveName = _planMoveName(move.moveId, plan);
   return switch (move.side) {
-    MoveSide.left => 'Left $exerciseName',
-    MoveSide.right => 'Right $exerciseName',
-    null => exerciseName,
+    MoveSide.left => 'Left $moveName',
+    MoveSide.right => 'Right $moveName',
+    null => moveName,
   };
 }
 

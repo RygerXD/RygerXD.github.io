@@ -8,16 +8,16 @@ import 'package:workout_app_rewrite/features/workout_plan/data/in_memory_workout
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
 
 void main() {
-  testWidgets('shows a newly added exercise name immediately',
+  testWidgets('shows a newly added move name immediately',
       (WidgetTester tester) async {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 3,
+        schemaVersion: 4,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[],
-        exercises: <Exercise>[],
+        moves: <Move>[],
       ),
     );
 
@@ -43,13 +43,13 @@ void main() {
     await tester.tap(find.text('New Move'));
     await tester.pumpAndSettle();
 
-    final Finder exerciseNameField = find
+    final Finder moveNameField = find
         .descendant(
           of: find.byType(AlertDialog),
           matching: find.byType(TextField),
         )
         .first;
-    await tester.enterText(exerciseNameField, 'Push Up');
+    await tester.enterText(moveNameField, 'Push Up');
     await tester.tap(find.widgetWithText(FilledButton, 'Add'));
     await tester.pumpAndSettle();
 
@@ -57,7 +57,7 @@ void main() {
       find.text('Push Up'),
       findsOneWidget,
     );
-    expect(find.text('Unknown Exercise'), findsNothing);
+    expect(find.text('Unknown Move'), findsNothing);
 
     await tester.tap(find.text('Existing'));
     await tester.pumpAndSettle();
@@ -75,11 +75,11 @@ void main() {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 3,
+        schemaVersion: 4,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[],
-        exercises: <Exercise>[],
+        moves: <Move>[],
       ),
     );
 
@@ -104,13 +104,13 @@ void main() {
     await tester.tap(find.text('New Move'));
     await tester.pumpAndSettle();
 
-    final Finder exerciseNameField = find
+    final Finder moveNameField = find
         .descendant(
           of: find.byType(AlertDialog),
           matching: find.byType(TextField),
         )
         .first;
-    await tester.enterText(exerciseNameField, 'Jumping Jacks');
+    await tester.enterText(moveNameField, 'Jumping Jacks');
     await tester.tap(find.text('Time'));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('Metronome'));
@@ -133,7 +133,7 @@ void main() {
 
   testWidgets('add move dialog saves each-side duration moves',
       (WidgetTester tester) async {
-    Move? capturedMove;
+    WorkoutMove? capturedMove;
 
     await tester.pumpWidget(
       MaterialApp(
@@ -146,8 +146,8 @@ void main() {
                     context: context,
                     builder: (BuildContext context) {
                       return AddMoveDialog(
-                        onAdd: (Move move, Exercise exercise) {
-                          capturedMove = move;
+                        onAdd: (WorkoutMove workoutMove, Move move) {
+                          capturedMove = workoutMove;
                         },
                       );
                     },
@@ -192,7 +192,7 @@ void main() {
 
   testWidgets('add move dialog saves each-side rep moves',
       (WidgetTester tester) async {
-    Move? capturedMove;
+    WorkoutMove? capturedMove;
 
     await tester.pumpWidget(
       MaterialApp(
@@ -205,8 +205,8 @@ void main() {
                     context: context,
                     builder: (BuildContext context) {
                       return AddMoveDialog(
-                        onAdd: (Move move, Exercise exercise) {
-                          capturedMove = move;
+                        onAdd: (WorkoutMove workoutMove, Move move) {
+                          capturedMove = workoutMove;
                         },
                       );
                     },
@@ -252,11 +252,11 @@ void main() {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 3,
+        schemaVersion: 4,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[],
-        exercises: <Exercise>[],
+        moves: <Move>[],
       ),
     );
 
@@ -296,8 +296,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final WorkoutPlan? updatedPlan = await repository.getPlanById('plan-1');
-    expect(updatedPlan?.exercises.single.imageUrl,
-        'https://example.com/plank.gif');
+    expect(updatedPlan?.moves.single.imageUrl, 'https://example.com/plank.gif');
   });
 
   testWidgets('saves image or GIF URL for workouts',
@@ -305,11 +304,11 @@ void main() {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 3,
+        schemaVersion: 4,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[],
-        exercises: <Exercise>[],
+        moves: <Move>[],
       ),
     );
 
@@ -353,7 +352,7 @@ void main() {
 
   testWidgets('add move dialog saves target weight',
       (WidgetTester tester) async {
-    Move? capturedMove;
+    WorkoutMove? capturedMove;
 
     await tester.pumpWidget(
       MaterialApp(
@@ -366,8 +365,8 @@ void main() {
                     context: context,
                     builder: (BuildContext context) {
                       return AddMoveDialog(
-                        onAdd: (Move move, Exercise exercise) {
-                          capturedMove = move;
+                        onAdd: (WorkoutMove workoutMove, Move move) {
+                          capturedMove = workoutMove;
                         },
                       );
                     },
@@ -412,7 +411,7 @@ void main() {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 3,
+        schemaVersion: 4,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[
@@ -424,10 +423,10 @@ void main() {
                 setId: 'set-1',
                 lapCount: 1,
                 restBetweenLapsSeconds: 30,
-                moves: <Move>[
-                  Move(
-                    moveId: 'move-1',
-                    exerciseId: 'incline-bench',
+                moves: <WorkoutMove>[
+                  WorkoutMove(
+                    workoutMoveId: 'move-1',
+                    moveId: 'incline-bench',
                     type: MoveType.reps,
                     repCount: 10,
                     setCount: 3,
@@ -439,8 +438,8 @@ void main() {
             ],
           ),
         ],
-        exercises: <Exercise>[
-          Exercise(exerciseId: 'incline-bench', name: 'Incline Bench'),
+        moves: <Move>[
+          Move(moveId: 'incline-bench', name: 'Incline Bench'),
         ],
       ),
     );
@@ -471,7 +470,7 @@ void main() {
 
   testWidgets('add move dialog saves cooldown time',
       (WidgetTester tester) async {
-    Move? capturedMove;
+    WorkoutMove? capturedMove;
 
     await tester.pumpWidget(
       MaterialApp(
@@ -484,8 +483,8 @@ void main() {
                     context: context,
                     builder: (BuildContext context) {
                       return AddMoveDialog(
-                        onAdd: (Move move, Exercise exercise) {
-                          capturedMove = move;
+                        onAdd: (WorkoutMove workoutMove, Move move) {
+                          capturedMove = workoutMove;
                         },
                       );
                     },
@@ -516,7 +515,7 @@ void main() {
 
   testWidgets('add move dialog defaults cooldown time to zero',
       (WidgetTester tester) async {
-    Move? capturedMove;
+    WorkoutMove? capturedMove;
 
     await tester.pumpWidget(
       MaterialApp(
@@ -529,8 +528,8 @@ void main() {
                     context: context,
                     builder: (BuildContext context) {
                       return AddMoveDialog(
-                        onAdd: (Move move, Exercise exercise) {
-                          capturedMove = move;
+                        onAdd: (WorkoutMove workoutMove, Move move) {
+                          capturedMove = workoutMove;
                         },
                       );
                     },
@@ -571,7 +570,7 @@ void main() {
                     context: context,
                     builder: (BuildContext context) {
                       return AddMoveDialog(
-                        onAdd: (Move move, Exercise exercise) {},
+                        onAdd: (WorkoutMove workoutMove, Move move) {},
                       );
                     },
                   );
@@ -610,7 +609,7 @@ void main() {
 
   testWidgets('add move dialog saves max-time moves',
       (WidgetTester tester) async {
-    Move? capturedMove;
+    WorkoutMove? capturedMove;
 
     await tester.pumpWidget(
       MaterialApp(
@@ -623,8 +622,8 @@ void main() {
                     context: context,
                     builder: (BuildContext context) {
                       return AddMoveDialog(
-                        onAdd: (Move move, Exercise exercise) {
-                          capturedMove = move;
+                        onAdd: (WorkoutMove workoutMove, Move move) {
+                          capturedMove = workoutMove;
                         },
                       );
                     },
@@ -664,11 +663,11 @@ void main() {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 3,
+        schemaVersion: 4,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[],
-        exercises: <Exercise>[],
+        moves: <Move>[],
       ),
     );
 
@@ -721,16 +720,16 @@ void main() {
     await tester.pumpAndSettle();
 
     final WorkoutPlan? updatedPlan = await repository.getPlanById('plan-1');
-    expect(updatedPlan?.exercises.single.name, 'Incline Push Up');
+    expect(updatedPlan?.moves.single.name, 'Incline Push Up');
     expect(updatedPlan?.workouts.single.sets.single.moves.single.repCount, 15);
   });
 
-  testWidgets('updates move set count from the exercise card',
+  testWidgets('updates move set count from the move card',
       (WidgetTester tester) async {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 3,
+        schemaVersion: 4,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[
@@ -742,10 +741,10 @@ void main() {
                 setId: 'set-1',
                 lapCount: 1,
                 restBetweenLapsSeconds: 30,
-                moves: <Move>[
-                  Move(
-                    moveId: 'move-1',
-                    exerciseId: 'push-up',
+                moves: <WorkoutMove>[
+                  WorkoutMove(
+                    workoutMoveId: 'move-1',
+                    moveId: 'push-up',
                     type: MoveType.reps,
                     repCount: 10,
                   ),
@@ -754,8 +753,8 @@ void main() {
             ],
           ),
         ],
-        exercises: <Exercise>[
-          Exercise(exerciseId: 'push-up', name: 'Push Up'),
+        moves: <Move>[
+          Move(moveId: 'push-up', name: 'Push Up'),
         ],
       ),
     );
@@ -791,12 +790,12 @@ void main() {
     expect(updatedPlan.workouts.single.sets.single.moves.single.setCount, 2);
   });
 
-  testWidgets('existing picker searches exercises and resets move settings',
+  testWidgets('existing picker searches moves and resets move settings',
       (WidgetTester tester) async {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 3,
+        schemaVersion: 4,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[
@@ -808,10 +807,10 @@ void main() {
                 setId: 'source-set',
                 lapCount: 1,
                 restBetweenLapsSeconds: 30,
-                moves: <Move>[
-                  Move(
-                    moveId: 'source-move',
-                    exerciseId: 'burpee',
+                moves: <WorkoutMove>[
+                  WorkoutMove(
+                    workoutMoveId: 'source-move',
+                    moveId: 'burpee',
                     type: MoveType.reps,
                     repCount: 99,
                     prepTimeSeconds: 12,
@@ -821,9 +820,9 @@ void main() {
             ],
           ),
         ],
-        exercises: <Exercise>[
-          Exercise(
-            exerciseId: 'burpee',
+        moves: <Move>[
+          Move(
+            moveId: 'burpee',
             name: 'Burpee',
             imageUrl: 'https://example.com/burpee.gif',
           ),
@@ -853,9 +852,9 @@ void main() {
     await tester.tap(find.text('Existing'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Search exercises'), findsOneWidget);
+    expect(find.text('Search moves'), findsOneWidget);
     await tester.enterText(
-        find.widgetWithText(TextField, 'Search exercises'), 'brp');
+        find.widgetWithText(TextField, 'Search moves'), 'brp');
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Burpee'));
@@ -886,13 +885,12 @@ void main() {
     final WorkoutPlan updatedPlan = (await repository.getPlanById('plan-1'))!;
     final Workout addedWorkout = updatedPlan.workouts
         .singleWhere((Workout workout) => workout.title == 'Workout A');
-    final Move addedMove = addedWorkout.sets.single.moves.single;
-    expect(addedMove.exerciseId, 'burpee');
+    final WorkoutMove addedMove = addedWorkout.sets.single.moves.single;
+    expect(addedMove.moveId, 'burpee');
     expect(addedMove.repCount, 10);
     expect(addedMove.prepTimeSeconds, 5);
     expect(addedMove.finishTimeSeconds, 0);
-    expect(updatedPlan.exercises.single.imageUrl,
-        'https://example.com/burpee.gif');
+    expect(updatedPlan.moves.single.imageUrl, 'https://example.com/burpee.gif');
   });
 
   testWidgets('saves set names, lap counts, and rest between laps',
@@ -900,11 +898,11 @@ void main() {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 3,
+        schemaVersion: 4,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[],
-        exercises: <Exercise>[],
+        moves: <Move>[],
       ),
     );
 
@@ -948,11 +946,11 @@ void main() {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 3,
+        schemaVersion: 4,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[],
-        exercises: <Exercise>[],
+        moves: <Move>[],
       ),
     );
 
@@ -989,7 +987,7 @@ void main() {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 3,
+        schemaVersion: 4,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[
@@ -1001,16 +999,16 @@ void main() {
                 setId: 'set-1',
                 lapCount: 1,
                 restBetweenLapsSeconds: 30,
-                moves: <Move>[
-                  Move(
-                    moveId: 'move-1',
-                    exerciseId: 'push-up',
+                moves: <WorkoutMove>[
+                  WorkoutMove(
+                    workoutMoveId: 'move-1',
+                    moveId: 'push-up',
                     type: MoveType.reps,
                     repCount: 10,
                   ),
-                  Move(
-                    moveId: 'move-2',
-                    exerciseId: 'squat',
+                  WorkoutMove(
+                    workoutMoveId: 'move-2',
+                    moveId: 'squat',
                     type: MoveType.reps,
                     repCount: 12,
                   ),
@@ -1019,9 +1017,9 @@ void main() {
             ],
           ),
         ],
-        exercises: <Exercise>[
-          Exercise(exerciseId: 'push-up', name: 'Push Up'),
-          Exercise(exerciseId: 'squat', name: 'Squat'),
+        moves: <Move>[
+          Move(moveId: 'push-up', name: 'Push Up'),
+          Move(moveId: 'squat', name: 'Squat'),
         ],
       ),
     );
@@ -1057,8 +1055,9 @@ void main() {
     await tester.pumpAndSettle();
 
     final WorkoutPlan updatedPlan = (await repository.getPlanById('plan-1'))!;
-    final List<Move> savedMoves = updatedPlan.workouts.single.sets.single.moves;
-    expect(savedMoves.map((Move move) => move.exerciseId), <String>[
+    final List<WorkoutMove> savedMoves =
+        updatedPlan.workouts.single.sets.single.moves;
+    expect(savedMoves.map((WorkoutMove move) => move.moveId), <String>[
       'squat',
       'push-up',
     ]);

@@ -10,8 +10,9 @@ class AppTheme {
       error: AppColors.danger,
       brightness: Brightness.light,
     );
-    
-    final TextTheme baseTextTheme = Typography.material2021(platform: TargetPlatform.android).black;
+
+    final TextTheme baseTextTheme =
+        Typography.material2021(platform: TargetPlatform.android).black;
 
     return ThemeData(
       colorScheme: scheme,
@@ -34,8 +35,10 @@ class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.md)),
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: AppSpacing.md),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadii.md)),
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.xl, vertical: AppSpacing.md),
         ),
       ),
     );
@@ -49,8 +52,9 @@ class AppTheme {
       error: AppColors.danger,
       brightness: Brightness.dark,
     );
-    
-    final TextTheme baseTextTheme = Typography.material2021(platform: TargetPlatform.android).white;
+
+    final TextTheme baseTextTheme =
+        Typography.material2021(platform: TargetPlatform.android).white;
 
     return ThemeData(
       colorScheme: scheme,
@@ -73,8 +77,10 @@ class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.md)),
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: AppSpacing.md),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadii.md)),
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.xl, vertical: AppSpacing.md),
         ),
       ),
     );

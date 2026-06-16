@@ -16,7 +16,7 @@ void main() {
         _FakeWorkoutPlanExportService();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 3,
+        schemaVersion: 4,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[
@@ -29,10 +29,10 @@ void main() {
                 setId: 'set-1',
                 lapCount: 1,
                 restBetweenLapsSeconds: 0,
-                moves: <Move>[
-                  Move(
+                moves: <WorkoutMove>[
+                  WorkoutMove(
+                    workoutMoveId: 'move-1',
                     moveId: 'move-1',
-                    exerciseId: 'exercise-1',
                     type: MoveType.duration,
                     durationSeconds: 60,
                   ),
@@ -41,8 +41,8 @@ void main() {
             ],
           ),
         ],
-        exercises: <Exercise>[
-          Exercise(exerciseId: 'exercise-1', name: 'Squat'),
+        moves: <Move>[
+          Move(moveId: 'move-1', name: 'Squat'),
         ],
       ),
     );
@@ -84,11 +84,11 @@ void main() {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 3,
+        schemaVersion: 4,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[],
-        exercises: <Exercise>[],
+        moves: <Move>[],
       ),
     );
 

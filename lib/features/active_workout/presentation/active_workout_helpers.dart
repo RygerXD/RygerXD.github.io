@@ -26,27 +26,27 @@ WorkoutPlan? findWorkoutPlanById(List<WorkoutPlan>? plans, String? planId) {
   return null;
 }
 
-Exercise? resolveMoveExercise(Move move, WorkoutPlan? plan) {
+Move? resolveWorkoutMove(WorkoutMove workoutMove, WorkoutPlan? plan) {
   if (plan == null) {
     return null;
   }
-  for (final Exercise exercise in plan.exercises) {
-    if (exercise.exerciseId == move.exerciseId) {
-      return exercise;
+  for (final Move planMove in plan.moves) {
+    if (planMove.moveId == workoutMove.moveId) {
+      return planMove;
     }
   }
   return null;
 }
 
-String moveDisplayLabel(String exerciseName, Move move) {
+String moveDisplayLabel(String moveName, WorkoutMove move) {
   return switch (move.side) {
-    MoveSide.left => 'Left $exerciseName',
-    MoveSide.right => 'Right $exerciseName',
-    null => exerciseName,
+    MoveSide.left => 'Left $moveName',
+    MoveSide.right => 'Right $moveName',
+    null => moveName,
   };
 }
 
-Move? nextMoveDuringRestPhase({
+WorkoutMove? nextMoveDuringRestPhase({
   required WorkoutPhase phase,
   required WorkoutState state,
   required Workout workout,
@@ -111,7 +111,7 @@ WorkoutSet? _setAt(Workout workout, int setIndex) {
   return workout.sets[setIndex];
 }
 
-Move? _moveAt({
+WorkoutMove? _moveAt({
   required Workout workout,
   required int setIndex,
   required int moveIndex,

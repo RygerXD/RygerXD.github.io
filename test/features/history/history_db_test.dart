@@ -39,8 +39,8 @@ void main() {
         workoutId: 'workout-1',
         setId: 'set-1',
         lapIndex: 0,
+        workoutMoveId: 'workout-move-1',
         moveId: 'move-1',
-        exerciseId: 'exercise-1',
         repCount: 10,
         elapsedSeconds: 30,
         completedAt: 2000,
@@ -53,8 +53,8 @@ void main() {
         workoutId: 'workout-1',
         setId: 'set-1',
         lapIndex: 0,
+        workoutMoveId: 'workout-move-1',
         moveId: 'move-1',
-        exerciseId: 'exercise-1',
         repCount: 12,
         elapsedSeconds: 35,
         completedAt: 4000,
@@ -84,7 +84,7 @@ void main() {
     addTearDown(db.close);
 
     const WorkoutPlan plan = WorkoutPlan(
-      schemaVersion: 3,
+      schemaVersion: 4,
       planId: 'plan-1',
       name: 'Plan 1',
       workouts: <Workout>[
@@ -96,10 +96,10 @@ void main() {
               setId: 'set-1',
               lapCount: 1,
               restBetweenLapsSeconds: 0,
-              moves: <Move>[
-                Move(
+              moves: <WorkoutMove>[
+                WorkoutMove(
+                  workoutMoveId: 'move-1',
                   moveId: 'move-1',
-                  exerciseId: 'exercise-1',
                   type: MoveType.reps,
                   repCount: 10,
                 ),
@@ -108,8 +108,8 @@ void main() {
           ],
         ),
       ],
-      exercises: <Exercise>[
-        Exercise(exerciseId: 'exercise-1', name: 'Squat'),
+      moves: <Move>[
+        Move(moveId: 'move-1', name: 'Squat'),
       ],
     );
 
@@ -131,6 +131,6 @@ void main() {
     expect(session.planName, 'Plan 1');
     expect(session.workoutName, 'Workout A');
     expect(snapshot?.workout.title, 'Workout A');
-    expect(snapshot?.exercises.single.name, 'Squat');
+    expect(snapshot?.moves.single.name, 'Squat');
   });
 }

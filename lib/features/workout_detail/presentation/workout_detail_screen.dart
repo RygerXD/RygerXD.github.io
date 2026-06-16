@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:workout_app_rewrite/core/media/exercise_media_image.dart';
 import 'package:workout_app_rewrite/core/media/media_thumbnail.dart';
+import 'package:workout_app_rewrite/core/media/move_media_image.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
 import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
 import 'package:workout_app_rewrite/core/widgets/confirm_destructive_action.dart';
@@ -97,7 +97,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(AppRadii.md),
                   child: SizedBox(
                     height: 180,
-                    child: ExerciseMediaImage(
+                    child: MoveMediaImage(
                       source: imageUrl,
                       fit: BoxFit.cover,
                     ),

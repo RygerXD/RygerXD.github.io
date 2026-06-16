@@ -50,10 +50,10 @@ void main() {
             .any((SafeArea safeArea) => safeArea.top && !safeArea.bottom),
         isTrue);
 
-    await tester.tap(find.text('Exercises'));
+    await tester.tap(find.text('Moves'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
-    expect(find.text('No exercises yet. Import or create a plan to add some.'),
+    expect(find.text('No moves yet. Import or create a plan to add some.'),
         findsOneWidget);
 
     await tester.tap(find.text('Settings'));
@@ -71,14 +71,14 @@ void main() {
     expect(find.text('Get ready ding'), findsOneWidget);
 
     await tester.scrollUntilVisible(
-      find.text('Exercise finished ding'),
+      find.text('Move finished ding'),
       500,
       scrollable: find.byType(Scrollable),
     );
-    expect(find.text('Exercise finished ding'), findsOneWidget);
+    expect(find.text('Move finished ding'), findsOneWidget);
   });
 
-  testWidgets('exercises tab returns to exercises after archiving a workout',
+  testWidgets('moves tab returns to moves after archiving a workout',
       (WidgetTester tester) async {
     final SharedPreferences sharedPreferences =
         await SharedPreferences.getInstance();
@@ -86,7 +86,7 @@ void main() {
         InMemoryWorkoutRepository();
     await workoutRepository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 3,
+        schemaVersion: 4,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[
@@ -98,10 +98,10 @@ void main() {
                 setId: 'set-1',
                 lapCount: 1,
                 restBetweenLapsSeconds: 0,
-                moves: <Move>[
-                  Move(
+                moves: <WorkoutMove>[
+                  WorkoutMove(
+                    workoutMoveId: 'move-1',
                     moveId: 'move-1',
-                    exerciseId: 'exercise-1',
                     type: MoveType.reps,
                     repCount: 10,
                   ),
@@ -110,8 +110,8 @@ void main() {
             ],
           ),
         ],
-        exercises: <Exercise>[
-          Exercise(exerciseId: 'exercise-1', name: 'Squat'),
+        moves: <Move>[
+          Move(moveId: 'move-1', name: 'Squat'),
         ],
       ),
     );
@@ -142,11 +142,11 @@ void main() {
 
     expect(find.text('Workout not found'), findsNothing);
 
-    await tester.tap(find.text('Exercises'));
+    await tester.tap(find.text('Moves'));
     await tester.pumpAndSettle();
 
     expect(
-      find.text('No exercises yet. Import or create a plan to add some.'),
+      find.text('No moves yet. Import or create a plan to add some.'),
       findsOneWidget,
     );
     expect(find.text('Workout not found'), findsNothing);

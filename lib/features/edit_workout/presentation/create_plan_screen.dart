@@ -121,7 +121,7 @@ class _CreatePlanScreenState extends ConsumerState<CreatePlanScreen> {
             tags: tags,
           ) ??
           WorkoutPlan(
-            schemaVersion: 3,
+            schemaVersion: 4,
             planId: const Uuid().v4(),
             name: name,
             imageUrl: imageUrl,
@@ -129,7 +129,7 @@ class _CreatePlanScreenState extends ConsumerState<CreatePlanScreen> {
             author: author,
             tags: tags,
             workouts: <Workout>[],
-            exercises: <Exercise>[],
+            moves: <Move>[],
           );
 
       await ref
@@ -274,7 +274,7 @@ class _CreatePlanScreenState extends ConsumerState<CreatePlanScreen> {
                           const SizedBox(width: AppSpacing.sm),
                           const Expanded(
                             child: Text(
-                                'After creating your plan, you can add workouts and exercises to it.'),
+                                'After creating your plan, you can add workouts and moves to it.'),
                           ),
                         ],
                       ),

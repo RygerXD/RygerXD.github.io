@@ -29,7 +29,7 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _imageUrlController = TextEditingController();
   final List<WorkoutSet> _sets = <WorkoutSet>[];
-  final Map<String, Exercise> _exercisesById = <String, Exercise>{};
+  final Map<String, Move> _movesById = <String, Move>{};
 
   bool _isInit = true;
 
@@ -60,7 +60,7 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
     final WorkoutPlan? plan = _currentPlan;
 
     if (plan != null) {
-      _cacheExercises(plan.exercises);
+      _cacheMoves(plan.moves);
       final Workout? workout = plan.workouts
           .where((Workout w) => w.workoutId == widget.workoutId)
           .firstOrNull;
@@ -91,7 +91,7 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
           name: 'Set ${_sets.length + 1}',
           lapCount: 1,
           restBetweenLapsSeconds: 0,
-          moves: <Move>[],
+          moves: <WorkoutMove>[],
         ),
       );
     });
@@ -104,12 +104,13 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
   }
 
   void _removeMove(int setIndex, int moveIndex) {
-    _updateSetMoves(setIndex, (List<Move> moves) => moves..removeAt(moveIndex));
+    _updateSetMoves(
+        setIndex, (List<WorkoutMove> moves) => moves..removeAt(moveIndex));
   }
 
   void _updateMoveSetCount(int setIndex, int moveIndex, int setCount) {
     final int clampedSetCount = setCount.clamp(1, 99).toInt();
-    _updateSetMoves(setIndex, (List<Move> moves) {
+    _updateSetMoves(setIndex, (List<WorkoutMove> moves) {
       moves[moveIndex] = moves[moveIndex].copyWith(
         setCount: clampedSetCount,
       );
@@ -118,9 +119,9 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
   }
 
   void _reorderMove(int setIndex, int oldIndex, int newIndex) {
-    _updateSetMoves(setIndex, (List<Move> moves) {
+    _updateSetMoves(setIndex, (List<WorkoutMove> moves) {
       final int insertionIndex = oldIndex < newIndex ? newIndex - 1 : newIndex;
-      final Move moved = moves.removeAt(oldIndex);
+      final WorkoutMove moved = moves.removeAt(oldIndex);
       moves.insert(insertionIndex, moved);
       return moves;
     });
@@ -134,42 +135,43 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
 
   void _updateSetMoves(
     int setIndex,
-    List<Move> Function(List<Move> moves) update,
+    List<WorkoutMove> Function(List<WorkoutMove> moves) update,
   ) {
     _updateSet(setIndex, (WorkoutSet set) {
-      return set.copyWith(moves: update(List<Move>.from(set.moves)));
+      return set.copyWith(moves: update(List<WorkoutMove>.from(set.moves)));
     });
   }
 
-  void _showAddMoveDialog(int setIndex, {Exercise? initialExercise}) {
+  void _showAddMoveDialog(int setIndex, {Move? initialMove}) {
     showDialog<void>(
       context: context,
       builder: (BuildContext context) => AddMoveDialog(
-        initialExercise: initialExercise,
-        onAdd: (Move move, Exercise newExercise) {
-          _upsertExerciseInPlan(newExercise);
-          _updateSetMoves(setIndex, (List<Move> moves) => moves..add(move));
+        initialMove: initialMove,
+        onAdd: (WorkoutMove workoutMove, Move newMove) {
+          _upsertMoveInPlan(newMove);
+          _updateSetMoves(
+              setIndex, (List<WorkoutMove> moves) => moves..add(workoutMove));
         },
       ),
     );
   }
 
   void _showEditMoveDialog(int setIndex, int moveIndex) {
-    final Move move = _sets[setIndex].moves[moveIndex];
-    final Exercise initialExercise = _getExercise(move.exerciseId) ??
-        Exercise(exerciseId: move.exerciseId, name: 'Unknown Exercise');
+    final WorkoutMove workoutMove = _sets[setIndex].moves[moveIndex];
+    final Move initialMove = _getMove(workoutMove.moveId) ??
+        Move(moveId: workoutMove.moveId, name: 'Unknown Move');
 
     showDialog<void>(
       context: context,
       builder: (BuildContext context) => AddMoveDialog(
-        initialMove: move,
-        initialExercise: initialExercise,
-        onAdd: (Move updatedMove, Exercise updatedExercise) {
-          _upsertExerciseInPlan(updatedExercise);
+        initialWorkoutMove: workoutMove,
+        initialMove: initialMove,
+        onAdd: (WorkoutMove updatedWorkoutMove, Move updatedMove) {
+          _upsertMoveInPlan(updatedMove);
           _updateSetMoves(
             setIndex,
-            (List<Move> moves) {
-              moves[moveIndex] = updatedMove;
+            (List<WorkoutMove> moves) {
+              moves[moveIndex] = updatedWorkoutMove;
               return moves;
             },
           );
@@ -183,14 +185,14 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
         ref.read(loadedWorkoutPlansNotifierProvider).value ?? <WorkoutPlan>[];
     final List<WorkoutPlan> pickerPlans = _plansWithDraftWorkout(plans);
 
-    final Exercise? selectedExercise = await showDialog<Exercise>(
+    final Move? selectedMove = await showDialog<Move>(
       context: context,
       builder: (BuildContext context) =>
           ExistingMovePickerDialog(plans: pickerPlans),
     );
 
-    if (selectedExercise != null && mounted) {
-      _showAddMoveDialog(setIndex, initialExercise: selectedExercise);
+    if (selectedMove != null && mounted) {
+      _showAddMoveDialog(setIndex, initialMove: selectedMove);
     }
   }
 
@@ -222,29 +224,27 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
       workouts.add(draftWorkout);
     }
     pickerPlans[planIndex] = plan.copyWith(
-      exercises: _mergedExercises(plan),
+      moves: _mergedMoves(plan),
       workouts: workouts,
     );
     return pickerPlans;
   }
 
-  void _upsertExerciseInPlan(Exercise exercise) {
-    _exercisesById[exercise.exerciseId] = exercise;
+  void _upsertMoveInPlan(Move move) {
+    _movesById[move.moveId] = move;
 
     final WorkoutPlan? plan = _currentPlan;
     if (plan != null) {
-      final List<Exercise> updatedExercises =
-          List<Exercise>.from(plan.exercises);
-      final int existingIndex = updatedExercises.indexWhere(
-        (Exercise e) => e.exerciseId == exercise.exerciseId,
+      final List<Move> updatedMoves = List<Move>.from(plan.moves);
+      final int existingIndex = updatedMoves.indexWhere(
+        (Move e) => e.moveId == move.moveId,
       );
       if (existingIndex >= 0) {
-        updatedExercises[existingIndex] = exercise;
+        updatedMoves[existingIndex] = move;
       } else {
-        updatedExercises.add(exercise);
+        updatedMoves.add(move);
       }
-      final WorkoutPlan updatedPlan =
-          plan.copyWith(exercises: updatedExercises);
+      final WorkoutPlan updatedPlan = plan.copyWith(moves: updatedMoves);
       // We load it silently into memory so the UI can instantly find it.
       ref
           .read(loadedWorkoutPlansNotifierProvider.notifier)
@@ -252,10 +252,9 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
     }
   }
 
-  void _cacheExercises(List<Exercise> exercises) {
-    _exercisesById.addEntries(
-      exercises.map((Exercise exercise) =>
-          MapEntry<String, Exercise>(exercise.exerciseId, exercise)),
+  void _cacheMoves(List<Move> moves) {
+    _movesById.addEntries(
+      moves.map((Move move) => MapEntry<String, Move>(move.moveId, move)),
     );
   }
 
@@ -288,20 +287,19 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
     );
   }
 
-  Exercise? _getExercise(String exerciseId) {
-    final Exercise? cachedExercise = _exercisesById[exerciseId];
-    if (cachedExercise != null) {
-      return cachedExercise;
+  Move? _getMove(String moveId) {
+    final Move? cachedMove = _movesById[moveId];
+    if (cachedMove != null) {
+      return cachedMove;
     }
 
     final WorkoutPlan? plan = _currentPlan;
     if (plan != null) {
-      _cacheExercises(plan.exercises);
-      final Exercise? exercise = plan.exercises
-          .where((Exercise e) => e.exerciseId == exerciseId)
-          .firstOrNull;
-      if (exercise != null) {
-        return exercise;
+      _cacheMoves(plan.moves);
+      final Move? move =
+          plan.moves.where((Move e) => e.moveId == moveId).firstOrNull;
+      if (move != null) {
+        return move;
       }
     }
     return null;
@@ -344,7 +342,7 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
     }
 
     final WorkoutPlan updatedPlan = plan.copyWith(
-      exercises: _mergedExercises(plan),
+      moves: _mergedMoves(plan),
       workouts: updatedWorkouts,
     );
 
@@ -357,13 +355,12 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
     }
   }
 
-  List<Exercise> _mergedExercises(WorkoutPlan plan) {
-    final Map<String, Exercise> exercisesById = <String, Exercise>{
-      for (final Exercise exercise in plan.exercises)
-        exercise.exerciseId: exercise,
-      ..._exercisesById,
+  List<Move> _mergedMoves(WorkoutPlan plan) {
+    final Map<String, Move> movesById = <String, Move>{
+      for (final Move move in plan.moves) move.moveId: move,
+      ..._movesById,
     };
-    return exercisesById.values.toList(growable: false);
+    return movesById.values.toList(growable: false);
   }
 
   @override
@@ -515,19 +512,20 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
                                   _reorderMove(setIndex, oldIndex, newIndex),
                               itemBuilder:
                                   (BuildContext context, int moveIndex) {
-                                final Move move = set.moves[moveIndex];
-                                final Exercise? exercise =
-                                    _getExercise(move.exerciseId);
-                                final String exerciseName =
-                                    exercise?.name ?? 'Unknown Exercise';
+                                final WorkoutMove workoutMove =
+                                    set.moves[moveIndex];
+                                final Move? move = _getMove(workoutMove.moveId);
+                                final String moveName =
+                                    move?.name ?? 'Unknown Move';
 
                                 return _MoveRow(
-                                  key: ValueKey<String>(move.moveId),
+                                  key: ValueKey<String>(
+                                      workoutMove.workoutMoveId),
                                   index: moveIndex,
-                                  exerciseName: exerciseName,
-                                  imageUrl: optionalText(exercise?.imageUrl),
-                                  moveSummary: _moveSummary(move),
-                                  setCount: move.setCount,
+                                  moveName: moveName,
+                                  imageUrl: optionalText(move?.imageUrl),
+                                  moveSummary: _moveSummary(workoutMove),
+                                  setCount: workoutMove.setCount,
                                   onSetCountChanged: (int setCount) =>
                                       _updateMoveSetCount(
                                     setIndex,
@@ -574,7 +572,7 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
     );
   }
 
-  String _moveSummary(Move move) {
+  String _moveSummary(WorkoutMove move) {
     if (move.type == MoveType.reps) {
       return _withTargetWeight(
         _withEachSide('${move.repCount ?? 0} reps', move),
@@ -597,7 +595,7 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
     return '$weightedSummary - $bpm BPM';
   }
 
-  String _withTargetWeight(String summary, Move move) {
+  String _withTargetWeight(String summary, WorkoutMove move) {
     final String? targetWeight = formatMoveTargetWeight(move);
     if (targetWeight == null) {
       return summary;
@@ -605,7 +603,7 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
     return '$summary, $targetWeight';
   }
 
-  String _withEachSide(String summary, Move move) {
+  String _withEachSide(String summary, WorkoutMove move) {
     return move.repeatEachSide ? '$summary / side' : summary;
   }
 }
@@ -614,7 +612,7 @@ class _MoveRow extends StatelessWidget {
   const _MoveRow({
     super.key,
     required this.index,
-    required this.exerciseName,
+    required this.moveName,
     required this.imageUrl,
     required this.moveSummary,
     required this.setCount,
@@ -624,7 +622,7 @@ class _MoveRow extends StatelessWidget {
   });
 
   final int index;
-  final String exerciseName;
+  final String moveName;
   final String? imageUrl;
   final String moveSummary;
   final int setCount;
@@ -647,7 +645,7 @@ class _MoveRow extends StatelessWidget {
             onTap: onTap,
             child: Semantics(
               button: true,
-              label: 'Edit $exerciseName',
+              label: 'Edit $moveName',
               child: Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.sm,
@@ -668,7 +666,7 @@ class _MoveRow extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Text(
-                            exerciseName,
+                            moveName,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.titleMedium,

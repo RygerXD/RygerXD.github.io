@@ -5,8 +5,8 @@ a `.json` file that can be imported into this app from the Library screen with
 `Import Workout JSON`.
 
 The app imports one workout plan per JSON file. A plan contains reusable
-exercises plus one or more workouts. Workouts contain sets. Sets contain moves.
-Each move points back to one reusable exercise by `exerciseId`.
+moves plus one or more workouts. Workouts contain sets. Sets contain workout
+moves. Each workout move points back to one reusable move by `moveId`.
 
 ## Copy-paste prompt
 
@@ -18,13 +18,13 @@ Convert the workout below into an importable Workout App JSON file.
 
 Output rules:
 - Return only valid JSON. Do not wrap it in Markdown.
-- Use schemaVersion 3.
+- Use schemaVersion 4.
 - Create one root object with planId, name, description, author, tags,
-  exercises, and workouts.
-- Use stable lowercase kebab-case IDs for planId, workoutId, setId, moveId,
-  and exerciseId.
-- Define every distinct exercise exactly once in exercises.
-- Every move.exerciseId must match an exerciseId from exercises.
+  moves, and workouts.
+- Use stable lowercase kebab-case IDs for planId, workoutId, setId,
+  workoutMoveId, and moveId.
+- Define every distinct move exactly once in moves.
+- Every workout move `moveId` must match a `moveId` from `moves`.
 - Omit optional fields when unknown. Do not use null.
 - Use integer seconds for all time values.
 - Use type "reps" for counted movements and include repCount.
@@ -56,19 +56,19 @@ Plan metadata:
 
 ```json
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "planId": "plan-id",
   "name": "Plan name",
   "description": "Short description",
   "author": "Author name",
   "imageUrl": "https://example.com/plan-image.jpg",
   "tags": ["strength", "beginner"],
-  "exercises": [
+  "moves": [
     {
-      "exerciseId": "exercise-id",
-      "name": "Exercise name",
-      "imageUrl": "https://example.com/exercise-image.jpg",
-      "description": "How to perform the exercise"
+      "moveId": "move-id",
+      "name": "Move name",
+      "imageUrl": "https://example.com/move-image.jpg",
+      "description": "How to perform the move"
     }
   ],
   "workouts": [
@@ -84,8 +84,8 @@ Plan metadata:
           "restBetweenLapsSeconds": 60,
           "moves": [
             {
+              "workoutMoveId": "workout-move-id",
               "moveId": "move-id",
-              "exerciseId": "exercise-id",
               "type": "reps",
               "repCount": 12,
               "setCount": 3,
@@ -117,14 +117,14 @@ Use exactly one of these `type` values for every move:
 
 `prepTimeSeconds` and `finishTimeSeconds` default to `0` when omitted.
 `lapCount` defaults to `1`, and `restBetweenLapsSeconds` defaults to `0`.
-`setCount` defaults to `1`; use a larger value when one exercise should be
-completed for multiple sets before moving to the next exercise.
+`setCount` defaults to `1`; use a larger value when one move should be
+completed for multiple sets before moving to the next move.
 
 Use `repeatEachSide: true` on any move where the listed target should run once
 for the left side and once for the right side. For example, a 30-second lunge
 with `repeatEachSide: true` counts as 60 active seconds, and a 10-rep split
 squat displays as 10 reps per side. Do not create separate left and right
-exercise entries for the same sided movement unless they need different names
+move entries for the same sided movement unless they need different names
 or settings; the workout player expands the move into separate left and right
 executions.
 
@@ -136,14 +136,14 @@ executions.
 Before importing, check that:
 
 - The file is valid JSON with one root object.
-- `schemaVersion` is `3`.
-- `planId`, `name`, `workouts`, and `exercises` are present.
+- `schemaVersion` is `4`.
+- `planId`, `name`, `workouts`, and `moves` are present.
 - `workouts` has at least one workout.
-- `exercises` has at least one exercise.
+- `moves` has at least one move.
 - Every workout has at least one set.
 - If present, every set `lapCount` is at least `1`.
 - Every set has at least one move.
-- Every `move.exerciseId` exists in the top-level `exercises` list.
+- Every `move.moveId` exists in the top-level `moves` list.
 - If present, move `setCount` is at least `1`.
 - Reps moves have `repCount` of at least `1`.
 - Duration moves have `durationSeconds` of at least `1`.
@@ -168,20 +168,20 @@ The importable JSON can be:
 
 ```json
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "planId": "beginner-full-body",
   "name": "Beginner Full Body",
   "description": "Three-round beginner full body workout.",
   "author": "AI generated",
   "tags": ["beginner", "full-body"],
-  "exercises": [
+  "moves": [
     {
-      "exerciseId": "bodyweight-squat",
+      "moveId": "bodyweight-squat",
       "name": "Bodyweight Squat",
       "description": "Squat using bodyweight only."
     },
     {
-      "exerciseId": "plank",
+      "moveId": "plank",
       "name": "Plank",
       "description": "Hold a forearm plank."
     }
@@ -198,14 +198,14 @@ The importable JSON can be:
           "restBetweenLapsSeconds": 60,
           "moves": [
             {
-              "moveId": "squat-12",
-              "exerciseId": "bodyweight-squat",
+              "workoutMoveId": "squat-12",
+              "moveId": "bodyweight-squat",
               "type": "reps",
               "repCount": 12
             },
             {
-              "moveId": "plank-30",
-              "exerciseId": "plank",
+              "workoutMoveId": "plank-30",
+              "moveId": "plank",
               "type": "duration",
               "durationSeconds": 30
             }

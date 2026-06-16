@@ -29,9 +29,8 @@ void main() {
       expect(settings.audioVolume, 0.8);
       expect(settings.getReadyCountdownSound, CountdownSound.click);
       expect(settings.getReadyDingSound, GetReadyDingSound.classic);
-      expect(settings.exerciseCountdownSound, CountdownSound.pulse);
-      expect(settings.exerciseFinishedDingSound,
-          ExerciseFinishedDingSound.classic);
+      expect(settings.moveCountdownSound, CountdownSound.pulse);
+      expect(settings.moveFinishedDingSound, MoveFinishedDingSound.classic);
       expect(container.read(appThemeModeProvider), ThemeMode.system);
     });
 
@@ -55,9 +54,8 @@ void main() {
       await controller.setAudioVolume(0.35);
       await controller.setGetReadyCountdownSound(CountdownSound.wood);
       await controller.setGetReadyDingSound(GetReadyDingSound.bright);
-      await controller.setExerciseCountdownSound(CountdownSound.low);
-      await controller
-          .setExerciseFinishedDingSound(ExerciseFinishedDingSound.bell);
+      await controller.setMoveCountdownSound(CountdownSound.low);
+      await controller.setMoveFinishedDingSound(MoveFinishedDingSound.bell);
 
       final ProviderContainer reloadedContainer = ProviderContainer(
         overrides: <Override>[
@@ -76,9 +74,9 @@ void main() {
       expect(reloadedSettings.audioVolume, 0.35);
       expect(reloadedSettings.getReadyCountdownSound, CountdownSound.wood);
       expect(reloadedSettings.getReadyDingSound, GetReadyDingSound.bright);
-      expect(reloadedSettings.exerciseCountdownSound, CountdownSound.low);
-      expect(reloadedSettings.exerciseFinishedDingSound,
-          ExerciseFinishedDingSound.bell);
+      expect(reloadedSettings.moveCountdownSound, CountdownSound.low);
+      expect(
+          reloadedSettings.moveFinishedDingSound, MoveFinishedDingSound.bell);
       expect(reloadedContainer.read(appThemeModeProvider), ThemeMode.dark);
     });
 

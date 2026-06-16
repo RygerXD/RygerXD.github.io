@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:workout_app_rewrite/core/media/exercise_media_image.dart';
+import 'package:workout_app_rewrite/core/media/move_media_image.dart';
 import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_metrics.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
@@ -25,7 +25,7 @@ class ActiveMoveMedia extends StatelessWidget {
           maxHeight: screenSize.height * 0.24,
         ),
         color: colorScheme.surfaceContainerHighest,
-        child: ExerciseMediaImage(
+        child: MoveMediaImage(
           source: url,
           fit: BoxFit.contain,
           loadingPlaceholder: const SizedBox(
@@ -77,7 +77,7 @@ class ActiveStopwatchDisplay extends StatelessWidget {
     super.key,
   });
 
-  final Move move;
+  final WorkoutMove move;
   final int seconds;
   final Color color;
   final int? lastDuration;
@@ -113,7 +113,7 @@ class ActiveAdjustableRepDisplay extends StatelessWidget {
     super.key,
   });
 
-  final Move move;
+  final WorkoutMove move;
   final int currentReps;
   final ValueChanged<int> onRepsChanged;
   final int? lastReps;
@@ -193,7 +193,7 @@ class ActiveAdjustableWeightDisplay extends StatelessWidget {
     super.key,
   });
 
-  final Move move;
+  final WorkoutMove move;
   final double currentWeight;
   final ValueChanged<double> onWeightChanged;
   final double? lastWeight;

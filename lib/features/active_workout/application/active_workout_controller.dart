@@ -35,7 +35,7 @@ class ActiveWorkoutController extends Notifier<WorkoutState> {
     return activeWorkout.sets[state.setIndex];
   }
 
-  Move? get currentMove {
+  WorkoutMove? get currentMove {
     final WorkoutSet? set = currentSet;
     if (set == null || set.moves.isEmpty) {
       return null;

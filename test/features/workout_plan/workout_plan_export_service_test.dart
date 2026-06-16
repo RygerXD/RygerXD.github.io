@@ -34,10 +34,11 @@ void main() {
       final Map<String, dynamic> json = jsonDecode(
         utf8.decode(fakeFilePicker.savedBytes!),
       ) as Map<String, dynamic>;
+      expect(json['schemaVersion'], 4);
       expect(json['planId'], 'plan-1');
       expect(json['name'], 'Plan 1: Upper/Lower');
       expect(json['workouts'], hasLength(1));
-      expect(json['exercises'], hasLength(1));
+      expect(json['moves'], hasLength(1));
       expect(json.containsKey('description'), isFalse);
       expect(json.containsKey('tags'), isFalse);
 
@@ -72,7 +73,7 @@ void main() {
 
       final List<WorkoutPlan> plans = await repository.getAllPlans();
       expect(plans, hasLength(1));
-      expect(plans.single.schemaVersion, 3);
+      expect(plans.single.schemaVersion, 4);
       expect(plans.single.planId, 'plan-1');
       expect(plans.single.workouts, hasLength(1));
       expect(plans.single.workouts.single.workoutId, 'workout-1');
@@ -88,7 +89,7 @@ void main() {
 }
 
 const WorkoutPlan _samplePlan = WorkoutPlan(
-  schemaVersion: 3,
+  schemaVersion: 2,
   planId: 'plan-1',
   name: 'Plan 1: Upper/Lower',
   workouts: <Workout>[
@@ -100,10 +101,10 @@ const WorkoutPlan _samplePlan = WorkoutPlan(
           setId: 'set-1',
           lapCount: 1,
           restBetweenLapsSeconds: 0,
-          moves: <Move>[
-            Move(
+          moves: <WorkoutMove>[
+            WorkoutMove(
+              workoutMoveId: 'move-1',
               moveId: 'move-1',
-              exerciseId: 'exercise-1',
               type: MoveType.reps,
               repCount: 10,
             ),
@@ -118,10 +119,10 @@ const WorkoutPlan _samplePlan = WorkoutPlan(
       sets: <WorkoutSet>[
         WorkoutSet(
           setId: 'archived-set',
-          moves: <Move>[
-            Move(
-              moveId: 'archived-move',
-              exerciseId: 'exercise-1',
+          moves: <WorkoutMove>[
+            WorkoutMove(
+              workoutMoveId: 'archived-move',
+              moveId: 'move-1',
               type: MoveType.reps,
               repCount: 10,
             ),
@@ -130,10 +131,14 @@ const WorkoutPlan _samplePlan = WorkoutPlan(
       ],
     ),
   ],
-  exercises: <Exercise>[
-    Exercise(
-      exerciseId: 'exercise-1',
+  moves: <Move>[
+    Move(
+      moveId: 'move-1',
       name: 'Squat',
+    ),
+    Move(
+      moveId: 'unused-move',
+      name: 'Unused',
     ),
   ],
 );

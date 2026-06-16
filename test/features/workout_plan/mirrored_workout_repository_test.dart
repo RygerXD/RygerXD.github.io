@@ -6,7 +6,7 @@ import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_mo
 
 void main() {
   const WorkoutPlan samplePlan = WorkoutPlan(
-    schemaVersion: 3,
+    schemaVersion: 4,
     planId: 'plan-1',
     name: 'Plan 1',
     workouts: <Workout>[
@@ -18,10 +18,10 @@ void main() {
             setId: 's-1',
             lapCount: 1,
             restBetweenLapsSeconds: 30,
-            moves: <Move>[
-              Move(
-                moveId: 'm-1',
-                exerciseId: 'ex-1',
+            moves: <WorkoutMove>[
+              WorkoutMove(
+                workoutMoveId: 'm-1',
+                moveId: 'ex-1',
                 type: MoveType.reps,
                 repCount: 10,
               ),
@@ -30,9 +30,9 @@ void main() {
         ],
       ),
     ],
-    exercises: <Exercise>[
-      Exercise(
-        exerciseId: 'ex-1',
+    moves: <Move>[
+      Move(
+        moveId: 'ex-1',
         name: 'Squat',
       ),
     ],

@@ -35,7 +35,7 @@ enum CountdownSound {
   low,
 }
 
-enum ExerciseFinishedDingSound {
+enum MoveFinishedDingSound {
   classic,
   bright,
   soft,
@@ -52,8 +52,8 @@ class AppSettings {
     required this.audioVolume,
     required this.getReadyCountdownSound,
     required this.getReadyDingSound,
-    required this.exerciseCountdownSound,
-    required this.exerciseFinishedDingSound,
+    required this.moveCountdownSound,
+    required this.moveFinishedDingSound,
   });
 
   final AppThemePreference themePreference;
@@ -64,8 +64,8 @@ class AppSettings {
   final double audioVolume;
   final CountdownSound getReadyCountdownSound;
   final GetReadyDingSound getReadyDingSound;
-  final CountdownSound exerciseCountdownSound;
-  final ExerciseFinishedDingSound exerciseFinishedDingSound;
+  final CountdownSound moveCountdownSound;
+  final MoveFinishedDingSound moveFinishedDingSound;
 
   AppSettings copyWith({
     AppThemePreference? themePreference,
@@ -76,8 +76,8 @@ class AppSettings {
     double? audioVolume,
     CountdownSound? getReadyCountdownSound,
     GetReadyDingSound? getReadyDingSound,
-    CountdownSound? exerciseCountdownSound,
-    ExerciseFinishedDingSound? exerciseFinishedDingSound,
+    CountdownSound? moveCountdownSound,
+    MoveFinishedDingSound? moveFinishedDingSound,
   }) {
     return AppSettings(
       themePreference: themePreference ?? this.themePreference,
@@ -90,10 +90,9 @@ class AppSettings {
       getReadyCountdownSound:
           getReadyCountdownSound ?? this.getReadyCountdownSound,
       getReadyDingSound: getReadyDingSound ?? this.getReadyDingSound,
-      exerciseCountdownSound:
-          exerciseCountdownSound ?? this.exerciseCountdownSound,
-      exerciseFinishedDingSound:
-          exerciseFinishedDingSound ?? this.exerciseFinishedDingSound,
+      moveCountdownSound: moveCountdownSound ?? this.moveCountdownSound,
+      moveFinishedDingSound:
+          moveFinishedDingSound ?? this.moveFinishedDingSound,
     );
   }
 
@@ -139,17 +138,17 @@ class AppSettings {
         values: GetReadyDingSound.values,
         fallback: GetReadyDingSound.classic,
       ),
-      exerciseCountdownSound: _readEnum(
+      moveCountdownSound: _readEnum(
         json,
-        key: 'exerciseCountdownSound',
+        key: 'moveCountdownSound',
         values: CountdownSound.values,
         fallback: CountdownSound.pulse,
       ),
-      exerciseFinishedDingSound: _readEnum(
+      moveFinishedDingSound: _readEnum(
         json,
-        key: 'exerciseFinishedDingSound',
-        values: ExerciseFinishedDingSound.values,
-        fallback: ExerciseFinishedDingSound.classic,
+        key: 'moveFinishedDingSound',
+        values: MoveFinishedDingSound.values,
+        fallback: MoveFinishedDingSound.classic,
       ),
     );
   }
@@ -164,8 +163,8 @@ class AppSettings {
       'audioVolume': audioVolume,
       'getReadyCountdownSound': getReadyCountdownSound.name,
       'getReadyDingSound': getReadyDingSound.name,
-      'exerciseCountdownSound': exerciseCountdownSound.name,
-      'exerciseFinishedDingSound': exerciseFinishedDingSound.name,
+      'moveCountdownSound': moveCountdownSound.name,
+      'moveFinishedDingSound': moveFinishedDingSound.name,
     };
   }
 
@@ -257,13 +256,13 @@ final Provider<CountdownSound> getReadyCountdownSoundProvider =
     _settingsSelector<CountdownSound>(
         (AppSettings value) => value.getReadyCountdownSound);
 
-final Provider<CountdownSound> exerciseCountdownSoundProvider =
+final Provider<CountdownSound> moveCountdownSoundProvider =
     _settingsSelector<CountdownSound>(
-        (AppSettings value) => value.exerciseCountdownSound);
+        (AppSettings value) => value.moveCountdownSound);
 
-final Provider<ExerciseFinishedDingSound> exerciseFinishedDingSoundProvider =
-    _settingsSelector<ExerciseFinishedDingSound>(
-        (AppSettings value) => value.exerciseFinishedDingSound);
+final Provider<MoveFinishedDingSound> moveFinishedDingSoundProvider =
+    _settingsSelector<MoveFinishedDingSound>(
+        (AppSettings value) => value.moveFinishedDingSound);
 
 final Provider<AppUnitSystem> appUnitSystemProvider =
     _settingsSelector<AppUnitSystem>((AppSettings value) => value.unitSystem);
@@ -286,10 +285,10 @@ class AppSettingsController extends Notifier<AppSettings> {
       'settings.get_ready_countdown_sound.v1';
   static const String _getReadyDingSoundKey =
       'settings.get_ready_ding_sound.v1';
-  static const String _exerciseCountdownSoundKey =
-      'settings.exercise_countdown_sound.v1';
-  static const String _exerciseFinishedDingSoundKey =
-      'settings.exercise_finished_ding_sound.v1';
+  static const String _moveCountdownSoundKey =
+      'settings.move_countdown_sound.v1';
+  static const String _moveFinishedDingSoundKey =
+      'settings.move_finished_ding_sound.v1';
 
   @override
   AppSettings build() {
@@ -328,17 +327,17 @@ class AppSettingsController extends Notifier<AppSettings> {
         values: GetReadyDingSound.values,
         fallback: GetReadyDingSound.classic,
       ),
-      exerciseCountdownSound: _readEnum(
+      moveCountdownSound: _readEnum(
         prefs,
-        key: _exerciseCountdownSoundKey,
+        key: _moveCountdownSoundKey,
         values: CountdownSound.values,
         fallback: CountdownSound.pulse,
       ),
-      exerciseFinishedDingSound: _readEnum(
+      moveFinishedDingSound: _readEnum(
         prefs,
-        key: _exerciseFinishedDingSoundKey,
-        values: ExerciseFinishedDingSound.values,
-        fallback: ExerciseFinishedDingSound.classic,
+        key: _moveFinishedDingSoundKey,
+        values: MoveFinishedDingSound.values,
+        fallback: MoveFinishedDingSound.classic,
       ),
     );
   }
@@ -420,24 +419,23 @@ class AppSettingsController extends Notifier<AppSettings> {
     );
   }
 
-  Future<void> setExerciseCountdownSound(CountdownSound value) async {
+  Future<void> setMoveCountdownSound(CountdownSound value) async {
     await _setEnum(
-      currentValue: state.exerciseCountdownSound,
+      currentValue: state.moveCountdownSound,
       value: value,
-      key: _exerciseCountdownSoundKey,
+      key: _moveCountdownSoundKey,
       update: (CountdownSound value) =>
-          state.copyWith(exerciseCountdownSound: value),
+          state.copyWith(moveCountdownSound: value),
     );
   }
 
-  Future<void> setExerciseFinishedDingSound(
-      ExerciseFinishedDingSound value) async {
+  Future<void> setMoveFinishedDingSound(MoveFinishedDingSound value) async {
     await _setEnum(
-      currentValue: state.exerciseFinishedDingSound,
+      currentValue: state.moveFinishedDingSound,
       value: value,
-      key: _exerciseFinishedDingSoundKey,
-      update: (ExerciseFinishedDingSound value) =>
-          state.copyWith(exerciseFinishedDingSound: value),
+      key: _moveFinishedDingSoundKey,
+      update: (MoveFinishedDingSound value) =>
+          state.copyWith(moveFinishedDingSound: value),
     );
   }
 
@@ -450,8 +448,8 @@ class AppSettingsController extends Notifier<AppSettings> {
     await setAudioVolume(settings.audioVolume);
     await setGetReadyCountdownSound(settings.getReadyCountdownSound);
     await setGetReadyDingSound(settings.getReadyDingSound);
-    await setExerciseCountdownSound(settings.exerciseCountdownSound);
-    await setExerciseFinishedDingSound(settings.exerciseFinishedDingSound);
+    await setMoveCountdownSound(settings.moveCountdownSound);
+    await setMoveFinishedDingSound(settings.moveFinishedDingSound);
   }
 
   int _readStreakWorkoutsPerWeek(SharedPreferences prefs) {

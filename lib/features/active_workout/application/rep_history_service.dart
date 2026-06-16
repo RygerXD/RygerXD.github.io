@@ -39,13 +39,13 @@ class RepHistoryService {
     required String workoutId,
     required String setId,
     required int lapIndex,
-    required String exerciseId,
+    required String moveId,
   }) async {
     return _repsStore.get(_key(
       workoutId: workoutId,
       setId: setId,
       lapIndex: lapIndex,
-      exerciseId: exerciseId,
+      moveId: moveId,
     ));
   }
 
@@ -53,7 +53,7 @@ class RepHistoryService {
     required String workoutId,
     required String setId,
     required int lapIndex,
-    required String exerciseId,
+    required String moveId,
     required int reps,
   }) async {
     await _repsStore.save(
@@ -61,7 +61,7 @@ class RepHistoryService {
         workoutId: workoutId,
         setId: setId,
         lapIndex: lapIndex,
-        exerciseId: exerciseId,
+        moveId: moveId,
       ),
       reps,
     );
@@ -71,14 +71,14 @@ class RepHistoryService {
     required String workoutId,
     required String setId,
     required int lapIndex,
-    required String exerciseId,
+    required String moveId,
     required String weightUnit,
   }) async {
     return _weightStore.get(_weightKey(
       workoutId: workoutId,
       setId: setId,
       lapIndex: lapIndex,
-      exerciseId: exerciseId,
+      moveId: moveId,
       weightUnit: weightUnit,
     ));
   }
@@ -87,7 +87,7 @@ class RepHistoryService {
     required String workoutId,
     required String setId,
     required int lapIndex,
-    required String exerciseId,
+    required String moveId,
     required String weightUnit,
     required double weight,
   }) async {
@@ -96,7 +96,7 @@ class RepHistoryService {
         workoutId: workoutId,
         setId: setId,
         lapIndex: lapIndex,
-        exerciseId: exerciseId,
+        moveId: moveId,
         weightUnit: weightUnit,
       ),
       weight,
@@ -107,13 +107,13 @@ class RepHistoryService {
     required String workoutId,
     required String setId,
     required int lapIndex,
-    required String exerciseId,
+    required String moveId,
   }) async {
     return _durationStore.get(_key(
       workoutId: workoutId,
       setId: setId,
       lapIndex: lapIndex,
-      exerciseId: exerciseId,
+      moveId: moveId,
     ));
   }
 
@@ -121,7 +121,7 @@ class RepHistoryService {
     required String workoutId,
     required String setId,
     required int lapIndex,
-    required String exerciseId,
+    required String moveId,
     required int seconds,
   }) async {
     await _durationStore.save(
@@ -129,7 +129,7 @@ class RepHistoryService {
         workoutId: workoutId,
         setId: setId,
         lapIndex: lapIndex,
-        exerciseId: exerciseId,
+        moveId: moveId,
       ),
       seconds,
     );
@@ -139,19 +139,19 @@ class RepHistoryService {
     required String workoutId,
     required String setId,
     required int lapIndex,
-    required String exerciseId,
+    required String moveId,
   }) {
-    return '$workoutId|$setId|$lapIndex|$exerciseId';
+    return '$workoutId|$setId|$lapIndex|$moveId';
   }
 
   String _weightKey({
     required String workoutId,
     required String setId,
     required int lapIndex,
-    required String exerciseId,
+    required String moveId,
     required String weightUnit,
   }) {
-    return '$workoutId|$setId|$lapIndex|$exerciseId|$weightUnit';
+    return '$workoutId|$setId|$lapIndex|$moveId|$weightUnit';
   }
 
   static int? _readIntValue(Object? value) {

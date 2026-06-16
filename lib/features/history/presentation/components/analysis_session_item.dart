@@ -11,7 +11,8 @@ class AnalysisSessionItem {
   final String planName;
   final String workoutName;
 
-  DateTime get startedAt => DateTime.fromMillisecondsSinceEpoch(session.startedAt);
+  DateTime get startedAt =>
+      DateTime.fromMillisecondsSinceEpoch(session.startedAt);
 
   DateTime? get endedAt {
     final int? endedAtMs = session.endedAt;

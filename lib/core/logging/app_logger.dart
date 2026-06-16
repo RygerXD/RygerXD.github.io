@@ -17,7 +17,8 @@ class AppLogger {
     StackTrace? stackTrace,
     Map<String, Object?> context = const <String, Object?>{},
   }) {
-    final String enriched = '[${level.name.toUpperCase()}] $message | context=$context';
+    final String enriched =
+        '[${level.name.toUpperCase()}] $message | context=$context';
     log(
       enriched,
       error: error,

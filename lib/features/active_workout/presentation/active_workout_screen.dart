@@ -38,7 +38,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   String? _lastMoveKey;
   String? _activeMetronomeKey;
   String? _lastGetReadyCountdownKey;
-  String? _lastExerciseCountdownKey;
+  String? _lastMoveCountdownKey;
   int? _lastRepsForCurrentMove;
   double? _lastWeightForCurrentMove;
   int? _lastDurationForCurrentMove;
@@ -68,13 +68,13 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
         ref.read(activeWorkoutControllerProvider.notifier);
     final Workout? workout = controller.workout;
     final WorkoutSet? currentSet = controller.currentSet;
-    final Move? currentMove = controller.currentMove;
+    final WorkoutMove? currentWorkoutMove = controller.currentMove;
 
     ref.listen<WorkoutState>(activeWorkoutControllerProvider, _syncUiWithState);
 
     if (workout == null ||
         currentSet == null ||
-        currentMove == null ||
+        currentWorkoutMove == null ||
         isInactiveWorkoutState(state)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -88,30 +88,30 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
         ref.watch(loadedWorkoutPlansNotifierProvider).valueOrNull;
     final WorkoutPlan? plan = findWorkoutPlanById(plans, controller.planId);
     final WorkoutPhase displayPhase = displayWorkoutPhase(state);
-    final Exercise? currentExercise = resolveMoveExercise(currentMove, plan);
+    final Move? currentMove = resolveWorkoutMove(currentWorkoutMove, plan);
     final String moveLabel = moveDisplayLabel(
-      currentExercise?.name ?? currentMove.exerciseId,
-      currentMove,
+      currentMove?.name ?? currentWorkoutMove.moveId,
+      currentWorkoutMove,
     );
     final String setLabel =
         optionalText(currentSet.name) ?? 'Set ${state.setIndex + 1}';
-    final String? moveMediaUrl = optionalText(currentExercise?.imageUrl);
-    final Move? nextMoveDuringRest = nextMoveDuringRestPhase(
+    final String? moveMediaUrl = optionalText(currentMove?.imageUrl);
+    final WorkoutMove? nextWorkoutMoveDuringRest = nextMoveDuringRestPhase(
       phase: displayPhase,
       state: state,
       workout: workout,
     );
-    final Exercise? nextExerciseDuringRest = nextMoveDuringRest == null
+    final Move? nextMoveDuringRest = nextWorkoutMoveDuringRest == null
         ? null
-        : resolveMoveExercise(nextMoveDuringRest, plan);
-    final String? nextMoveLabelDuringRest = nextMoveDuringRest == null
+        : resolveWorkoutMove(nextWorkoutMoveDuringRest, plan);
+    final String? nextMoveLabelDuringRest = nextWorkoutMoveDuringRest == null
         ? null
         : moveDisplayLabel(
-            nextExerciseDuringRest?.name ?? nextMoveDuringRest.exerciseId,
-            nextMoveDuringRest,
+            nextMoveDuringRest?.name ?? nextWorkoutMoveDuringRest.moveId,
+            nextWorkoutMoveDuringRest,
           );
     final String? nextMoveMediaUrlDuringRest =
-        optionalText(nextExerciseDuringRest?.imageUrl);
+        optionalText(nextMoveDuringRest?.imageUrl);
     final Color statusColor = activeWorkoutPhaseColor(displayPhase);
     final String statusLabel = activeWorkoutPhaseLabel(displayPhase);
     final bool isPaused = state.phase == WorkoutPhase.paused;
@@ -119,8 +119,8 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     final bool isRest = displayPhase == WorkoutPhase.restBetweenLaps ||
         displayPhase == WorkoutPhase.rest;
     final bool isMove = displayPhase == WorkoutPhase.move;
-    final bool hasTrackedWeight = currentMove.targetWeight != null &&
-        currentMove.targetWeightUnit != null;
+    final bool hasTrackedWeight = currentWorkoutMove.targetWeight != null &&
+        currentWorkoutMove.targetWeightUnit != null;
 
     return PopScope<Object?>(
       canPop: false,
@@ -237,22 +237,22 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                                   textAlign: TextAlign.center,
                                 ),
                                 const SizedBox(height: 24),
-                                if (currentMove.type ==
+                                if (currentWorkoutMove.type ==
                                     MoveType.duration) ...<Widget>[
                                   ActiveTimerDisplay(
                                       seconds: _timerSeconds,
                                       color: statusColor),
-                                  if (currentMove.metronomeSpeed !=
+                                  if (currentWorkoutMove.metronomeSpeed !=
                                       null) ...<Widget>[
                                     const SizedBox(height: 8),
                                     ActiveMetronomeSummary(
-                                      bpm: currentMove.metronomeSpeed!,
+                                      bpm: currentWorkoutMove.metronomeSpeed!,
                                       estimatedReps:
                                           metronomeRepsForElapsedTime(
-                                                move: currentMove,
+                                                move: currentWorkoutMove,
                                                 elapsedSeconds:
                                                     effectiveMoveDurationSeconds(
-                                                  currentMove,
+                                                  currentWorkoutMove,
                                                 ),
                                               ) ??
                                               0,
@@ -260,16 +260,16 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                                   ],
                                   if (hasTrackedWeight) ...<Widget>[
                                     ..._weightControls(
-                                      currentMove,
+                                      currentWorkoutMove,
                                       topPadding: 16,
                                     ),
                                   ],
-                                ] else if (currentMove.type ==
+                                ] else if (currentWorkoutMove.type ==
                                     MoveType.stopwatch)
                                   Column(
                                     children: <Widget>[
                                       ActiveStopwatchDisplay(
-                                        move: currentMove,
+                                        move: currentWorkoutMove,
                                         seconds: _timerSeconds,
                                         color: statusColor,
                                         lastDuration:
@@ -277,7 +277,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                                       ),
                                       if (hasTrackedWeight) ...<Widget>[
                                         ..._weightControls(
-                                          currentMove,
+                                          currentWorkoutMove,
                                           topPadding: 18,
                                         ),
                                       ],
@@ -287,7 +287,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                                   Column(
                                     children: <Widget>[
                                       ActiveAdjustableRepDisplay(
-                                        move: currentMove,
+                                        move: currentWorkoutMove,
                                         currentReps: _currentReps,
                                         onRepsChanged: (int value) => setState(
                                             () => _currentReps = value),
@@ -295,7 +295,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                                       ),
                                       if (hasTrackedWeight) ...<Widget>[
                                         ..._weightControls(
-                                          currentMove,
+                                          currentWorkoutMove,
                                           topPadding: 18,
                                         ),
                                       ],
@@ -373,7 +373,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     setState(() => _currentWeight = value.clamp(0, 9999).toDouble());
   }
 
-  List<Widget> _weightControls(Move move, {required double topPadding}) {
+  List<Widget> _weightControls(WorkoutMove move, {required double topPadding}) {
     return <Widget>[
       SizedBox(height: topPadding),
       ActiveAdjustableWeightDisplay(
@@ -419,7 +419,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
         return;
       }
 
-      final Move? currentMove =
+      final WorkoutMove? currentMove =
           ref.read(activeWorkoutControllerProvider.notifier).currentMove;
       if (displayWorkoutPhase(state) == WorkoutPhase.move &&
           currentMove?.type == MoveType.stopwatch) {
@@ -439,7 +439,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
 
       if (_timerSeconds > 0) {
         _playGetReadyCountdownCueIfNeeded(state, _timerSeconds);
-        _playExerciseCountdownCueIfNeeded(
+        _playMoveCountdownCueIfNeeded(
           state,
           currentMove: currentMove,
           seconds: _timerSeconds,
@@ -467,7 +467,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
 
     if (displayPhase == WorkoutPhase.move &&
         controller.currentMove?.type == MoveType.duration) {
-      await _playExerciseFinishedDing();
+      await _playMoveFinishedDing();
       return _completeCurrentMove();
     }
 
@@ -517,18 +517,18 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
         );
       });
 
-  Future<void> _playExerciseCountdownCue() =>
+  Future<void> _playMoveCountdownCue() =>
       _playConfiguredWorkoutAudio((AppSettings settings) {
-        return WorkoutAudio.playExerciseCountdown(
-          sound: settings.exerciseCountdownSound,
+        return WorkoutAudio.playMoveCountdown(
+          sound: settings.moveCountdownSound,
           volume: settings.audioVolume,
         );
       });
 
-  Future<void> _playExerciseFinishedDing() =>
+  Future<void> _playMoveFinishedDing() =>
       _playConfiguredWorkoutAudio((AppSettings settings) {
-        return WorkoutAudio.playExerciseFinishedDing(
-          sound: settings.exerciseFinishedDingSound,
+        return WorkoutAudio.playMoveFinishedDing(
+          sound: settings.moveFinishedDingSound,
           volume: settings.audioVolume,
         );
       });
@@ -546,7 +546,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       final ActiveWorkoutController controller =
           ref.read(activeWorkoutControllerProvider.notifier);
       final WorkoutState state = ref.read(activeWorkoutControllerProvider);
-      final Move? currentMove = controller.currentMove;
+      final WorkoutMove? currentMove = controller.currentMove;
       final WorkoutSet? currentSet = controller.currentSet;
       final Workout? workout = controller.workout;
       final String? sessionId = controller.sessionId;
@@ -570,7 +570,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                 workoutId: workout.workoutId,
                 setId: currentSet.setId,
                 lapIndex: state.lapIndex,
-                exerciseId: currentMove.exerciseId,
+                moveId: currentMove.moveId,
                 reps: repsToSave,
               );
           _lastRepsForCurrentMove = repsToSave;
@@ -580,7 +580,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                 workoutId: workout.workoutId,
                 setId: currentSet.setId,
                 lapIndex: state.lapIndex,
-                exerciseId: currentMove.exerciseId,
+                moveId: currentMove.moveId,
                 seconds: elapsedSeconds,
               );
           _lastDurationForCurrentMove = elapsedSeconds;
@@ -590,7 +590,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                 workoutId: workout.workoutId,
                 setId: currentSet.setId,
                 lapIndex: state.lapIndex,
-                exerciseId: currentMove.exerciseId,
+                moveId: currentMove.moveId,
                 weightUnit: weightUnit.name,
                 weight: _currentWeight,
               );
@@ -602,8 +602,8 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                 workoutId: workout.workoutId,
                 setId: currentSet.setId,
                 lapIndex: state.lapIndex,
+                workoutMoveId: currentMove.workoutMoveId,
                 moveId: currentMove.moveId,
-                exerciseId: currentMove.exerciseId,
                 repCount: repsToSave ?? 0,
                 actualWeight: hasTrackedWeight ? _currentWeight : null,
                 actualWeightUnit: hasTrackedWeight ? weightUnit.name : null,
@@ -646,7 +646,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
 
     final ActiveWorkoutController controller =
         ref.read(activeWorkoutControllerProvider.notifier);
-    final Move? move = controller.currentMove;
+    final WorkoutMove? move = controller.currentMove;
     final WorkoutSet? set = controller.currentSet;
     if (move == null || set == null) {
       return;
@@ -682,7 +682,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       if (moveChanged) {
         _lastMoveKey = moveKey;
         _lastGetReadyCountdownKey = null;
-        _lastExerciseCountdownKey = null;
+        _lastMoveCountdownKey = null;
         _currentReps = move.repCount ?? 0;
         _currentWeight = move.targetWeight ?? 0;
         _lastRepsForCurrentMove = null;
@@ -696,7 +696,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
 
     if (nextTimer != null) {
       _playGetReadyCountdownCueIfNeeded(next, nextTimer);
-      _playExerciseCountdownCueIfNeeded(
+      _playMoveCountdownCueIfNeeded(
         next,
         currentMove: move,
         seconds: nextTimer,
@@ -734,7 +734,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   Future<void> _loadLastRepsForMove({
     required String moveKey,
     required WorkoutState state,
-    required Move move,
+    required WorkoutMove move,
     required WorkoutSet set,
   }) async {
     await _loadLastTrackedValueForMove<int>(
@@ -744,7 +744,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
               workoutId: workout.workoutId,
               setId: set.setId,
               lapIndex: state.lapIndex,
-              exerciseId: move.exerciseId,
+              moveId: move.moveId,
             );
       },
       applyValue: (int? lastReps) {
@@ -757,7 +757,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   Future<void> _loadLastWeightForMove({
     required String moveKey,
     required WorkoutState state,
-    required Move move,
+    required WorkoutMove move,
     required WorkoutSet set,
   }) async {
     final WeightUnit? unit = move.targetWeightUnit;
@@ -772,7 +772,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
               workoutId: workout.workoutId,
               setId: set.setId,
               lapIndex: state.lapIndex,
-              exerciseId: move.exerciseId,
+              moveId: move.moveId,
               weightUnit: unit.name,
             );
       },
@@ -786,7 +786,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   Future<void> _loadLastDurationForMove({
     required String moveKey,
     required WorkoutState state,
-    required Move move,
+    required WorkoutMove move,
     required WorkoutSet set,
   }) async {
     await _loadLastTrackedValueForMove<int>(
@@ -796,7 +796,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
               workoutId: workout.workoutId,
               setId: set.setId,
               lapIndex: state.lapIndex,
-              exerciseId: move.exerciseId,
+              moveId: move.moveId,
             );
       },
       applyValue: (int? lastDuration) {
@@ -829,7 +829,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
 
   int _phaseStartSeconds({
     required WorkoutPhase phase,
-    required Move move,
+    required WorkoutMove move,
     required WorkoutSet set,
   }) {
     if (phase == WorkoutPhase.prep) {
@@ -847,7 +847,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     return _timerSeconds;
   }
 
-  int _elapsedSecondsForMove(Move move) {
+  int _elapsedSecondsForMove(WorkoutMove move) {
     final int durationSeconds = effectiveMoveDurationSeconds(move);
     if (move.type != MoveType.duration || durationSeconds <= 0) {
       return _moveStopwatch.elapsed.inSeconds;
@@ -872,7 +872,8 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     }
   }
 
-  void _syncMetronomeWithState(WorkoutState state, {required Move move}) {
+  void _syncMetronomeWithState(WorkoutState state,
+      {required WorkoutMove move}) {
     final WorkoutPhase displayPhase = displayWorkoutPhase(state);
     final int? bpm = move.metronomeSpeed;
     final bool shouldPlay = state.phase != WorkoutPhase.paused &&
@@ -905,7 +906,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
 
         final WorkoutState currentState =
             ref.read(activeWorkoutControllerProvider);
-        final Move? currentMove =
+        final WorkoutMove? currentMove =
             ref.read(activeWorkoutControllerProvider.notifier).currentMove;
         if (currentMove == null ||
             currentState.phase == WorkoutPhase.paused ||
@@ -928,7 +929,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   }
 
   void _playGetReadyCountdownCueIfNeeded(WorkoutState state, int seconds) {
-    final Move? currentMove =
+    final WorkoutMove? currentMove =
         ref.read(activeWorkoutControllerProvider.notifier).currentMove;
     _playCountdownCueIfNeeded(
       state,
@@ -941,9 +942,9 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     );
   }
 
-  void _playExerciseCountdownCueIfNeeded(
+  void _playMoveCountdownCueIfNeeded(
     WorkoutState state, {
-    required Move? currentMove,
+    required WorkoutMove? currentMove,
     required int seconds,
   }) {
     _playCountdownCueIfNeeded(
@@ -951,22 +952,22 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       currentMove: currentMove,
       seconds: seconds,
       phase: WorkoutPhase.move,
-      moveMatches: (Move? move) => move?.type == MoveType.duration,
-      lastKey: _lastExerciseCountdownKey,
-      rememberKey: (String key) => _lastExerciseCountdownKey = key,
-      playCue: _playExerciseCountdownCue,
+      moveMatches: (WorkoutMove? move) => move?.type == MoveType.duration,
+      lastKey: _lastMoveCountdownKey,
+      rememberKey: (String key) => _lastMoveCountdownKey = key,
+      playCue: _playMoveCountdownCue,
     );
   }
 
   void _playCountdownCueIfNeeded(
     WorkoutState state, {
-    required Move? currentMove,
+    required WorkoutMove? currentMove,
     required int seconds,
     required WorkoutPhase phase,
     required String? lastKey,
     required ValueChanged<String> rememberKey,
     required Future<void> Function() playCue,
-    bool Function(Move? move)? moveMatches,
+    bool Function(WorkoutMove? move)? moveMatches,
   }) {
     if (displayWorkoutPhase(state) != phase ||
         seconds < 1 ||

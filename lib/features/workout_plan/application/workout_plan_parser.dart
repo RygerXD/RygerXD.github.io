@@ -66,8 +66,9 @@ class WorkoutPlanParser {
   }
 
   WorkoutPlan parseFromJson(Map<String, dynamic> json) {
+    final Map<String, dynamic> normalizedJson = normalizeWorkoutPlanJson(json);
     final List<PlanValidationIssue> issues = <PlanValidationIssue>[];
-    final int? schemaVersion = json['schemaVersion'] as int?;
+    final int? schemaVersion = normalizedJson['schemaVersion'] as int?;
     if (schemaVersion == null) {
       issues.add(const PlanValidationIssue(
         path: r'$.schemaVersion',
@@ -80,10 +81,10 @@ class WorkoutPlanParser {
       ));
     }
 
-    _validateRequiredString(json, 'planId', issues);
-    _validateRequiredString(json, 'name', issues);
-    _validateList(json, 'workouts', issues);
-    _validateList(json, 'exercises', issues);
+    _validateRequiredString(normalizedJson, 'planId', issues);
+    _validateRequiredString(normalizedJson, 'name', issues);
+    _validateList(normalizedJson, 'workouts', issues);
+    _validateList(normalizedJson, 'moves', issues);
 
     if (issues.isNotEmpty) {
       throw WorkoutPlanParseException(
@@ -94,7 +95,7 @@ class WorkoutPlanParser {
 
     final WorkoutPlan plan;
     try {
-      plan = WorkoutPlan.fromJson(json);
+      plan = WorkoutPlan.fromJson(normalizedJson);
     } on ArgumentError catch (error) {
       throw WorkoutPlanParseException(
         message: 'Plan JSON has invalid data types.',
@@ -145,8 +146,7 @@ class WorkoutPlanParser {
 
   void _validateDomain(WorkoutPlan plan) {
     final List<PlanValidationIssue> issues = <PlanValidationIssue>[];
-    final Set<String> exerciseIds =
-        plan.exercises.map((Exercise e) => e.exerciseId).toSet();
+    final Set<String> moveIds = plan.moves.map((Move e) => e.moveId).toSet();
 
     if (plan.workouts.isEmpty) {
       issues.add(const PlanValidationIssue(
@@ -154,10 +154,10 @@ class WorkoutPlanParser {
         message: 'At least one workout is required.',
       ));
     }
-    if (plan.exercises.isEmpty) {
+    if (plan.moves.isEmpty) {
       issues.add(const PlanValidationIssue(
-        path: r'$.exercises',
-        message: 'At least one exercise is required.',
+        path: r'$.moves',
+        message: 'At least one move is required.',
       ));
     }
 
@@ -192,12 +192,12 @@ class WorkoutPlanParser {
           ));
         }
         for (int moveIndex = 0; moveIndex < set.moves.length; moveIndex++) {
-          final Move move = set.moves[moveIndex];
-          if (!exerciseIds.contains(move.exerciseId)) {
+          final WorkoutMove move = set.moves[moveIndex];
+          if (!moveIds.contains(move.moveId)) {
             issues.add(PlanValidationIssue(
               path:
-                  '\$.workouts[$workoutIndex].sets[$setIndex].moves[$moveIndex].exerciseId',
-              message: 'exerciseId does not exist in plan.exercises.',
+                  '\$.workouts[$workoutIndex].sets[$setIndex].moves[$moveIndex].moveId',
+              message: 'moveId does not exist in plan.moves.',
             ));
           }
           if (move.prepTimeSeconds < 0) {

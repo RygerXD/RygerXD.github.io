@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "planId": "plan-beginner-a",
   "name": "Beginner Strength A",
   "description": "Simple full body routine",
@@ -8,14 +8,14 @@
     "strength",
     "beginner"
   ],
-  "exercises": [
+  "moves": [
     {
-      "exerciseId": "exercise-squat",
+      "moveId": "move-squat",
       "name": "Squat",
       "description": "Bodyweight squat"
     },
     {
-      "exerciseId": "exercise-plank",
+      "moveId": "move-plank",
       "name": "Plank",
       "description": "Forearm plank hold"
     }
@@ -31,16 +31,16 @@
           "restBetweenLapsSeconds": 60,
           "moves": [
             {
-              "moveId": "move-1",
-              "exerciseId": "exercise-squat",
+              "workoutMoveId": "move-1",
+              "moveId": "move-squat",
               "type": "reps",
               "repCount": 12,
               "prepTimeSeconds": 10,
               "finishTimeSeconds": 5
             },
             {
-              "moveId": "move-2",
-              "exerciseId": "exercise-plank",
+              "workoutMoveId": "move-2",
+              "moveId": "move-plank",
               "type": "duration",
               "durationSeconds": 30,
               "prepTimeSeconds": 10,

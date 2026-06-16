@@ -5,9 +5,9 @@ import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_mo
 void main() {
   group('metronomeRepsForElapsedTime', () {
     test('counts one rep per metronome beat for duration moves', () {
-      const Move move = Move(
-        moveId: 'm1',
-        exerciseId: 'e1',
+      const WorkoutMove move = WorkoutMove(
+        workoutMoveId: 'm1',
+        moveId: 'e1',
         type: MoveType.duration,
         durationSeconds: 30,
         metronomeSpeed: 60,
@@ -17,9 +17,9 @@ void main() {
     });
 
     test('uses elapsed time for early completion', () {
-      const Move move = Move(
-        moveId: 'm1',
-        exerciseId: 'e1',
+      const WorkoutMove move = WorkoutMove(
+        workoutMoveId: 'm1',
+        moveId: 'e1',
         type: MoveType.duration,
         durationSeconds: 30,
         metronomeSpeed: 120,
@@ -29,9 +29,9 @@ void main() {
     });
 
     test('returns null when the move has no metronome', () {
-      const Move move = Move(
-        moveId: 'm1',
-        exerciseId: 'e1',
+      const WorkoutMove move = WorkoutMove(
+        workoutMoveId: 'm1',
+        moveId: 'e1',
         type: MoveType.duration,
         durationSeconds: 30,
       );

@@ -143,7 +143,7 @@ void main() {
 }
 
 const WorkoutPlan _samplePlan = WorkoutPlan(
-  schemaVersion: 3,
+  schemaVersion: 4,
   planId: 'plan-1',
   name: 'Plan 1',
   workouts: <Workout>[
@@ -155,10 +155,10 @@ const WorkoutPlan _samplePlan = WorkoutPlan(
           setId: 'set-1',
           lapCount: 1,
           restBetweenLapsSeconds: 30,
-          moves: <Move>[
-            Move(
+          moves: <WorkoutMove>[
+            WorkoutMove(
+              workoutMoveId: 'move-1',
               moveId: 'move-1',
-              exerciseId: 'exercise-1',
               type: MoveType.reps,
               repCount: 10,
             ),
@@ -167,16 +167,16 @@ const WorkoutPlan _samplePlan = WorkoutPlan(
       ],
     ),
   ],
-  exercises: <Exercise>[
-    Exercise(
-      exerciseId: 'exercise-1',
+  moves: <Move>[
+    Move(
+      moveId: 'move-1',
       name: 'Squat',
     ),
   ],
 );
 
 const WorkoutPlan _stalePlan = WorkoutPlan(
-  schemaVersion: 3,
+  schemaVersion: 4,
   planId: 'stale-plan',
   name: 'Stale Plan',
   workouts: <Workout>[
@@ -186,7 +186,7 @@ const WorkoutPlan _stalePlan = WorkoutPlan(
       sets: <WorkoutSet>[],
     ),
   ],
-  exercises: <Exercise>[],
+  moves: <Move>[],
 );
 
 Future<void> _seedHistory(HistoryDatabase database) async {
@@ -208,8 +208,8 @@ Future<void> _seedHistory(HistoryDatabase database) async {
       workoutId: 'workout-1',
       setId: 'set-1',
       lapIndex: 0,
+      workoutMoveId: 'workout-move-1',
       moveId: 'move-1',
-      exerciseId: 'exercise-1',
       repCount: 10,
       actualWeight: 35,
       actualWeightUnit: 'kg',
@@ -233,8 +233,8 @@ Map<String, dynamic> _backupJson() {
       audioVolume: 0.35,
       getReadyCountdownSound: CountdownSound.wood,
       getReadyDingSound: GetReadyDingSound.bright,
-      exerciseCountdownSound: CountdownSound.low,
-      exerciseFinishedDingSound: ExerciseFinishedDingSound.bell,
+      moveCountdownSound: CountdownSound.low,
+      moveFinishedDingSound: MoveFinishedDingSound.bell,
     ).toJson(),
     'workoutPlans': <Map<String, dynamic>>[_samplePlan.toJson()],
     'history': <String, dynamic>{
@@ -256,8 +256,8 @@ Map<String, dynamic> _backupJson() {
           'workoutId': 'workout-1',
           'setId': 'set-1',
           'lapIndex': 0,
+          'workoutMoveId': 'workout-move-1',
           'moveId': 'move-1',
-          'exerciseId': 'exercise-1',
           'repCount': 10,
           'actualWeight': 35,
           'actualWeightUnit': 'kg',

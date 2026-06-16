@@ -5,9 +5,9 @@ import 'package:workout_app_rewrite/features/active_workout/presentation/active_
 import 'package:workout_app_rewrite/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:workout_app_rewrite/features/edit_workout/presentation/create_plan_screen.dart';
 import 'package:workout_app_rewrite/features/edit_workout/presentation/edit_workout_screen.dart';
-import 'package:workout_app_rewrite/features/exercises/presentation/exercises_screen.dart';
 import 'package:workout_app_rewrite/features/history/presentation/analysis_screen.dart';
 import 'package:workout_app_rewrite/features/history/presentation/workout_progress_screen.dart';
+import 'package:workout_app_rewrite/features/moves/presentation/moves_screen.dart';
 import 'package:workout_app_rewrite/features/settings/presentation/settings_screen.dart';
 import 'package:workout_app_rewrite/features/workout_detail/presentation/workout_detail_screen.dart';
 import 'package:workout_app_rewrite/features/workout_summary/presentation/workout_summary_screen.dart';
@@ -39,9 +39,9 @@ final Provider<GoRouter> appRouterProvider =
           StatefulShellBranch(
             routes: <RouteBase>[
               GoRoute(
-                path: '/exercises',
+                path: '/moves',
                 builder: (BuildContext context, GoRouterState state) {
-                  return const ExercisesScreen();
+                  return const MovesScreen();
                 },
               ),
               GoRoute(
@@ -151,7 +151,7 @@ class AppScaffold extends StatelessWidget {
         destinations: const <Widget>[
           NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Home'),
           NavigationDestination(
-              icon: Icon(Icons.fitness_center), label: 'Exercises'),
+              icon: Icon(Icons.fitness_center), label: 'Moves'),
           NavigationDestination(
               icon: Icon(Icons.insights_outlined), label: 'Analysis'),
           NavigationDestination(
@@ -159,7 +159,7 @@ class AppScaffold extends StatelessWidget {
         ],
         onDestinationSelected: (int index) {
           if (index == 1) {
-            context.go('/exercises');
+            context.go('/moves');
             return;
           }
           navigationShell.goBranch(index);

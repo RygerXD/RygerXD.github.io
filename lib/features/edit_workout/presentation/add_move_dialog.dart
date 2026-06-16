@@ -10,14 +10,14 @@ class AddMoveDialog extends StatefulWidget {
     super.key,
     required this.onAdd,
     this.initialMove,
-    this.initialExercise,
+    this.initialWorkoutMove,
   });
 
-  /// Called when a user adds or edits a move. Passes back the Move and its
-  /// Exercise, which needs to be saved to the plan.
-  final void Function(Move move, Exercise newExercise) onAdd;
+  /// Called when a user adds or edits a move. Passes back the scheduled
+  /// workout move and its reusable move data, which need to be saved to the plan.
+  final void Function(WorkoutMove workoutMove, Move move) onAdd;
   final Move? initialMove;
-  final Exercise? initialExercise;
+  final WorkoutMove? initialWorkoutMove;
 
   @override
   State<AddMoveDialog> createState() => _AddMoveDialogState();
@@ -42,31 +42,34 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
   bool _repeatEachSide = false;
   bool _hasWeight = false;
   WeightUnit _weightUnit = WeightUnit.lb;
-  bool get _isEditing => widget.initialMove != null;
+  bool get _isEditing => widget.initialWorkoutMove != null;
 
   @override
   void initState() {
     super.initState();
     final Move? initialMove = widget.initialMove;
-    final Exercise? initialExercise = widget.initialExercise;
-    if (initialExercise != null) {
-      _nameController.text = initialExercise.name;
-      _mediaUrlController.text = initialExercise.imageUrl ?? '';
-    }
+    final WorkoutMove? initialWorkoutMove = widget.initialWorkoutMove;
     if (initialMove != null) {
-      _moveType = initialMove.type;
-      _useMetronome = initialMove.metronomeSpeed != null;
-      _repeatEachSide = initialMove.repeatEachSide;
-      _prepController.text = initialMove.prepTimeSeconds.toString();
-      _cooldownController.text = initialMove.finishTimeSeconds.toString();
-      _repsController.text = (initialMove.repCount ?? 10).toString();
-      _durationController.text = (initialMove.durationSeconds ?? 30).toString();
-      _metronomeController.text = (initialMove.metronomeSpeed ?? 60).toString();
-      _hasWeight = initialMove.targetWeight != null;
-      _weightController.text = initialMove.targetWeight == null
+      _nameController.text = initialMove.name;
+      _mediaUrlController.text = initialMove.imageUrl ?? '';
+    }
+    if (initialWorkoutMove != null) {
+      _moveType = initialWorkoutMove.type;
+      _useMetronome = initialWorkoutMove.metronomeSpeed != null;
+      _repeatEachSide = initialWorkoutMove.repeatEachSide;
+      _prepController.text = initialWorkoutMove.prepTimeSeconds.toString();
+      _cooldownController.text =
+          initialWorkoutMove.finishTimeSeconds.toString();
+      _repsController.text = (initialWorkoutMove.repCount ?? 10).toString();
+      _durationController.text =
+          (initialWorkoutMove.durationSeconds ?? 30).toString();
+      _metronomeController.text =
+          (initialWorkoutMove.metronomeSpeed ?? 60).toString();
+      _hasWeight = initialWorkoutMove.targetWeight != null;
+      _weightController.text = initialWorkoutMove.targetWeight == null
           ? ''
-          : formatWeight(initialMove.targetWeight!);
-      _weightUnit = initialMove.targetWeightUnit ?? WeightUnit.lb;
+          : formatWeight(initialWorkoutMove.targetWeight!);
+      _weightUnit = initialWorkoutMove.targetWeightUnit ?? WeightUnit.lb;
     }
   }
 
@@ -103,18 +106,18 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
       return;
     }
 
-    final String exerciseId =
-        widget.initialExercise?.exerciseId ?? const Uuid().v4();
-    final Exercise exercise = Exercise(
-      exerciseId: exerciseId,
+    final String moveId = widget.initialMove?.moveId ?? const Uuid().v4();
+    final Move move = Move(
+      moveId: moveId,
       name: name,
       imageUrl: optionalText(_mediaUrlController.text),
-      description: widget.initialExercise?.description,
+      description: widget.initialMove?.description,
     );
 
-    final Move move = Move(
-      moveId: widget.initialMove?.moveId ?? const Uuid().v4(),
-      exerciseId: exerciseId,
+    final WorkoutMove workoutMove = WorkoutMove(
+      workoutMoveId:
+          widget.initialWorkoutMove?.workoutMoveId ?? const Uuid().v4(),
+      moveId: moveId,
       type: _moveType,
       prepTimeSeconds: _parseNonNegativeSeconds(_prepController.text, 5),
       repCount: _moveType == MoveType.reps
@@ -124,14 +127,14 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
           ? (int.tryParse(_durationController.text) ?? 30)
           : null,
       finishTimeSeconds: _parseNonNegativeSeconds(_cooldownController.text, 0),
-      setCount: widget.initialMove?.setCount ?? 1,
+      setCount: widget.initialWorkoutMove?.setCount ?? 1,
       repeatEachSide: _repeatEachSide,
       targetWeight: _hasWeight ? targetWeight : null,
       targetWeightUnit: _hasWeight ? _weightUnit : null,
       metronomeSpeed: metronomeSpeed,
     );
 
-    widget.onAdd(move, exercise);
+    widget.onAdd(workoutMove, move);
     Navigator.of(context).pop();
   }
 
@@ -188,7 +191,7 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
               TextField(
                 controller: _nameController,
                 decoration: const InputDecoration(
-                  labelText: 'Exercise Name',
+                  labelText: 'Move Name',
                   border: OutlineInputBorder(),
                 ),
                 textCapitalization: TextCapitalization.words,

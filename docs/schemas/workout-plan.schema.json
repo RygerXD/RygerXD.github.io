@@ -9,12 +9,12 @@
     "planId",
     "name",
     "workouts",
-    "exercises"
+    "moves"
   ],
   "properties": {
     "schemaVersion": {
       "type": "integer",
-      "const": 3
+      "const": 4
     },
     "planId": {
       "type": "string",
@@ -42,11 +42,11 @@
       },
       "uniqueItems": true
     },
-    "exercises": {
+    "moves": {
       "type": "array",
       "minItems": 1,
       "items": {
-        "$ref": "#/$defs/exercise"
+        "$ref": "#/$defs/move"
       }
     },
     "workouts": {
@@ -58,15 +58,15 @@
     }
   },
   "$defs": {
-    "exercise": {
+    "move": {
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "exerciseId",
+        "moveId",
         "name"
       ],
       "properties": {
-        "exerciseId": {
+        "moveId": {
           "type": "string",
           "minLength": 1
         },
@@ -143,25 +143,25 @@
           "type": "array",
           "minItems": 1,
           "items": {
-            "$ref": "#/$defs/move"
+            "$ref": "#/$defs/workoutMove"
           }
         }
       }
     },
-    "move": {
+    "workoutMove": {
       "type": "object",
       "additionalProperties": false,
       "required": [
+        "workoutMoveId",
         "moveId",
-        "exerciseId",
         "type"
       ],
       "properties": {
-        "moveId": {
+        "workoutMoveId": {
           "type": "string",
           "minLength": 1
         },
-        "exerciseId": {
+        "moveId": {
           "type": "string",
           "minLength": 1
         },

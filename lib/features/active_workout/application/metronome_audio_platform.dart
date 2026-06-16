@@ -25,20 +25,19 @@ Future<void> playGetReadyCountdown({
       'playGetReadyCountdown', sound, volume, SystemSoundType.click);
 }
 
-Future<void> playExerciseCountdown({
+Future<void> playMoveCountdown({
   required CountdownSound sound,
   required double volume,
 }) async {
-  await _invokeSound(
-      'playExerciseCountdown', sound, volume, SystemSoundType.click);
+  await _invokeSound('playMoveCountdown', sound, volume, SystemSoundType.click);
 }
 
-Future<void> playExerciseFinishedDing({
-  required ExerciseFinishedDingSound sound,
+Future<void> playMoveFinishedDing({
+  required MoveFinishedDingSound sound,
   required double volume,
 }) async {
   await _invokeSound(
-      'playExerciseFinishedDing', sound, volume, SystemSoundType.alert);
+      'playMoveFinishedDing', sound, volume, SystemSoundType.alert);
 }
 
 Future<void> _invokeSound(

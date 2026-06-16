@@ -65,10 +65,10 @@ void main() {
             setId: 's1',
             lapCount: 1,
             restBetweenLapsSeconds: 30,
-            moves: const <Move>[
-              Move(
-                moveId: 'm1',
-                exerciseId: 'e1',
+            moves: const <WorkoutMove>[
+              WorkoutMove(
+                workoutMoveId: 'm1',
+                moveId: 'e1',
                 type: MoveType.reps,
                 repCount: 8,
               ),
@@ -78,10 +78,10 @@ void main() {
             setId: 's2',
             lapCount: 1,
             restBetweenLapsSeconds: 30,
-            moves: const <Move>[
-              Move(
-                moveId: 'm2',
-                exerciseId: 'e1',
+            moves: const <WorkoutMove>[
+              WorkoutMove(
+                workoutMoveId: 'm2',
+                moveId: 'e1',
                 type: MoveType.reps,
                 repCount: 6,
               ),
@@ -108,16 +108,16 @@ void main() {
             setId: 's1',
             lapCount: 1,
             restBetweenLapsSeconds: 0,
-            moves: const <Move>[
-              Move(
-                moveId: 'm1',
-                exerciseId: 'e1',
+            moves: const <WorkoutMove>[
+              WorkoutMove(
+                workoutMoveId: 'm1',
+                moveId: 'e1',
                 type: MoveType.reps,
                 repCount: 8,
               ),
-              Move(
-                moveId: 'm2',
-                exerciseId: 'e2',
+              WorkoutMove(
+                workoutMoveId: 'm2',
+                moveId: 'e2',
                 type: MoveType.reps,
                 repCount: 6,
               ),
@@ -160,18 +160,18 @@ void main() {
             repeatEachSide: true,
           ),
         );
-        final List<Move> moves = machine.workout.sets.single.moves;
+        final List<WorkoutMove> moves = machine.workout.sets.single.moves;
 
         expect(moves, hasLength(2));
-        expect(moves.map((Move move) => move.side), <MoveSide>[
+        expect(moves.map((WorkoutMove move) => move.side), <MoveSide>[
           MoveSide.left,
           MoveSide.right,
         ]);
-        expect(moves.map((Move move) => move.repeatEachSide), <bool>[
+        expect(moves.map((WorkoutMove move) => move.repeatEachSide), <bool>[
           false,
           false,
         ]);
-        expect(moves.map((Move move) => move.moveId), <String>[
+        expect(moves.map((WorkoutMove move) => move.workoutMoveId), <String>[
           'm1:left',
           'm1:right',
         ]);
@@ -205,17 +205,17 @@ void main() {
             setId: 's1',
             lapCount: 1,
             restBetweenLapsSeconds: 0,
-            moves: const <Move>[
-              Move(
-                moveId: 'm1',
-                exerciseId: 'e1',
+            moves: const <WorkoutMove>[
+              WorkoutMove(
+                workoutMoveId: 'm1',
+                moveId: 'e1',
                 type: MoveType.reps,
                 repCount: 8,
                 finishTimeSeconds: 15,
               ),
-              Move(
-                moveId: 'm2',
-                exerciseId: 'e2',
+              WorkoutMove(
+                workoutMoveId: 'm2',
+                moveId: 'e2',
                 type: MoveType.reps,
                 repCount: 6,
               ),
@@ -268,10 +268,10 @@ Workout _singleSetWorkout({
         setId: 's1',
         lapCount: lapCount,
         restBetweenLapsSeconds: 30,
-        moves: <Move>[
-          Move(
-            moveId: 'm1',
-            exerciseId: 'e1',
+        moves: <WorkoutMove>[
+          WorkoutMove(
+            workoutMoveId: 'm1',
+            moveId: 'e1',
             type: moveType,
             repCount: moveType == MoveType.reps ? 10 : null,
             durationSeconds: moveType == MoveType.duration ? 30 : null,

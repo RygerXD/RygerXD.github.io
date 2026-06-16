@@ -6,9 +6,9 @@ void main() {
   group('workout metrics', () {
     test('counts duration moves repeated for each side as double active time',
         () {
-      const Move move = Move(
-        moveId: 'm-1',
-        exerciseId: 'ex-1',
+      const WorkoutMove move = WorkoutMove(
+        workoutMoveId: 'm-1',
+        moveId: 'ex-1',
         type: MoveType.duration,
         durationSeconds: 30,
         prepTimeSeconds: 5,
@@ -21,9 +21,9 @@ void main() {
     });
 
     test('formats each-side duration targets', () {
-      const Move move = Move(
-        moveId: 'm-1',
-        exerciseId: 'ex-1',
+      const WorkoutMove move = WorkoutMove(
+        workoutMoveId: 'm-1',
+        moveId: 'ex-1',
         type: MoveType.duration,
         durationSeconds: 30,
         repeatEachSide: true,
@@ -33,16 +33,16 @@ void main() {
     });
 
     test('formats each-side rep and stopwatch targets', () {
-      const Move repMove = Move(
-        moveId: 'm-1',
-        exerciseId: 'ex-1',
+      const WorkoutMove repMove = WorkoutMove(
+        workoutMoveId: 'm-1',
+        moveId: 'ex-1',
         type: MoveType.reps,
         repCount: 10,
         repeatEachSide: true,
       );
-      const Move stopwatchMove = Move(
-        moveId: 'm-2',
-        exerciseId: 'ex-2',
+      const WorkoutMove stopwatchMove = WorkoutMove(
+        workoutMoveId: 'm-2',
+        moveId: 'ex-2',
         type: MoveType.stopwatch,
         repeatEachSide: true,
       );
@@ -60,10 +60,10 @@ void main() {
             setId: 's-1',
             lapCount: 1,
             restBetweenLapsSeconds: 0,
-            moves: <Move>[
-              Move(
-                moveId: 'm-1',
-                exerciseId: 'ex-1',
+            moves: <WorkoutMove>[
+              WorkoutMove(
+                workoutMoveId: 'm-1',
+                moveId: 'ex-1',
                 type: MoveType.reps,
                 repCount: 10,
                 repeatEachSide: true,
@@ -77,9 +77,9 @@ void main() {
     });
 
     test('formats tracked target weight with move targets', () {
-      const Move move = Move(
-        moveId: 'm-1',
-        exerciseId: 'ex-1',
+      const WorkoutMove move = WorkoutMove(
+        workoutMoveId: 'm-1',
+        moveId: 'ex-1',
         type: MoveType.reps,
         repCount: 10,
         targetWeight: 70,
@@ -91,9 +91,9 @@ void main() {
     });
 
     test('counts move setCount in estimates and target labels', () {
-      const Move move = Move(
-        moveId: 'm-1',
-        exerciseId: 'ex-1',
+      const WorkoutMove move = WorkoutMove(
+        workoutMoveId: 'm-1',
+        moveId: 'ex-1',
         type: MoveType.reps,
         repCount: 10,
         prepTimeSeconds: 5,
@@ -109,7 +109,7 @@ void main() {
             setId: 's-1',
             lapCount: 2,
             restBetweenLapsSeconds: 30,
-            moves: <Move>[move],
+            moves: <WorkoutMove>[move],
           ),
         ],
       );

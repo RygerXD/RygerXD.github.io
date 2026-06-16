@@ -34,24 +34,24 @@ class WorkoutAudio {
             platform.playGetReadyCountdown(sound: sound, volume: volume));
   }
 
-  static Future<void> playExerciseCountdown({
+  static Future<void> playMoveCountdown({
     required CountdownSound sound,
     required double volume,
   }) async {
     await _play(
         volume,
         (double volume) =>
-            platform.playExerciseCountdown(sound: sound, volume: volume));
+            platform.playMoveCountdown(sound: sound, volume: volume));
   }
 
-  static Future<void> playExerciseFinishedDing({
-    required ExerciseFinishedDingSound sound,
+  static Future<void> playMoveFinishedDing({
+    required MoveFinishedDingSound sound,
     required double volume,
   }) async {
     await _play(
         volume,
         (double volume) =>
-            platform.playExerciseFinishedDing(sound: sound, volume: volume));
+            platform.playMoveFinishedDing(sound: sound, volume: volume));
   }
 
   static Future<void> _play(

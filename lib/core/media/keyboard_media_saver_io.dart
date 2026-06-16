@@ -22,7 +22,7 @@ Future<String?> saveKeyboardInsertedMedia(
 
   final Directory documentsDirectory = await getApplicationDocumentsDirectory();
   final Directory mediaDirectory = Directory(
-    p.join(documentsDirectory.path, 'exercise_media'),
+    p.join(documentsDirectory.path, 'move_media'),
   );
   await mediaDirectory.create(recursive: true);
 

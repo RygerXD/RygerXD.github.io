@@ -1,6 +1,6 @@
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
 
-int effectiveMoveSetCount(Move move) {
+int effectiveMoveSetCount(WorkoutMove move) {
   return move.setCount < 1 ? 1 : move.setCount;
 }
 
@@ -9,27 +9,27 @@ Workout expandRepeatedMoveSets(Workout workout) {
     sets: workout.sets
         .map((WorkoutSet set) => set.copyWith(
               moves: set.moves
-                  .expand((Move move) => _expandedMoveSets(move))
+                  .expand((WorkoutMove move) => _expandedMoveSets(move))
                   .toList(growable: false),
             ))
         .toList(growable: false),
   );
 }
 
-Iterable<Move> _expandedMoveSets(Move move) sync* {
+Iterable<WorkoutMove> _expandedMoveSets(WorkoutMove move) sync* {
   final int setCount = effectiveMoveSetCount(move);
   yield* _expandedMoveSides(move.copyWith(setCount: 1));
   for (int setNumber = 2; setNumber <= setCount; setNumber += 1) {
     yield* _expandedMoveSides(
       move.copyWith(
-        moveId: '${move.moveId}:set-$setNumber',
+        workoutMoveId: '${move.workoutMoveId}:set-$setNumber',
         setCount: 1,
       ),
     );
   }
 }
 
-Iterable<Move> _expandedMoveSides(Move move) sync* {
+Iterable<WorkoutMove> _expandedMoveSides(WorkoutMove move) sync* {
   if (!move.repeatEachSide) {
     yield move;
     return;
@@ -37,7 +37,7 @@ Iterable<Move> _expandedMoveSides(Move move) sync* {
 
   for (final MoveSide side in MoveSide.values) {
     yield move.copyWith(
-      moveId: '${move.moveId}:${side.name}',
+      workoutMoveId: '${move.workoutMoveId}:${side.name}',
       repeatEachSide: false,
       side: side,
     );

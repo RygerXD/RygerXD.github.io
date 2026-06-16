@@ -65,17 +65,17 @@ class MainActivity : FlutterActivity() {
                     result.success(null)
                 }
 
-                "playExerciseCountdown" -> {
+                "playMoveCountdown" -> {
                     val sound = call.argument<String>("sound") ?: "pulse"
                     val volume = call.argument<Double>("volume") ?: 0.8
-                    playExerciseCountdown(sound, volume)
+                    playMoveCountdown(sound, volume)
                     result.success(null)
                 }
 
-                "playExerciseFinishedDing" -> {
+                "playMoveFinishedDing" -> {
                     val sound = call.argument<String>("sound") ?: "classic"
                     val volume = call.argument<Double>("volume") ?: 0.8
-                    playExerciseFinishedDing(sound, volume)
+                    playMoveFinishedDing(sound, volume)
                     result.success(null)
                 }
 
@@ -121,7 +121,7 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun copyKeyboardContent(uriString: String, mimeType: String): String {
-        val mediaDirectory = File(filesDir, "exercise_media")
+        val mediaDirectory = File(filesDir, "move_media")
         mediaDirectory.mkdirs()
 
         val extension = extensionForMimeType(mimeType)
@@ -157,15 +157,15 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun playGetReadyCountdown(sound: String, volume: Double) {
-        playPcm(buildCountdownPcm(sound, exerciseCue = false), volume)
+        playPcm(buildCountdownPcm(sound, moveCue = false), volume)
     }
 
-    private fun playExerciseCountdown(sound: String, volume: Double) {
-        playPcm(buildCountdownPcm(sound, exerciseCue = true), volume)
+    private fun playMoveCountdown(sound: String, volume: Double) {
+        playPcm(buildCountdownPcm(sound, moveCue = true), volume)
     }
 
-    private fun playExerciseFinishedDing(sound: String, volume: Double) {
-        playPcm(buildExerciseFinishedDingPcm(sound), volume)
+    private fun playMoveFinishedDing(sound: String, volume: Double) {
+        playPcm(buildMoveFinishedDingPcm(sound), volume)
     }
 
     private fun playPcm(pcm: ByteArray, volume: Double) {
@@ -295,12 +295,12 @@ class MainActivity : FlutterActivity() {
         return pcm
     }
 
-    private fun buildCountdownPcm(sound: String, exerciseCue: Boolean): ByteArray {
+    private fun buildCountdownPcm(sound: String, moveCue: Boolean): ByteArray {
         val durationMs = when (sound) {
-            "pulse" -> if (exerciseCue) 90 else 70
-            "low" -> if (exerciseCue) 90 else 80
-            "wood" -> if (exerciseCue) 55 else 45
-            else -> if (exerciseCue) 60 else 50
+            "pulse" -> if (moveCue) 90 else 70
+            "low" -> if (moveCue) 90 else 80
+            "wood" -> if (moveCue) 55 else 45
+            else -> if (moveCue) 60 else 50
         }
         val frameCount = sampleRate * durationMs / 1000
         val pcm = ByteArray(frameCount * 2)
@@ -310,25 +310,25 @@ class MainActivity : FlutterActivity() {
             val normalized = frame.toDouble() / frameCount
             val sample = when (sound) {
                 "pulse" -> {
-                    val base = if (exerciseCue) 880.0 else 980.0
+                    val base = if (moveCue) 880.0 else 980.0
                     val envelope = exp(-normalized * 10.0)
                     envelope * (sin(2.0 * PI * base * t) + 0.45 * sin(2.0 * PI * base * 2.0 * t))
                 }
 
                 "wood" -> {
-                    val base = if (exerciseCue) 640.0 else 720.0
+                    val base = if (moveCue) 640.0 else 720.0
                     val envelope = exp(-normalized * 18.0)
                     envelope * (sin(2.0 * PI * base * t) + 0.55 * sin(2.0 * PI * base * 1.5 * t))
                 }
 
                 "low" -> {
-                    val base = if (exerciseCue) 420.0 else 520.0
+                    val base = if (moveCue) 420.0 else 520.0
                     val envelope = exp(-normalized * 12.0)
                     envelope * (sin(2.0 * PI * base * t) + 0.4 * sin(2.0 * PI * base * 2.0 * t))
                 }
 
                 else -> {
-                    val base = if (exerciseCue) 1450.0 else 1200.0
+                    val base = if (moveCue) 1450.0 else 1200.0
                     val envelope = exp(-normalized * 16.0)
                     envelope * (sin(2.0 * PI * base * t) + 0.45 * sin(2.0 * PI * base * 2.0 * t))
                 }
@@ -342,7 +342,7 @@ class MainActivity : FlutterActivity() {
         return pcm
     }
 
-    private fun buildExerciseFinishedDingPcm(sound: String): ByteArray {
+    private fun buildMoveFinishedDingPcm(sound: String): ByteArray {
         val durationMs = when (sound) {
             "bright" -> 180
             "soft" -> 240

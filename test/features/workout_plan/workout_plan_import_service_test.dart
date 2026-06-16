@@ -47,12 +47,12 @@ void main() {
       final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
       final WorkoutPlanImportService service = buildService(repository);
       final String validPayload = jsonEncode(<String, dynamic>{
-        'schemaVersion': 3,
+        'schemaVersion': 4,
         'planId': 'plan-1',
         'name': 'Plan 1',
-        'exercises': <Map<String, dynamic>>[
+        'moves': <Map<String, dynamic>>[
           <String, dynamic>{
-            'exerciseId': 'ex-1',
+            'moveId': 'ex-1',
             'name': 'Squat',
           },
         ],
@@ -67,8 +67,8 @@ void main() {
                 'restBetweenLapsSeconds': 30,
                 'moves': <Map<String, dynamic>>[
                   <String, dynamic>{
-                    'moveId': 'm-1',
-                    'exerciseId': 'ex-1',
+                    'workoutMoveId': 'm-1',
+                    'moveId': 'ex-1',
                     'type': 'reps',
                     'repCount': 10,
                   },

@@ -23,7 +23,8 @@ class SharedPrefsWorkoutRepository implements WorkoutRepository {
         final String? jsonString = _prefs.getString(key);
         if (jsonString != null) {
           try {
-            final Map<String, dynamic> jsonMap = jsonDecode(jsonString) as Map<String, dynamic>;
+            final Map<String, dynamic> jsonMap =
+                jsonDecode(jsonString) as Map<String, dynamic>;
             plans.add(WorkoutPlan.fromJson(jsonMap));
           } catch (e) {
             // Ignore corrupted or invalid JSON items in storage.
@@ -42,7 +43,8 @@ class SharedPrefsWorkoutRepository implements WorkoutRepository {
       return null;
     }
     try {
-      final Map<String, dynamic> jsonMap = jsonDecode(jsonString) as Map<String, dynamic>;
+      final Map<String, dynamic> jsonMap =
+          jsonDecode(jsonString) as Map<String, dynamic>;
       return WorkoutPlan.fromJson(jsonMap);
     } catch (e) {
       return null;
@@ -52,7 +54,8 @@ class SharedPrefsWorkoutRepository implements WorkoutRepository {
   @override
   Future<void> savePlan(WorkoutPlan plan) async {
     final String jsonString = jsonEncode(plan.toJson());
-    final bool didSave = await _prefs.setString('$_planPrefix${plan.planId}', jsonString);
+    final bool didSave =
+        await _prefs.setString('$_planPrefix${plan.planId}', jsonString);
     if (!didSave) {
       throw StateError('Failed to persist workout plan ${plan.planId}.');
     }

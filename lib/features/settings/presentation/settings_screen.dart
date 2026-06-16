@@ -192,30 +192,30 @@ class SettingsScreen extends ConsumerWidget {
         ),
         const SizedBox(height: AppSpacing.md),
         _SoundSetting<CountdownSound>(
-          title: 'Exercise countdown',
-          dropdownLabel: 'Exercise countdown sound',
-          value: settings.exerciseCountdownSound,
+          title: 'Move countdown',
+          dropdownLabel: 'Move countdown sound',
+          value: settings.moveCountdownSound,
           values: CountdownSound.values,
           labelFor: _countdownLabel,
-          onChanged: controller.setExerciseCountdownSound,
+          onChanged: controller.setMoveCountdownSound,
           onTest: () => unawaited(
-            WorkoutAudio.playExerciseCountdown(
-              sound: settings.exerciseCountdownSound,
+            WorkoutAudio.playMoveCountdown(
+              sound: settings.moveCountdownSound,
               volume: settings.audioVolume,
             ),
           ),
         ),
         const SizedBox(height: AppSpacing.md),
-        _SoundSetting<ExerciseFinishedDingSound>(
-          title: 'Exercise finished ding',
+        _SoundSetting<MoveFinishedDingSound>(
+          title: 'Move finished ding',
           dropdownLabel: 'Finished ding sound',
-          value: settings.exerciseFinishedDingSound,
-          values: ExerciseFinishedDingSound.values,
-          labelFor: _exerciseFinishedDingLabel,
-          onChanged: controller.setExerciseFinishedDingSound,
+          value: settings.moveFinishedDingSound,
+          values: MoveFinishedDingSound.values,
+          labelFor: _moveFinishedDingLabel,
+          onChanged: controller.setMoveFinishedDingSound,
           onTest: () => unawaited(
-            WorkoutAudio.playExerciseFinishedDing(
-              sound: settings.exerciseFinishedDingSound,
+            WorkoutAudio.playMoveFinishedDing(
+              sound: settings.moveFinishedDingSound,
               volume: settings.audioVolume,
             ),
           ),
@@ -288,15 +288,15 @@ class SettingsScreen extends ConsumerWidget {
     }
   }
 
-  static String _exerciseFinishedDingLabel(ExerciseFinishedDingSound sound) {
+  static String _moveFinishedDingLabel(MoveFinishedDingSound sound) {
     switch (sound) {
-      case ExerciseFinishedDingSound.classic:
+      case MoveFinishedDingSound.classic:
         return 'Classic finish';
-      case ExerciseFinishedDingSound.bright:
+      case MoveFinishedDingSound.bright:
         return 'Bright finish';
-      case ExerciseFinishedDingSound.soft:
+      case MoveFinishedDingSound.soft:
         return 'Soft finish';
-      case ExerciseFinishedDingSound.bell:
+      case MoveFinishedDingSound.bell:
         return 'Bell';
     }
   }

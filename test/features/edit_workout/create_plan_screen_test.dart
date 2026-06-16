@@ -57,7 +57,7 @@ void main() {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 3,
+        schemaVersion: 4,
         planId: 'plan-1',
         name: 'Plan 1',
         imageUrl: 'https://example.com/old.gif',
@@ -68,8 +68,8 @@ void main() {
             sets: <WorkoutSet>[],
           ),
         ],
-        exercises: <Exercise>[
-          Exercise(exerciseId: 'exercise-1', name: 'Push Up'),
+        moves: <Move>[
+          Move(moveId: 'move-1', name: 'Push Up'),
         ],
       ),
     );
@@ -109,7 +109,7 @@ void main() {
     final WorkoutPlan savedPlan = (await repository.getPlanById('plan-1'))!;
     expect(savedPlan.imageUrl, 'https://example.com/new.gif');
     expect(savedPlan.workouts.single.workoutId, 'workout-1');
-    expect(savedPlan.exercises.single.exerciseId, 'exercise-1');
+    expect(savedPlan.moves.single.moveId, 'move-1');
     expect(find.text('Plan detail'), findsOneWidget);
   });
 }

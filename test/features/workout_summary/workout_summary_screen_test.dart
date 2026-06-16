@@ -16,7 +16,7 @@ void main() {
         _FakeWorkoutPlanExportService();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 3,
+        schemaVersion: 4,
         planId: 'plan-1',
         name: 'Plan 1',
         description: 'Preview this workout before starting.',
@@ -30,17 +30,17 @@ void main() {
                 name: 'Circuit',
                 lapCount: 2,
                 restBetweenLapsSeconds: 15,
-                moves: <Move>[
-                  Move(
-                    moveId: 'move-a',
-                    exerciseId: 'squat',
+                moves: <WorkoutMove>[
+                  WorkoutMove(
+                    workoutMoveId: 'move-a',
+                    moveId: 'squat',
                     type: MoveType.duration,
                     prepTimeSeconds: 5,
                     durationSeconds: 30,
                   ),
-                  Move(
-                    moveId: 'move-b',
-                    exerciseId: 'push-up',
+                  WorkoutMove(
+                    workoutMoveId: 'move-b',
+                    moveId: 'push-up',
                     type: MoveType.reps,
                     repCount: 12,
                   ),
@@ -49,9 +49,9 @@ void main() {
             ],
           ),
         ],
-        exercises: <Exercise>[
-          Exercise(exerciseId: 'squat', name: 'Squat'),
-          Exercise(exerciseId: 'push-up', name: 'Push Up'),
+        moves: <Move>[
+          Move(moveId: 'squat', name: 'Squat'),
+          Move(moveId: 'push-up', name: 'Push Up'),
         ],
       ),
     );
@@ -81,7 +81,7 @@ void main() {
     expect(find.text('Workout A'), findsOneWidget);
     expect(find.text('Duration'), findsOneWidget);
     expect(find.text('00:01:25'), findsOneWidget);
-    expect(find.text('Exercises'), findsWidgets);
+    expect(find.text('Moves'), findsWidgets);
     expect(find.text('4'), findsOneWidget);
     expect(find.text('Preview this workout before starting.'), findsOneWidget);
     await tester.scrollUntilVisible(
@@ -105,8 +105,7 @@ void main() {
     expect(exportService.exportedPlan?.name, 'Workout A');
     expect(exportService.exportedPlan?.workouts.single.workoutId, 'workout-a');
     expect(
-      exportService.exportedPlan?.exercises
-          .map((Exercise exercise) => exercise.exerciseId),
+      exportService.exportedPlan?.moves.map((Move move) => move.moveId),
       <String>['squat', 'push-up'],
     );
     expect(find.text('Exported Workout A'), findsOneWidget);
@@ -117,7 +116,7 @@ void main() {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
       const WorkoutPlan(
-        schemaVersion: 3,
+        schemaVersion: 4,
         planId: 'plan-1',
         name: 'Plan 1',
         workouts: <Workout>[
@@ -129,10 +128,10 @@ void main() {
                 setId: 'set-a',
                 lapCount: 1,
                 restBetweenLapsSeconds: 0,
-                moves: <Move>[
-                  Move(
-                    moveId: 'move-a',
-                    exerciseId: 'push-up',
+                moves: <WorkoutMove>[
+                  WorkoutMove(
+                    workoutMoveId: 'move-a',
+                    moveId: 'push-up',
                     type: MoveType.reps,
                     repCount: 10,
                   ),
@@ -148,10 +147,10 @@ void main() {
                 setId: 'set-b',
                 lapCount: 1,
                 restBetweenLapsSeconds: 0,
-                moves: <Move>[
-                  Move(
-                    moveId: 'move-b',
-                    exerciseId: 'squat',
+                moves: <WorkoutMove>[
+                  WorkoutMove(
+                    workoutMoveId: 'move-b',
+                    moveId: 'squat',
                     type: MoveType.reps,
                     repCount: 12,
                   ),
@@ -160,9 +159,9 @@ void main() {
             ],
           ),
         ],
-        exercises: <Exercise>[
-          Exercise(exerciseId: 'push-up', name: 'Push Up'),
-          Exercise(exerciseId: 'squat', name: 'Squat'),
+        moves: <Move>[
+          Move(moveId: 'push-up', name: 'Push Up'),
+          Move(moveId: 'squat', name: 'Squat'),
         ],
       ),
     );
@@ -229,8 +228,7 @@ void main() {
     expect(updatedPlan?.workouts.first.isArchived, isTrue);
     expect(updatedPlan?.workouts.last.workoutId, 'workout-b');
     expect(updatedPlan?.workouts.last.isArchived, isFalse);
-    expect(
-        updatedPlan?.exercises.map((Exercise exercise) => exercise.exerciseId),
+    expect(updatedPlan?.moves.map((Move move) => move.moveId),
         <String>['push-up', 'squat']);
     expect(find.text('Plan detail plan-1'), findsOneWidget);
   });

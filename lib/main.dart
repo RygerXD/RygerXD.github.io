@@ -9,7 +9,8 @@ import 'package:workout_app_rewrite/features/workout_plan/application/workout_pl
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+  final SharedPreferences sharedPreferences =
+      await SharedPreferences.getInstance();
 
   runApp(
     ProviderScope(

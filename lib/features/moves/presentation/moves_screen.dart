@@ -4,18 +4,18 @@ import 'package:workout_app_rewrite/core/media/image_or_gif_url_field.dart';
 import 'package:workout_app_rewrite/core/media/media_thumbnail.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
 import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
-import 'package:workout_app_rewrite/features/exercises/application/exercise_catalog.dart';
+import 'package:workout_app_rewrite/features/moves/application/move_catalog.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
 
-class ExercisesScreen extends ConsumerStatefulWidget {
-  const ExercisesScreen({super.key});
+class MovesScreen extends ConsumerStatefulWidget {
+  const MovesScreen({super.key});
 
   @override
-  ConsumerState<ExercisesScreen> createState() => _ExercisesScreenState();
+  ConsumerState<MovesScreen> createState() => _MovesScreenState();
 }
 
-class _ExercisesScreenState extends ConsumerState<ExercisesScreen> {
+class _MovesScreenState extends ConsumerState<MovesScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
 
@@ -32,20 +32,18 @@ class _ExercisesScreenState extends ConsumerState<ExercisesScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Exercises'),
+        title: const Text('Moves'),
       ),
       body: plansState.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (Object error, StackTrace stack) =>
-            Center(child: Text('Error loading exercises: $error')),
+            Center(child: Text('Error loading moves: $error')),
         data: (List<WorkoutPlan> plans) {
-          final List<ReferencedExerciseEntry> exercises =
-              collectReferencedExercises(plans);
-          final List<ReferencedExerciseEntry> filteredExercises =
-              _filteredExercises(exercises);
-          if (exercises.isEmpty) {
+          final List<ReferencedMoveEntry> moves = collectReferencedMoves(plans);
+          final List<ReferencedMoveEntry> filteredMoves = _filteredMoves(moves);
+          if (moves.isEmpty) {
             return const _EmptyState(
-              message: 'No exercises yet. Import or create a plan to add some.',
+              message: 'No moves yet. Import or create a plan to add some.',
             );
           }
 
@@ -55,7 +53,7 @@ class _ExercisesScreenState extends ConsumerState<ExercisesScreen> {
               TextField(
                 controller: _searchController,
                 decoration: const InputDecoration(
-                  labelText: 'Search exercises',
+                  labelText: 'Search moves',
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.search),
                 ),
@@ -66,13 +64,13 @@ class _ExercisesScreenState extends ConsumerState<ExercisesScreen> {
                 },
               ),
               const SizedBox(height: AppSpacing.lg),
-              if (filteredExercises.isEmpty)
-                const _EmptyState(message: 'No matching exercises.')
+              if (filteredMoves.isEmpty)
+                const _EmptyState(message: 'No matching moves.')
               else
-                for (final ReferencedExerciseEntry entry in filteredExercises)
-                  _ExerciseCard(
+                for (final ReferencedMoveEntry entry in filteredMoves)
+                  _MoveCard(
                     entry: entry,
-                    onTap: () => _editExercise(context, ref, plans, entry),
+                    onTap: () => _editMove(context, ref, plans, entry),
                   ),
             ],
           );
@@ -81,79 +79,77 @@ class _ExercisesScreenState extends ConsumerState<ExercisesScreen> {
     );
   }
 
-  List<ReferencedExerciseEntry> _filteredExercises(
-    List<ReferencedExerciseEntry> exercises,
+  List<ReferencedMoveEntry> _filteredMoves(
+    List<ReferencedMoveEntry> moves,
   ) {
-    return filterByFuzzyExerciseName<ReferencedExerciseEntry>(
-      entries: exercises,
+    return filterByFuzzyMoveName<ReferencedMoveEntry>(
+      entries: moves,
       query: _query,
-      exerciseFor: (ReferencedExerciseEntry entry) => entry.exercise,
+      moveFor: (ReferencedMoveEntry entry) => entry.move,
     );
   }
 
-  Future<void> _editExercise(
+  Future<void> _editMove(
     BuildContext context,
     WidgetRef ref,
     List<WorkoutPlan> plans,
-    ReferencedExerciseEntry entry,
+    ReferencedMoveEntry entry,
   ) async {
-    final Exercise? updatedExercise = await showDialog<Exercise>(
+    final Move? updatedMove = await showDialog<Move>(
       context: context,
-      builder: (BuildContext context) => _EditExerciseDialog(
-        exercise: entry.exercise,
+      builder: (BuildContext context) => _EditMoveDialog(
+        move: entry.move,
         sourcePlanNames: entry.planNames,
       ),
     );
 
-    if (updatedExercise == null) {
+    if (updatedMove == null) {
       return;
     }
 
     try {
       for (final WorkoutPlan plan in plans) {
-        final int exerciseIndex = plan.exercises.indexWhere(
-          (Exercise exercise) =>
-              exercise.exerciseId == updatedExercise.exerciseId,
+        final int moveIndex = plan.moves.indexWhere(
+          (Move move) => move.moveId == updatedMove.moveId,
         );
-        if (exerciseIndex < 0) {
+        if (moveIndex < 0) {
           continue;
         }
 
-        final List<Exercise> updatedExercises =
-            List<Exercise>.from(plan.exercises);
-        updatedExercises[exerciseIndex] = updatedExercise;
+        final List<Move> updatedMoves = List<Move>.from(plan.moves);
+        updatedMoves[moveIndex] = updatedMove;
         await ref
             .read(loadedWorkoutPlansNotifierProvider.notifier)
-            .loadPlan(plan.copyWith(exercises: updatedExercises));
+            .loadPlan(plan.copyWith(moves: updatedMoves));
       }
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Updated ${updatedExercise.name}')),
+          SnackBar(content: Text('Updated ${updatedMove.name}')),
         );
       }
     } catch (error) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error updating exercise: $error')),
+          SnackBar(content: Text('Error updating move: $error')),
         );
       }
     }
   }
 }
 
-class _ExerciseCard extends StatelessWidget {
-  const _ExerciseCard({
+class _MoveCard extends StatelessWidget {
+  const _MoveCard({
     required this.entry,
     required this.onTap,
   });
 
-  final ReferencedExerciseEntry entry;
+  final ReferencedMoveEntry entry;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final Exercise exercise = entry.exercise;
+    final Move move = entry.move;
     final ColorScheme colors = Theme.of(context).colorScheme;
 
     return Card(
@@ -166,7 +162,7 @@ class _ExerciseCard extends StatelessWidget {
           child: Row(
             children: <Widget>[
               MediaThumbnail(
-                imageUrl: optionalText(exercise.imageUrl),
+                imageUrl: optionalText(move.imageUrl),
                 fallbackIcon: Icons.fitness_center,
                 backgroundColor: colors.primaryContainer,
                 iconColor: colors.onPrimaryContainer,
@@ -178,17 +174,17 @@ class _ExerciseCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      exercise.name,
+                      move.name,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w800,
                           ),
                     ),
-                    if (exercise.description != null) ...<Widget>[
+                    if (move.description != null) ...<Widget>[
                       const SizedBox(height: AppSpacing.xs),
                       Text(
-                        exercise.description!,
+                        move.description!,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -207,27 +203,27 @@ class _ExerciseCard extends StatelessWidget {
   }
 }
 
-class _EditExerciseDialog extends StatefulWidget {
-  const _EditExerciseDialog({
-    required this.exercise,
+class _EditMoveDialog extends StatefulWidget {
+  const _EditMoveDialog({
+    required this.move,
     required this.sourcePlanNames,
   });
 
-  final Exercise exercise;
+  final Move move;
   final List<String> sourcePlanNames;
 
   @override
-  State<_EditExerciseDialog> createState() => _EditExerciseDialogState();
+  State<_EditMoveDialog> createState() => _EditMoveDialogState();
 }
 
-class _EditExerciseDialogState extends State<_EditExerciseDialog> {
+class _EditMoveDialogState extends State<_EditMoveDialog> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController =
-      TextEditingController(text: widget.exercise.name);
+      TextEditingController(text: widget.move.name);
   late final TextEditingController _imageUrlController =
-      TextEditingController(text: widget.exercise.imageUrl ?? '');
+      TextEditingController(text: widget.move.imageUrl ?? '');
   late final TextEditingController _descriptionController =
-      TextEditingController(text: widget.exercise.description ?? '');
+      TextEditingController(text: widget.move.description ?? '');
 
   @override
   void dispose() {
@@ -241,7 +237,7 @@ class _EditExerciseDialogState extends State<_EditExerciseDialog> {
   Widget build(BuildContext context) {
     final ColorScheme colors = Theme.of(context).colorScheme;
     return AlertDialog(
-      title: const Text('Edit Exercise'),
+      title: const Text('Edit Move'),
       content: SizedBox(
         width: double.maxFinite,
         child: Form(
@@ -264,13 +260,13 @@ class _EditExerciseDialogState extends State<_EditExerciseDialog> {
                 TextFormField(
                   controller: _nameController,
                   decoration: const InputDecoration(
-                    labelText: 'Exercise Name *',
+                    labelText: 'Move Name *',
                     border: OutlineInputBorder(),
                   ),
                   textCapitalization: TextCapitalization.words,
                   validator: (String? value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'Please enter an exercise name';
+                      return 'Please enter a move name';
                     }
                     return null;
                   },
@@ -306,7 +302,7 @@ class _EditExerciseDialogState extends State<_EditExerciseDialog> {
               return;
             }
             Navigator.of(context).pop(
-              widget.exercise.copyWith(
+              widget.move.copyWith(
                 name: _nameController.text.trim(),
                 imageUrl: optionalText(_imageUrlController.text),
                 description: optionalText(_descriptionController.text),

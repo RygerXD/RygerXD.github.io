@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:workout_app_rewrite/core/media/exercise_media_image.dart';
+import 'package:workout_app_rewrite/core/media/move_media_image.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
 
 class MediaThumbnail extends StatelessWidget {
@@ -32,7 +32,7 @@ class MediaThumbnail extends StatelessWidget {
         dimension: dimension,
         child: imageUrl == null
             ? placeholder
-            : ExerciseMediaImage(
+            : MoveMediaImage(
                 source: imageUrl!,
                 fit: BoxFit.cover,
                 errorPlaceholder: placeholder,

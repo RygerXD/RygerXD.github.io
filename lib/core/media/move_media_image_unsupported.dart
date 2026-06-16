@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class ExerciseMediaImage extends StatelessWidget {
-  const ExerciseMediaImage({
+class MoveMediaImage extends StatelessWidget {
+  const MoveMediaImage({
     super.key,
     required this.source,
     this.fit,

@@ -22,7 +22,8 @@ class DateGroup extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Padding(
-          padding: const EdgeInsets.only(top: AppSpacing.lg, bottom: AppSpacing.sm),
+          padding:
+              const EdgeInsets.only(top: AppSpacing.lg, bottom: AppSpacing.sm),
           child: Text(
             dateLabel,
             style: theme.textTheme.titleSmall?.copyWith(
@@ -32,7 +33,8 @@ class DateGroup extends StatelessWidget {
             ),
           ),
         ),
-        ...sessions.map((AnalysisSessionItem session) => SessionCard(item: session)),
+        ...sessions
+            .map((AnalysisSessionItem session) => SessionCard(item: session)),
       ],
     );
   }

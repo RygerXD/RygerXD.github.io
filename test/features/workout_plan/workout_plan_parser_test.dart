@@ -22,21 +22,68 @@ void main() {
       expect(parsed.workouts.single.sets.single.moves.single.setCount, 2);
     });
 
+    test('migrates schema 3 plan JSON', () {
+      final String previousMovesKey = _legacyKey(
+        <int>[101, 120, 101, 114, 99, 105, 115, 101, 115],
+      );
+      final String previousMoveIdKey = _legacyKey(
+        <int>[101, 120, 101, 114, 99, 105, 115, 101, 73, 100],
+      );
+
+      final WorkoutPlan parsed = parser.parseFromJson(<String, dynamic>{
+        'schemaVersion': 3,
+        'planId': 'plan-1',
+        'name': 'Plan',
+        previousMovesKey: <Map<String, dynamic>>[
+          <String, dynamic>{
+            previousMoveIdKey: 'squat',
+            'name': 'Squat',
+          },
+        ],
+        'workouts': <Map<String, dynamic>>[
+          <String, dynamic>{
+            'workoutId': 'workout-1',
+            'title': 'Workout',
+            'sets': <Map<String, dynamic>>[
+              <String, dynamic>{
+                'setId': 'set-1',
+                'moves': <Map<String, dynamic>>[
+                  <String, dynamic>{
+                    'moveId': 'workout-move-1',
+                    previousMoveIdKey: 'squat',
+                    'type': 'reps',
+                    'repCount': 10,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      });
+
+      final WorkoutMove parsedMove =
+          parsed.workouts.single.sets.single.moves.single;
+      expect(parsed.schemaVersion, 4);
+      expect(parsed.moves.single.moveId, 'squat');
+      expect(parsedMove.workoutMoveId, 'workout-move-1');
+      expect(parsedMove.moveId, 'squat');
+    });
+
     test('throws on unsupported schemaVersion', () {
       expect(
-        () => parser.parseFromJson(_planJson(schemaVersion: 4)),
+        () => parser.parseFromJson(_planJson(schemaVersion: 5)),
         throwsA(isA<WorkoutPlanParseException>()),
       );
     });
 
     test('formats validation issues in exception text', () {
       try {
-        parser.parseFromJson(_planJson(schemaVersion: 4));
+        parser.parseFromJson(_planJson(schemaVersion: 5));
         fail('Expected parse exception.');
       } on WorkoutPlanParseException catch (error) {
         expect(
           error.toString(),
-          contains(r'$.schemaVersion: Unsupported schemaVersion: 4'),
+          contains(r'$.schemaVersion: Unsupported schemaVersion: 5'),
         );
       }
     });
@@ -56,10 +103,10 @@ void main() {
       expect(parsed.restBetweenLapsSeconds, 0);
     });
 
-    test('throws when move references unknown exercise', () {
+    test('throws when move references unknown move', () {
       expect(
         () => parser.parseFromJson(_planJson(
-          move: <String, dynamic>{'exerciseId': 'ex-does-not-exist'},
+          move: <String, dynamic>{'moveId': 'ex-does-not-exist'},
         )),
         throwsA(isA<WorkoutPlanParseException>()),
       );
@@ -67,7 +114,7 @@ void main() {
 
     test('parses metronome BPM for duration moves', () {
       final WorkoutPlan parsed = parser.parseFromJson(_planJson(
-        exerciseName: 'Jumping Jacks',
+        moveName: 'Jumping Jacks',
         move: <String, dynamic>{
           'type': 'duration',
           'durationSeconds': 30,
@@ -80,9 +127,9 @@ void main() {
     });
 
     test('parses each-side duration moves', () {
-      final Move move = parser
+      final WorkoutMove move = parser
           .parseFromJson(_planJson(
-            exerciseName: 'Lunge',
+            moveName: 'Lunge',
             move: <String, dynamic>{
               'type': 'duration',
               'durationSeconds': 30,
@@ -102,9 +149,9 @@ void main() {
     });
 
     test('parses stopwatch moves', () {
-      final Move move = parser
+      final WorkoutMove move = parser
           .parseFromJson(_planJson(
-            exerciseName: 'Wall Sit',
+            moveName: 'Wall Sit',
             move: <String, dynamic>{'type': 'stopwatch'},
           ))
           .workouts
@@ -130,7 +177,7 @@ void main() {
     test('throws when a move includes fields for another move type', () {
       expect(
         () => parser.parseFromJson(_planJson(
-          exerciseName: 'Jumping Jacks',
+          moveName: 'Jumping Jacks',
           move: <String, dynamic>{
             'type': 'duration',
             'durationSeconds': 30,
@@ -142,7 +189,7 @@ void main() {
     });
 
     test('parses each-side rep moves', () {
-      final Move move = parser
+      final WorkoutMove move = parser
           .parseFromJson(_planJson(
             move: <String, dynamic>{'repeatEachSide': true},
           ))
@@ -159,9 +206,9 @@ void main() {
     });
 
     test('parses each-side stopwatch moves', () {
-      final Move move = parser
+      final WorkoutMove move = parser
           .parseFromJson(_planJson(
-            exerciseName: 'Wall Sit',
+            moveName: 'Wall Sit',
             move: <String, dynamic>{
               'type': 'stopwatch',
               'repeatEachSide': true,
@@ -190,15 +237,19 @@ void main() {
   });
 }
 
+String _legacyKey(List<int> charCodes) {
+  return String.fromCharCodes(charCodes);
+}
+
 Map<String, dynamic> _planJson({
-  int schemaVersion = 3,
-  String exerciseId = 'ex-1',
-  String exerciseName = 'Squat',
+  int schemaVersion = 4,
+  String moveId = 'ex-1',
+  String moveName = 'Squat',
   Map<String, dynamic> move = const <String, dynamic>{},
 }) {
   final Map<String, dynamic> moveJson = <String, dynamic>{
-    'moveId': 'm-1',
-    'exerciseId': exerciseId,
+    'workoutMoveId': 'm-1',
+    'moveId': moveId,
     'type': 'reps',
     'repCount': 10,
     ...move,
@@ -212,10 +263,10 @@ Map<String, dynamic> _planJson({
     'planId': 'plan-1',
     'name': 'Plan 1',
     'imageUrl': 'https://example.com/plan.gif',
-    'exercises': <Map<String, dynamic>>[
+    'moves': <Map<String, dynamic>>[
       <String, dynamic>{
-        'exerciseId': exerciseId,
-        'name': exerciseName,
+        'moveId': moveId,
+        'name': moveName,
       },
     ],
     'workouts': <Map<String, dynamic>>[

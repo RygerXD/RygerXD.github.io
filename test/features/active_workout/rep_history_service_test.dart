@@ -4,7 +4,7 @@ import 'package:workout_app_rewrite/features/active_workout/application/rep_hist
 
 void main() {
   group('RepHistoryService', () {
-    test('saves and retrieves reps by workout/set/lap/exercise key', () async {
+    test('saves and retrieves reps by workout/set/lap/move key', () async {
       SharedPreferences.setMockInitialValues(<String, Object>{});
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       final RepHistoryService service = RepHistoryService(prefs);
@@ -13,7 +13,7 @@ void main() {
         workoutId: 'w1',
         setId: 's1',
         lapIndex: 0,
-        exerciseId: 'e1',
+        moveId: 'e1',
         reps: 12,
       );
 
@@ -21,7 +21,7 @@ void main() {
         workoutId: 'w1',
         setId: 's1',
         lapIndex: 0,
-        exerciseId: 'e1',
+        moveId: 'e1',
       );
 
       expect(stored, 12);
@@ -36,14 +36,14 @@ void main() {
         workoutId: 'w1',
         setId: 's1',
         lapIndex: 0,
-        exerciseId: 'e1',
+        moveId: 'e1',
         reps: 10,
       );
       await service.saveReps(
         workoutId: 'w1',
         setId: 's1',
         lapIndex: 1,
-        exerciseId: 'e1',
+        moveId: 'e1',
         reps: 8,
       );
 
@@ -51,13 +51,13 @@ void main() {
         workoutId: 'w1',
         setId: 's1',
         lapIndex: 0,
-        exerciseId: 'e1',
+        moveId: 'e1',
       );
       final int? lap1 = await service.getLastReps(
         workoutId: 'w1',
         setId: 's1',
         lapIndex: 1,
-        exerciseId: 'e1',
+        moveId: 'e1',
       );
 
       expect(lap0, 10);
@@ -75,13 +75,13 @@ void main() {
         workoutId: 'w1',
         setId: 's1',
         lapIndex: 0,
-        exerciseId: 'e1',
+        moveId: 'e1',
       );
 
       expect(stored, isNull);
     });
 
-    test('saves and retrieves weight by workout/set/lap/exercise/unit key',
+    test('saves and retrieves weight by workout/set/lap/move/unit key',
         () async {
       SharedPreferences.setMockInitialValues(<String, Object>{});
       final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -91,7 +91,7 @@ void main() {
         workoutId: 'w1',
         setId: 's1',
         lapIndex: 0,
-        exerciseId: 'e1',
+        moveId: 'e1',
         weightUnit: 'lb',
         weight: 45.5,
       );
@@ -100,7 +100,7 @@ void main() {
         workoutId: 'w1',
         setId: 's1',
         lapIndex: 0,
-        exerciseId: 'e1',
+        moveId: 'e1',
         weightUnit: 'lb',
       );
 
@@ -116,7 +116,7 @@ void main() {
         workoutId: 'w1',
         setId: 's1',
         lapIndex: 0,
-        exerciseId: 'e1',
+        moveId: 'e1',
         weightUnit: 'lb',
         weight: 100,
       );
@@ -124,7 +124,7 @@ void main() {
         workoutId: 'w1',
         setId: 's1',
         lapIndex: 0,
-        exerciseId: 'e1',
+        moveId: 'e1',
         weightUnit: 'kg',
         weight: 45,
       );
@@ -133,14 +133,14 @@ void main() {
         workoutId: 'w1',
         setId: 's1',
         lapIndex: 0,
-        exerciseId: 'e1',
+        moveId: 'e1',
         weightUnit: 'lb',
       );
       final double? kilos = await service.getLastWeight(
         workoutId: 'w1',
         setId: 's1',
         lapIndex: 0,
-        exerciseId: 'e1',
+        moveId: 'e1',
         weightUnit: 'kg',
       );
 
@@ -148,8 +148,7 @@ void main() {
       expect(kilos, 45);
     });
 
-    test('saves and retrieves duration by workout/set/lap/exercise key',
-        () async {
+    test('saves and retrieves duration by workout/set/lap/move key', () async {
       SharedPreferences.setMockInitialValues(<String, Object>{});
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       final RepHistoryService service = RepHistoryService(prefs);
@@ -158,7 +157,7 @@ void main() {
         workoutId: 'w1',
         setId: 's1',
         lapIndex: 0,
-        exerciseId: 'e1',
+        moveId: 'e1',
         seconds: 75,
       );
 
@@ -166,7 +165,7 @@ void main() {
         workoutId: 'w1',
         setId: 's1',
         lapIndex: 0,
-        exerciseId: 'e1',
+        moveId: 'e1',
       );
 
       expect(stored, 75);

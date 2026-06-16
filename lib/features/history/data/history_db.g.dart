@@ -771,16 +771,16 @@ class $WorkoutMovePerformancesTable extends WorkoutMovePerformances
   late final GeneratedColumn<int> lapIndex = GeneratedColumn<int>(
       'lap_index', aliasedName, false,
       type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _workoutMoveIdMeta =
+      const VerificationMeta('workoutMoveId');
+  @override
+  late final GeneratedColumn<String> workoutMoveId = GeneratedColumn<String>(
+      'workout_move_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
   static const VerificationMeta _moveIdMeta = const VerificationMeta('moveId');
   @override
   late final GeneratedColumn<String> moveId = GeneratedColumn<String>(
       'move_id', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _exerciseIdMeta =
-      const VerificationMeta('exerciseId');
-  @override
-  late final GeneratedColumn<String> exerciseId = GeneratedColumn<String>(
-      'exercise_id', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
   static const VerificationMeta _repCountMeta =
       const VerificationMeta('repCount');
@@ -819,8 +819,8 @@ class $WorkoutMovePerformancesTable extends WorkoutMovePerformances
         workoutId,
         setId,
         lapIndex,
+        workoutMoveId,
         moveId,
-        exerciseId,
         repCount,
         actualWeight,
         actualWeightUnit,
@@ -870,19 +870,19 @@ class $WorkoutMovePerformancesTable extends WorkoutMovePerformances
     } else if (isInserting) {
       context.missing(_lapIndexMeta);
     }
+    if (data.containsKey('workout_move_id')) {
+      context.handle(
+          _workoutMoveIdMeta,
+          workoutMoveId.isAcceptableOrUnknown(
+              data['workout_move_id']!, _workoutMoveIdMeta));
+    } else if (isInserting) {
+      context.missing(_workoutMoveIdMeta);
+    }
     if (data.containsKey('move_id')) {
       context.handle(_moveIdMeta,
           moveId.isAcceptableOrUnknown(data['move_id']!, _moveIdMeta));
     } else if (isInserting) {
       context.missing(_moveIdMeta);
-    }
-    if (data.containsKey('exercise_id')) {
-      context.handle(
-          _exerciseIdMeta,
-          exerciseId.isAcceptableOrUnknown(
-              data['exercise_id']!, _exerciseIdMeta));
-    } else if (isInserting) {
-      context.missing(_exerciseIdMeta);
     }
     if (data.containsKey('rep_count')) {
       context.handle(_repCountMeta,
@@ -938,10 +938,10 @@ class $WorkoutMovePerformancesTable extends WorkoutMovePerformances
           .read(DriftSqlType.string, data['${effectivePrefix}set_id'])!,
       lapIndex: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}lap_index'])!,
+      workoutMoveId: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}workout_move_id'])!,
       moveId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}move_id'])!,
-      exerciseId: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}exercise_id'])!,
       repCount: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}rep_count'])!,
       actualWeight: attachedDatabase.typeMapping
@@ -968,8 +968,8 @@ class WorkoutMovePerformanceEntity extends DataClass
   final String workoutId;
   final String setId;
   final int lapIndex;
+  final String workoutMoveId;
   final String moveId;
-  final String exerciseId;
   final int repCount;
   final double? actualWeight;
   final String? actualWeightUnit;
@@ -981,8 +981,8 @@ class WorkoutMovePerformanceEntity extends DataClass
       required this.workoutId,
       required this.setId,
       required this.lapIndex,
+      required this.workoutMoveId,
       required this.moveId,
-      required this.exerciseId,
       required this.repCount,
       this.actualWeight,
       this.actualWeightUnit,
@@ -996,8 +996,8 @@ class WorkoutMovePerformanceEntity extends DataClass
     map['workout_id'] = Variable<String>(workoutId);
     map['set_id'] = Variable<String>(setId);
     map['lap_index'] = Variable<int>(lapIndex);
+    map['workout_move_id'] = Variable<String>(workoutMoveId);
     map['move_id'] = Variable<String>(moveId);
-    map['exercise_id'] = Variable<String>(exerciseId);
     map['rep_count'] = Variable<int>(repCount);
     if (!nullToAbsent || actualWeight != null) {
       map['actual_weight'] = Variable<double>(actualWeight);
@@ -1017,8 +1017,8 @@ class WorkoutMovePerformanceEntity extends DataClass
       workoutId: Value(workoutId),
       setId: Value(setId),
       lapIndex: Value(lapIndex),
+      workoutMoveId: Value(workoutMoveId),
       moveId: Value(moveId),
-      exerciseId: Value(exerciseId),
       repCount: Value(repCount),
       actualWeight: actualWeight == null && nullToAbsent
           ? const Value.absent()
@@ -1040,8 +1040,8 @@ class WorkoutMovePerformanceEntity extends DataClass
       workoutId: serializer.fromJson<String>(json['workoutId']),
       setId: serializer.fromJson<String>(json['setId']),
       lapIndex: serializer.fromJson<int>(json['lapIndex']),
+      workoutMoveId: serializer.fromJson<String>(json['workoutMoveId']),
       moveId: serializer.fromJson<String>(json['moveId']),
-      exerciseId: serializer.fromJson<String>(json['exerciseId']),
       repCount: serializer.fromJson<int>(json['repCount']),
       actualWeight: serializer.fromJson<double?>(json['actualWeight']),
       actualWeightUnit: serializer.fromJson<String?>(json['actualWeightUnit']),
@@ -1058,8 +1058,8 @@ class WorkoutMovePerformanceEntity extends DataClass
       'workoutId': serializer.toJson<String>(workoutId),
       'setId': serializer.toJson<String>(setId),
       'lapIndex': serializer.toJson<int>(lapIndex),
+      'workoutMoveId': serializer.toJson<String>(workoutMoveId),
       'moveId': serializer.toJson<String>(moveId),
-      'exerciseId': serializer.toJson<String>(exerciseId),
       'repCount': serializer.toJson<int>(repCount),
       'actualWeight': serializer.toJson<double?>(actualWeight),
       'actualWeightUnit': serializer.toJson<String?>(actualWeightUnit),
@@ -1074,8 +1074,8 @@ class WorkoutMovePerformanceEntity extends DataClass
           String? workoutId,
           String? setId,
           int? lapIndex,
+          String? workoutMoveId,
           String? moveId,
-          String? exerciseId,
           int? repCount,
           Value<double?> actualWeight = const Value.absent(),
           Value<String?> actualWeightUnit = const Value.absent(),
@@ -1087,8 +1087,8 @@ class WorkoutMovePerformanceEntity extends DataClass
         workoutId: workoutId ?? this.workoutId,
         setId: setId ?? this.setId,
         lapIndex: lapIndex ?? this.lapIndex,
+        workoutMoveId: workoutMoveId ?? this.workoutMoveId,
         moveId: moveId ?? this.moveId,
-        exerciseId: exerciseId ?? this.exerciseId,
         repCount: repCount ?? this.repCount,
         actualWeight:
             actualWeight.present ? actualWeight.value : this.actualWeight,
@@ -1108,9 +1108,10 @@ class WorkoutMovePerformanceEntity extends DataClass
       workoutId: data.workoutId.present ? data.workoutId.value : this.workoutId,
       setId: data.setId.present ? data.setId.value : this.setId,
       lapIndex: data.lapIndex.present ? data.lapIndex.value : this.lapIndex,
+      workoutMoveId: data.workoutMoveId.present
+          ? data.workoutMoveId.value
+          : this.workoutMoveId,
       moveId: data.moveId.present ? data.moveId.value : this.moveId,
-      exerciseId:
-          data.exerciseId.present ? data.exerciseId.value : this.exerciseId,
       repCount: data.repCount.present ? data.repCount.value : this.repCount,
       actualWeight: data.actualWeight.present
           ? data.actualWeight.value
@@ -1134,8 +1135,8 @@ class WorkoutMovePerformanceEntity extends DataClass
           ..write('workoutId: $workoutId, ')
           ..write('setId: $setId, ')
           ..write('lapIndex: $lapIndex, ')
+          ..write('workoutMoveId: $workoutMoveId, ')
           ..write('moveId: $moveId, ')
-          ..write('exerciseId: $exerciseId, ')
           ..write('repCount: $repCount, ')
           ..write('actualWeight: $actualWeight, ')
           ..write('actualWeightUnit: $actualWeightUnit, ')
@@ -1152,8 +1153,8 @@ class WorkoutMovePerformanceEntity extends DataClass
       workoutId,
       setId,
       lapIndex,
+      workoutMoveId,
       moveId,
-      exerciseId,
       repCount,
       actualWeight,
       actualWeightUnit,
@@ -1168,8 +1169,8 @@ class WorkoutMovePerformanceEntity extends DataClass
           other.workoutId == this.workoutId &&
           other.setId == this.setId &&
           other.lapIndex == this.lapIndex &&
+          other.workoutMoveId == this.workoutMoveId &&
           other.moveId == this.moveId &&
-          other.exerciseId == this.exerciseId &&
           other.repCount == this.repCount &&
           other.actualWeight == this.actualWeight &&
           other.actualWeightUnit == this.actualWeightUnit &&
@@ -1184,8 +1185,8 @@ class WorkoutMovePerformancesCompanion
   final Value<String> workoutId;
   final Value<String> setId;
   final Value<int> lapIndex;
+  final Value<String> workoutMoveId;
   final Value<String> moveId;
-  final Value<String> exerciseId;
   final Value<int> repCount;
   final Value<double?> actualWeight;
   final Value<String?> actualWeightUnit;
@@ -1198,8 +1199,8 @@ class WorkoutMovePerformancesCompanion
     this.workoutId = const Value.absent(),
     this.setId = const Value.absent(),
     this.lapIndex = const Value.absent(),
+    this.workoutMoveId = const Value.absent(),
     this.moveId = const Value.absent(),
-    this.exerciseId = const Value.absent(),
     this.repCount = const Value.absent(),
     this.actualWeight = const Value.absent(),
     this.actualWeightUnit = const Value.absent(),
@@ -1213,8 +1214,8 @@ class WorkoutMovePerformancesCompanion
     required String workoutId,
     required String setId,
     required int lapIndex,
+    required String workoutMoveId,
     required String moveId,
-    required String exerciseId,
     required int repCount,
     this.actualWeight = const Value.absent(),
     this.actualWeightUnit = const Value.absent(),
@@ -1226,8 +1227,8 @@ class WorkoutMovePerformancesCompanion
         workoutId = Value(workoutId),
         setId = Value(setId),
         lapIndex = Value(lapIndex),
+        workoutMoveId = Value(workoutMoveId),
         moveId = Value(moveId),
-        exerciseId = Value(exerciseId),
         repCount = Value(repCount),
         elapsedSeconds = Value(elapsedSeconds),
         completedAt = Value(completedAt);
@@ -1237,8 +1238,8 @@ class WorkoutMovePerformancesCompanion
     Expression<String>? workoutId,
     Expression<String>? setId,
     Expression<int>? lapIndex,
+    Expression<String>? workoutMoveId,
     Expression<String>? moveId,
-    Expression<String>? exerciseId,
     Expression<int>? repCount,
     Expression<double>? actualWeight,
     Expression<String>? actualWeightUnit,
@@ -1252,8 +1253,8 @@ class WorkoutMovePerformancesCompanion
       if (workoutId != null) 'workout_id': workoutId,
       if (setId != null) 'set_id': setId,
       if (lapIndex != null) 'lap_index': lapIndex,
+      if (workoutMoveId != null) 'workout_move_id': workoutMoveId,
       if (moveId != null) 'move_id': moveId,
-      if (exerciseId != null) 'exercise_id': exerciseId,
       if (repCount != null) 'rep_count': repCount,
       if (actualWeight != null) 'actual_weight': actualWeight,
       if (actualWeightUnit != null) 'actual_weight_unit': actualWeightUnit,
@@ -1269,8 +1270,8 @@ class WorkoutMovePerformancesCompanion
       Value<String>? workoutId,
       Value<String>? setId,
       Value<int>? lapIndex,
+      Value<String>? workoutMoveId,
       Value<String>? moveId,
-      Value<String>? exerciseId,
       Value<int>? repCount,
       Value<double?>? actualWeight,
       Value<String?>? actualWeightUnit,
@@ -1283,8 +1284,8 @@ class WorkoutMovePerformancesCompanion
       workoutId: workoutId ?? this.workoutId,
       setId: setId ?? this.setId,
       lapIndex: lapIndex ?? this.lapIndex,
+      workoutMoveId: workoutMoveId ?? this.workoutMoveId,
       moveId: moveId ?? this.moveId,
-      exerciseId: exerciseId ?? this.exerciseId,
       repCount: repCount ?? this.repCount,
       actualWeight: actualWeight ?? this.actualWeight,
       actualWeightUnit: actualWeightUnit ?? this.actualWeightUnit,
@@ -1312,11 +1313,11 @@ class WorkoutMovePerformancesCompanion
     if (lapIndex.present) {
       map['lap_index'] = Variable<int>(lapIndex.value);
     }
+    if (workoutMoveId.present) {
+      map['workout_move_id'] = Variable<String>(workoutMoveId.value);
+    }
     if (moveId.present) {
       map['move_id'] = Variable<String>(moveId.value);
-    }
-    if (exerciseId.present) {
-      map['exercise_id'] = Variable<String>(exerciseId.value);
     }
     if (repCount.present) {
       map['rep_count'] = Variable<int>(repCount.value);
@@ -1347,8 +1348,8 @@ class WorkoutMovePerformancesCompanion
           ..write('workoutId: $workoutId, ')
           ..write('setId: $setId, ')
           ..write('lapIndex: $lapIndex, ')
+          ..write('workoutMoveId: $workoutMoveId, ')
           ..write('moveId: $moveId, ')
-          ..write('exerciseId: $exerciseId, ')
           ..write('repCount: $repCount, ')
           ..write('actualWeight: $actualWeight, ')
           ..write('actualWeightUnit: $actualWeightUnit, ')
@@ -1771,8 +1772,8 @@ typedef $$WorkoutMovePerformancesTableCreateCompanionBuilder
   required String workoutId,
   required String setId,
   required int lapIndex,
+  required String workoutMoveId,
   required String moveId,
-  required String exerciseId,
   required int repCount,
   Value<double?> actualWeight,
   Value<String?> actualWeightUnit,
@@ -1787,8 +1788,8 @@ typedef $$WorkoutMovePerformancesTableUpdateCompanionBuilder
   Value<String> workoutId,
   Value<String> setId,
   Value<int> lapIndex,
+  Value<String> workoutMoveId,
   Value<String> moveId,
-  Value<String> exerciseId,
   Value<int> repCount,
   Value<double?> actualWeight,
   Value<String?> actualWeightUnit,
@@ -1821,11 +1822,11 @@ class $$WorkoutMovePerformancesTableFilterComposer
   ColumnFilters<int> get lapIndex => $composableBuilder(
       column: $table.lapIndex, builder: (column) => ColumnFilters(column));
 
+  ColumnFilters<String> get workoutMoveId => $composableBuilder(
+      column: $table.workoutMoveId, builder: (column) => ColumnFilters(column));
+
   ColumnFilters<String> get moveId => $composableBuilder(
       column: $table.moveId, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get exerciseId => $composableBuilder(
-      column: $table.exerciseId, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<int> get repCount => $composableBuilder(
       column: $table.repCount, builder: (column) => ColumnFilters(column));
@@ -1870,11 +1871,12 @@ class $$WorkoutMovePerformancesTableOrderingComposer
   ColumnOrderings<int> get lapIndex => $composableBuilder(
       column: $table.lapIndex, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get workoutMoveId => $composableBuilder(
+      column: $table.workoutMoveId,
+      builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get moveId => $composableBuilder(
       column: $table.moveId, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get exerciseId => $composableBuilder(
-      column: $table.exerciseId, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<int> get repCount => $composableBuilder(
       column: $table.repCount, builder: (column) => ColumnOrderings(column));
@@ -1919,11 +1921,11 @@ class $$WorkoutMovePerformancesTableAnnotationComposer
   GeneratedColumn<int> get lapIndex =>
       $composableBuilder(column: $table.lapIndex, builder: (column) => column);
 
+  GeneratedColumn<String> get workoutMoveId => $composableBuilder(
+      column: $table.workoutMoveId, builder: (column) => column);
+
   GeneratedColumn<String> get moveId =>
       $composableBuilder(column: $table.moveId, builder: (column) => column);
-
-  GeneratedColumn<String> get exerciseId => $composableBuilder(
-      column: $table.exerciseId, builder: (column) => column);
 
   GeneratedColumn<int> get repCount =>
       $composableBuilder(column: $table.repCount, builder: (column) => column);
@@ -1977,8 +1979,8 @@ class $$WorkoutMovePerformancesTableTableManager extends RootTableManager<
             Value<String> workoutId = const Value.absent(),
             Value<String> setId = const Value.absent(),
             Value<int> lapIndex = const Value.absent(),
+            Value<String> workoutMoveId = const Value.absent(),
             Value<String> moveId = const Value.absent(),
-            Value<String> exerciseId = const Value.absent(),
             Value<int> repCount = const Value.absent(),
             Value<double?> actualWeight = const Value.absent(),
             Value<String?> actualWeightUnit = const Value.absent(),
@@ -1992,8 +1994,8 @@ class $$WorkoutMovePerformancesTableTableManager extends RootTableManager<
             workoutId: workoutId,
             setId: setId,
             lapIndex: lapIndex,
+            workoutMoveId: workoutMoveId,
             moveId: moveId,
-            exerciseId: exerciseId,
             repCount: repCount,
             actualWeight: actualWeight,
             actualWeightUnit: actualWeightUnit,
@@ -2007,8 +2009,8 @@ class $$WorkoutMovePerformancesTableTableManager extends RootTableManager<
             required String workoutId,
             required String setId,
             required int lapIndex,
+            required String workoutMoveId,
             required String moveId,
-            required String exerciseId,
             required int repCount,
             Value<double?> actualWeight = const Value.absent(),
             Value<String?> actualWeightUnit = const Value.absent(),
@@ -2022,8 +2024,8 @@ class $$WorkoutMovePerformancesTableTableManager extends RootTableManager<
             workoutId: workoutId,
             setId: setId,
             lapIndex: lapIndex,
+            workoutMoveId: workoutMoveId,
             moveId: moveId,
-            exerciseId: exerciseId,
             repCount: repCount,
             actualWeight: actualWeight,
             actualWeightUnit: actualWeightUnit,

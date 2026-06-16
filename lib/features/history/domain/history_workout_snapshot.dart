@@ -7,21 +7,21 @@ class HistoryWorkoutSnapshot {
     required this.planId,
     required this.planName,
     required this.workout,
-    required this.exercises,
+    required this.moves,
   });
 
   final String planId;
   final String planName;
   final Workout workout;
-  final List<Exercise> exercises;
+  final List<Move> moves;
 
   WorkoutPlan toWorkoutPlan() {
     return WorkoutPlan(
-      schemaVersion: 3,
+      schemaVersion: 4,
       planId: planId,
       name: planName,
       workouts: <Workout>[workout],
-      exercises: exercises,
+      moves: moves,
     );
   }
 
@@ -30,9 +30,7 @@ class HistoryWorkoutSnapshot {
       'planId': planId,
       'planName': planName,
       'workout': workout.toJson(),
-      'exercises': exercises
-          .map((Exercise exercise) => exercise.toJson())
-          .toList(growable: false),
+      'moves': moves.map((Move move) => move.toJson()).toList(growable: false),
     };
   }
 
@@ -41,9 +39,9 @@ class HistoryWorkoutSnapshot {
       planId: json['planId'] as String,
       planName: json['planName'] as String,
       workout: Workout.fromJson(json['workout'] as Map<String, dynamic>),
-      exercises: (json['exercises'] as List<dynamic>)
+      moves: (json['moves'] as List<dynamic>)
           .cast<Map<String, dynamic>>()
-          .map(Exercise.fromJson)
+          .map(Move.fromJson)
           .toList(growable: false),
     );
   }
@@ -64,7 +62,7 @@ String? encodeHistoryWorkoutSnapshot(WorkoutPlan? plan, String workoutId) {
       planId: plan.planId,
       planName: plan.name,
       workout: workout,
-      exercises: plan.exercises,
+      moves: plan.moves,
     ).toJson(),
   );
 }

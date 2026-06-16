@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "planId": "growingannanas-25-minute-beginner-no-equipment",
   "name": "25-Minute No-Equipment Beginner Routine",
   "description": "A no-repeat beginner routine by growingannanas with two working rounds and a cool-down.",
@@ -12,129 +12,129 @@
     "core",
     "cool-down"
   ],
-  "exercises": [
+  "moves": [
     {
-      "exerciseId": "standing-jacks",
+      "moveId": "standing-jacks",
       "name": "Standing Jacks"
     },
     {
-      "exerciseId": "four-crunches-four-squat-pulses",
+      "moveId": "four-crunches-four-squat-pulses",
       "name": "4 Crunches + 4 Squat Pulses"
     },
     {
-      "exerciseId": "squats",
+      "moveId": "squats",
       "name": "Squats"
     },
     {
-      "exerciseId": "walk-it-out",
+      "moveId": "walk-it-out",
       "name": "Walk It Out"
     },
     {
-      "exerciseId": "reach-up-down",
+      "moveId": "reach-up-down",
       "name": "Reach Up & Down"
     },
     {
-      "exerciseId": "plank-side-steps",
+      "moveId": "plank-side-steps",
       "name": "Plank Side Steps"
     },
     {
-      "exerciseId": "push-up-childs-pose",
+      "moveId": "push-up-childs-pose",
       "name": "Push Up + Child's Pose"
     },
     {
-      "exerciseId": "split-squat",
+      "moveId": "split-squat",
       "name": "Split Squat"
     },
     {
-      "exerciseId": "step-back-burpee",
+      "moveId": "step-back-burpee",
       "name": "Step Back Burpee"
     },
     {
-      "exerciseId": "plank-toe-tap",
+      "moveId": "plank-toe-tap",
       "name": "Plank Toe Tap"
     },
     {
-      "exerciseId": "squat-crunch",
+      "moveId": "squat-crunch",
       "name": "Squat + Crunch"
     },
     {
-      "exerciseId": "slow-climbers",
+      "moveId": "slow-climbers",
       "name": "Slow Climbers"
     },
     {
-      "exerciseId": "squat-three-second-hold",
+      "moveId": "squat-three-second-hold",
       "name": "Squat + 3 Sec Hold"
     },
     {
-      "exerciseId": "shoulder-taps",
+      "moveId": "shoulder-taps",
       "name": "Shoulder Taps"
     },
     {
-      "exerciseId": "superman-push-ups",
+      "moveId": "superman-push-ups",
       "name": "Superman Push Ups"
     },
     {
-      "exerciseId": "low-plank-leg-raises",
+      "moveId": "low-plank-leg-raises",
       "name": "Low Plank Leg Raises"
     },
     {
-      "exerciseId": "crunches",
+      "moveId": "crunches",
       "name": "Crunches"
     },
     {
-      "exerciseId": "lean-back-body-twists",
+      "moveId": "lean-back-body-twists",
       "name": "Lean Back Body Twists"
     },
     {
-      "exerciseId": "reach-knee-hug",
+      "moveId": "reach-knee-hug",
       "name": "Reach + Knee Hug"
     },
     {
-      "exerciseId": "legs-in-up-down",
+      "moveId": "legs-in-up-down",
       "name": "Legs In Up Down"
     },
     {
-      "exerciseId": "ab-hold",
+      "moveId": "ab-hold",
       "name": "Ab Hold"
     },
     {
-      "exerciseId": "one-leg-glute-bridge",
+      "moveId": "one-leg-glute-bridge",
       "name": "1 Leg Glute Bridge"
     },
     {
-      "exerciseId": "one-leg-glute-bridge-pulses",
+      "moveId": "one-leg-glute-bridge-pulses",
       "name": "1 Leg Glute Bridge Pulses"
     },
     {
-      "exerciseId": "step-back-burpee-two-punches",
+      "moveId": "step-back-burpee-two-punches",
       "name": "Step Back Burpee + 2 Punches"
     },
     {
-      "exerciseId": "leg-lift-push-up",
+      "moveId": "leg-lift-push-up",
       "name": "Leg Lift + Push Up"
     },
     {
-      "exerciseId": "plank-front-back-walk",
+      "moveId": "plank-front-back-walk",
       "name": "Plank Front Back Walk"
     },
     {
-      "exerciseId": "low-plank-dips",
+      "moveId": "low-plank-dips",
       "name": "Low Plank Dips"
     },
     {
-      "exerciseId": "low-plank-hold",
+      "moveId": "low-plank-hold",
       "name": "Low Plank Hold"
     },
     {
-      "exerciseId": "childs-pose",
+      "moveId": "childs-pose",
       "name": "Child's Pose"
     },
     {
-      "exerciseId": "deep-lunge",
+      "moveId": "deep-lunge",
       "name": "Deep Lunge"
     },
     {
-      "exerciseId": "inhale-exhale",
+      "moveId": "inhale-exhale",
       "name": "Inhale Exhale"
     }
   ],
@@ -148,114 +148,114 @@
           "name": "Round 1: Strength & Steady Cardio",
           "moves": [
             {
-              "moveId": "round-1-standing-jacks",
-              "exerciseId": "standing-jacks",
+              "workoutMoveId": "round-1-standing-jacks",
+              "moveId": "standing-jacks",
               "type": "duration",
               "durationSeconds": 40,
               "finishTimeSeconds": 10
             },
             {
-              "moveId": "round-1-four-crunches-four-squat-pulses",
-              "exerciseId": "four-crunches-four-squat-pulses",
+              "workoutMoveId": "round-1-four-crunches-four-squat-pulses",
+              "moveId": "four-crunches-four-squat-pulses",
               "type": "duration",
               "durationSeconds": 40,
               "finishTimeSeconds": 10
             },
             {
-              "moveId": "round-1-squats",
-              "exerciseId": "squats",
+              "workoutMoveId": "round-1-squats",
+              "moveId": "squats",
               "type": "duration",
               "durationSeconds": 40,
               "finishTimeSeconds": 10
             },
             {
-              "moveId": "round-1-walk-it-out",
-              "exerciseId": "walk-it-out",
+              "workoutMoveId": "round-1-walk-it-out",
+              "moveId": "walk-it-out",
               "type": "duration",
               "durationSeconds": 40,
               "finishTimeSeconds": 10
             },
             {
-              "moveId": "round-1-reach-up-down",
-              "exerciseId": "reach-up-down",
+              "workoutMoveId": "round-1-reach-up-down",
+              "moveId": "reach-up-down",
               "type": "duration",
               "durationSeconds": 40,
               "finishTimeSeconds": 10
             },
             {
-              "moveId": "round-1-plank-side-steps",
-              "exerciseId": "plank-side-steps",
+              "workoutMoveId": "round-1-plank-side-steps",
+              "moveId": "plank-side-steps",
               "type": "duration",
               "durationSeconds": 40,
               "finishTimeSeconds": 10
             },
             {
-              "moveId": "round-1-push-up-childs-pose",
-              "exerciseId": "push-up-childs-pose",
+              "workoutMoveId": "round-1-push-up-childs-pose",
+              "moveId": "push-up-childs-pose",
               "type": "duration",
               "durationSeconds": 40,
               "finishTimeSeconds": 10
             },
             {
-              "moveId": "round-1-split-squat",
-              "exerciseId": "split-squat",
+              "workoutMoveId": "round-1-split-squat",
+              "moveId": "split-squat",
               "type": "duration",
               "durationSeconds": 40,
               "repeatEachSide": true,
               "finishTimeSeconds": 20
             },
             {
-              "moveId": "round-1-step-back-burpee",
-              "exerciseId": "step-back-burpee",
+              "workoutMoveId": "round-1-step-back-burpee",
+              "moveId": "step-back-burpee",
               "type": "duration",
               "durationSeconds": 40,
               "finishTimeSeconds": 10
             },
             {
-              "moveId": "round-1-plank-toe-tap",
-              "exerciseId": "plank-toe-tap",
+              "workoutMoveId": "round-1-plank-toe-tap",
+              "moveId": "plank-toe-tap",
               "type": "duration",
               "durationSeconds": 40,
               "finishTimeSeconds": 10
             },
             {
-              "moveId": "round-1-squat-crunch",
-              "exerciseId": "squat-crunch",
+              "workoutMoveId": "round-1-squat-crunch",
+              "moveId": "squat-crunch",
               "type": "duration",
               "durationSeconds": 40,
               "finishTimeSeconds": 10
             },
             {
-              "moveId": "round-1-slow-climbers",
-              "exerciseId": "slow-climbers",
+              "workoutMoveId": "round-1-slow-climbers",
+              "moveId": "slow-climbers",
               "type": "duration",
               "durationSeconds": 40,
               "finishTimeSeconds": 10
             },
             {
-              "moveId": "round-1-squat-three-second-hold",
-              "exerciseId": "squat-three-second-hold",
+              "workoutMoveId": "round-1-squat-three-second-hold",
+              "moveId": "squat-three-second-hold",
               "type": "duration",
               "durationSeconds": 40,
               "finishTimeSeconds": 10
             },
             {
-              "moveId": "round-1-shoulder-taps",
-              "exerciseId": "shoulder-taps",
+              "workoutMoveId": "round-1-shoulder-taps",
+              "moveId": "shoulder-taps",
               "type": "duration",
               "durationSeconds": 40,
               "finishTimeSeconds": 10
             },
             {
-              "moveId": "round-1-superman-push-ups",
-              "exerciseId": "superman-push-ups",
+              "workoutMoveId": "round-1-superman-push-ups",
+              "moveId": "superman-push-ups",
               "type": "duration",
               "durationSeconds": 40,
               "finishTimeSeconds": 10
             },
             {
-              "moveId": "round-1-low-plank-leg-raises",
-              "exerciseId": "low-plank-leg-raises",
+              "workoutMoveId": "round-1-low-plank-leg-raises",
+              "moveId": "low-plank-leg-raises",
               "type": "duration",
               "durationSeconds": 40
             }
@@ -266,88 +266,88 @@
           "name": "Round 2: Core Focus & Fast-Paced HIIT",
           "moves": [
             {
-              "moveId": "round-2-crunches",
-              "exerciseId": "crunches",
+              "workoutMoveId": "round-2-crunches",
+              "moveId": "crunches",
               "type": "duration",
               "durationSeconds": 30,
               "finishTimeSeconds": 10
             },
             {
-              "moveId": "round-2-lean-back-body-twists",
-              "exerciseId": "lean-back-body-twists",
+              "workoutMoveId": "round-2-lean-back-body-twists",
+              "moveId": "lean-back-body-twists",
               "type": "duration",
               "durationSeconds": 30,
               "finishTimeSeconds": 10
             },
             {
-              "moveId": "round-2-reach-knee-hug",
-              "exerciseId": "reach-knee-hug",
+              "workoutMoveId": "round-2-reach-knee-hug",
+              "moveId": "reach-knee-hug",
               "type": "duration",
               "durationSeconds": 30,
               "finishTimeSeconds": 10
             },
             {
-              "moveId": "round-2-legs-in-up-down",
-              "exerciseId": "legs-in-up-down",
+              "workoutMoveId": "round-2-legs-in-up-down",
+              "moveId": "legs-in-up-down",
               "type": "duration",
               "durationSeconds": 30,
               "finishTimeSeconds": 10
             },
             {
-              "moveId": "round-2-ab-hold",
-              "exerciseId": "ab-hold",
+              "workoutMoveId": "round-2-ab-hold",
+              "moveId": "ab-hold",
               "type": "duration",
               "durationSeconds": 30,
               "finishTimeSeconds": 10
             },
             {
-              "moveId": "round-2-one-leg-glute-bridge",
-              "exerciseId": "one-leg-glute-bridge",
+              "workoutMoveId": "round-2-one-leg-glute-bridge",
+              "moveId": "one-leg-glute-bridge",
               "type": "duration",
               "durationSeconds": 30,
               "repeatEachSide": true,
               "finishTimeSeconds": 20
             },
             {
-              "moveId": "round-2-one-leg-glute-bridge-pulses",
-              "exerciseId": "one-leg-glute-bridge-pulses",
+              "workoutMoveId": "round-2-one-leg-glute-bridge-pulses",
+              "moveId": "one-leg-glute-bridge-pulses",
               "type": "duration",
               "durationSeconds": 30,
               "repeatEachSide": true,
               "finishTimeSeconds": 20
             },
             {
-              "moveId": "round-2-step-back-burpee-two-punches",
-              "exerciseId": "step-back-burpee-two-punches",
+              "workoutMoveId": "round-2-step-back-burpee-two-punches",
+              "moveId": "step-back-burpee-two-punches",
               "type": "duration",
               "durationSeconds": 30,
               "finishTimeSeconds": 10
             },
             {
-              "moveId": "round-2-leg-lift-push-up",
-              "exerciseId": "leg-lift-push-up",
+              "workoutMoveId": "round-2-leg-lift-push-up",
+              "moveId": "leg-lift-push-up",
               "type": "duration",
               "durationSeconds": 30,
               "repeatEachSide": true,
               "finishTimeSeconds": 20
             },
             {
-              "moveId": "round-2-plank-front-back-walk",
-              "exerciseId": "plank-front-back-walk",
+              "workoutMoveId": "round-2-plank-front-back-walk",
+              "moveId": "plank-front-back-walk",
               "type": "duration",
               "durationSeconds": 30,
               "finishTimeSeconds": 10
             },
             {
-              "moveId": "round-2-low-plank-dips",
-              "exerciseId": "low-plank-dips",
+              "workoutMoveId": "round-2-low-plank-dips",
+              "moveId": "low-plank-dips",
               "type": "duration",
               "durationSeconds": 30,
               "finishTimeSeconds": 10
             },
             {
-              "moveId": "round-2-low-plank-hold",
-              "exerciseId": "low-plank-hold",
+              "workoutMoveId": "round-2-low-plank-hold",
+              "moveId": "low-plank-hold",
               "type": "duration",
               "durationSeconds": 30
             }
@@ -358,23 +358,23 @@
           "name": "Cool Down Stretches",
           "moves": [
             {
-              "moveId": "cool-down-childs-pose",
-              "exerciseId": "childs-pose",
+              "workoutMoveId": "cool-down-childs-pose",
+              "moveId": "childs-pose",
               "type": "duration",
               "durationSeconds": 30,
               "finishTimeSeconds": 10
             },
             {
-              "moveId": "cool-down-deep-lunge",
-              "exerciseId": "deep-lunge",
+              "workoutMoveId": "cool-down-deep-lunge",
+              "moveId": "deep-lunge",
               "type": "duration",
               "durationSeconds": 30,
               "repeatEachSide": true,
               "finishTimeSeconds": 20
             },
             {
-              "moveId": "cool-down-inhale-exhale",
-              "exerciseId": "inhale-exhale",
+              "workoutMoveId": "cool-down-inhale-exhale",
+              "moveId": "inhale-exhale",
               "type": "duration",
               "durationSeconds": 30
             }
