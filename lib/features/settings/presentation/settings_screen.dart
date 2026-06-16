@@ -224,82 +224,52 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  static String _themeLabel(AppThemePreference preference) {
-    switch (preference) {
-      case AppThemePreference.system:
-        return 'System';
-      case AppThemePreference.light:
-        return 'Light';
-      case AppThemePreference.dark:
-        return 'Dark';
-    }
-  }
+  static String _themeLabel(AppThemePreference preference) =>
+      switch (preference) {
+        AppThemePreference.system => 'System',
+        AppThemePreference.light => 'Light',
+        AppThemePreference.dark => 'Dark',
+      };
 
-  static String _unitLabel(AppUnitSystem unitSystem) {
-    switch (unitSystem) {
-      case AppUnitSystem.metric:
-        return 'Metric (kg)';
-      case AppUnitSystem.imperial:
-        return 'Imperial (lb)';
-    }
-  }
+  static String _unitLabel(AppUnitSystem unitSystem) => switch (unitSystem) {
+        AppUnitSystem.metric => 'Metric (kg)',
+        AppUnitSystem.imperial => 'Imperial (lb)',
+      };
 
   static String _streakGoalLabel(int workoutsPerWeek) {
     final String workoutLabel = workoutsPerWeek == 1 ? 'workout' : 'workouts';
     return '$workoutsPerWeek $workoutLabel per week';
   }
 
-  static String _metronomeClickLabel(MetronomeClickSound sound) {
-    switch (sound) {
-      case MetronomeClickSound.classic:
-        return 'Classic';
-      case MetronomeClickSound.sharp:
-        return 'Sharp';
-      case MetronomeClickSound.low:
-        return 'Low';
-      case MetronomeClickSound.bell:
-        return 'Bell';
-    }
-  }
+  static String _metronomeClickLabel(MetronomeClickSound sound) =>
+      switch (sound) {
+        MetronomeClickSound.classic => 'Classic',
+        MetronomeClickSound.sharp => 'Sharp',
+        MetronomeClickSound.low => 'Low',
+        MetronomeClickSound.bell => 'Bell',
+      };
 
-  static String _getReadyDingLabel(GetReadyDingSound sound) {
-    switch (sound) {
-      case GetReadyDingSound.classic:
-        return 'Classic ding';
-      case GetReadyDingSound.bright:
-        return 'Bright chime';
-      case GetReadyDingSound.soft:
-        return 'Soft ding';
-      case GetReadyDingSound.bell:
-        return 'Bell';
-    }
-  }
+  static String _getReadyDingLabel(GetReadyDingSound sound) => switch (sound) {
+        GetReadyDingSound.classic => 'Classic ding',
+        GetReadyDingSound.bright => 'Bright chime',
+        GetReadyDingSound.soft => 'Soft ding',
+        GetReadyDingSound.bell => 'Bell',
+      };
 
-  static String _countdownLabel(CountdownSound sound) {
-    switch (sound) {
-      case CountdownSound.click:
-        return 'Click';
-      case CountdownSound.pulse:
-        return 'Pulse';
-      case CountdownSound.wood:
-        return 'Wood';
-      case CountdownSound.low:
-        return 'Low';
-    }
-  }
+  static String _countdownLabel(CountdownSound sound) => switch (sound) {
+        CountdownSound.click => 'Click',
+        CountdownSound.pulse => 'Pulse',
+        CountdownSound.wood => 'Wood',
+        CountdownSound.low => 'Low',
+      };
 
-  static String _moveFinishedDingLabel(MoveFinishedDingSound sound) {
-    switch (sound) {
-      case MoveFinishedDingSound.classic:
-        return 'Classic finish';
-      case MoveFinishedDingSound.bright:
-        return 'Bright finish';
-      case MoveFinishedDingSound.soft:
-        return 'Soft finish';
-      case MoveFinishedDingSound.bell:
-        return 'Bell';
-    }
-  }
+  static String _moveFinishedDingLabel(MoveFinishedDingSound sound) =>
+      switch (sound) {
+        MoveFinishedDingSound.classic => 'Classic finish',
+        MoveFinishedDingSound.bright => 'Bright finish',
+        MoveFinishedDingSound.soft => 'Soft finish',
+        MoveFinishedDingSound.bell => 'Bell',
+      };
 
   static Future<void> _backUpData(BuildContext context, WidgetRef ref) async {
     try {

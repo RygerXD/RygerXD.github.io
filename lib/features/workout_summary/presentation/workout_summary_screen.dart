@@ -10,6 +10,7 @@ import 'package:workout_app_rewrite/features/active_workout/application/active_w
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_metrics.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
+import 'package:workout_app_rewrite/features/workout_plan/presentation/export_workout_plan.dart';
 
 class WorkoutSummaryScreen extends ConsumerWidget {
   const WorkoutSummaryScreen({
@@ -67,7 +68,7 @@ class WorkoutSummaryScreen extends ConsumerWidget {
               IconButton(
                 tooltip: 'Export workout',
                 icon: const Icon(Icons.upload_file_outlined),
-                onPressed: () => _exportWorkoutPlan(
+                onPressed: () => exportWorkoutPlan(
                   context,
                   ref,
                   _singleWorkoutPlan(plan, workout),
@@ -185,36 +186,6 @@ class WorkoutSummaryScreen extends ConsumerWidget {
       }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error deleting workout: $error')),
-      );
-    }
-  }
-}
-
-Future<void> _exportWorkoutPlan(
-  BuildContext context,
-  WidgetRef ref,
-  WorkoutPlan plan,
-) async {
-  try {
-    final result = await ref.read(workoutPlanExportServiceProvider).exportPlan(
-          plan,
-        );
-    if (!context.mounted) {
-      return;
-    }
-    if (result == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Export canceled.')),
-      );
-      return;
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Exported ${plan.name}')),
-    );
-  } catch (error) {
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error exporting workout: $error')),
       );
     }
   }
