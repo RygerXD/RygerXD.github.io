@@ -10,6 +10,11 @@ class PlanValidationIssue {
 
   final String path;
   final String message;
+
+  @override
+  String toString() {
+    return '$path: $message';
+  }
 }
 
 class WorkoutPlanParseException implements Exception {
@@ -23,7 +28,10 @@ class WorkoutPlanParseException implements Exception {
 
   @override
   String toString() {
-    return 'WorkoutPlanParseException(message: $message, issues: $issues)';
+    if (issues.isEmpty) {
+      return 'WorkoutPlanParseException($message)';
+    }
+    return 'WorkoutPlanParseException($message ${issues.join('; ')})';
   }
 }
 

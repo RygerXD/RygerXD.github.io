@@ -29,6 +29,18 @@ void main() {
       );
     });
 
+    test('formats validation issues in exception text', () {
+      try {
+        parser.parseFromJson(_planJson(schemaVersion: 4));
+        fail('Expected parse exception.');
+      } on WorkoutPlanParseException catch (error) {
+        expect(
+          error.toString(),
+          contains(r'$.schemaVersion: Unsupported schemaVersion: 4'),
+        );
+      }
+    });
+
     test('defaults omitted set timing fields', () {
       final Map<String, dynamic> json = _planJson();
       final Map<String, dynamic> set = (json['workouts'] as List<dynamic>)

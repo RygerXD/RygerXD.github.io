@@ -4,6 +4,9 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_export_service.dart';
+import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_import_service.dart';
+import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_parser.dart';
+import 'package:workout_app_rewrite/features/workout_plan/data/in_memory_workout_repository.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
 
 void main() {
@@ -53,6 +56,33 @@ void main() {
       expect(move.containsKey('finishTimeSeconds'), isFalse);
       expect(move.containsKey('setCount'), isFalse);
       expect(move.containsKey('repeatEachSide'), isFalse);
+    });
+
+    test('exports JSON that can be imported again', () async {
+      const WorkoutPlanExportService exportService = WorkoutPlanExportService();
+      final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
+      final WorkoutPlanImportService importService = WorkoutPlanImportService(
+        parser: const WorkoutPlanParser(),
+        repository: repository,
+      );
+
+      await exportService.exportPlan(_samplePlan);
+      final String exportedJson = utf8.decode(fakeFilePicker.savedBytes!);
+      await importService.importFromJsonString(exportedJson);
+
+      final List<WorkoutPlan> plans = await repository.getAllPlans();
+      expect(plans, hasLength(1));
+      expect(plans.single.schemaVersion, 3);
+      expect(plans.single.planId, 'plan-1');
+      expect(plans.single.workouts, hasLength(1));
+      expect(plans.single.workouts.single.workoutId, 'workout-1');
+      expect(plans.single.workouts.single.sets.single.lapCount, 1);
+      expect(
+        plans.single.workouts.single.sets.single.restBetweenLapsSeconds,
+        0,
+      );
+      expect(
+          plans.single.workouts.single.sets.single.moves.single.repCount, 10);
     });
   });
 }
