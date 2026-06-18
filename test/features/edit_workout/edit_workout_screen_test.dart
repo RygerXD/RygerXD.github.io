@@ -1055,11 +1055,16 @@ void main() {
     await tester.pumpAndSettle();
 
     final WorkoutPlan updatedPlan = (await repository.getPlanById('plan-1'))!;
+    expect(updatedPlan.workouts.single.workoutId, 'workout-1');
     final List<WorkoutMove> savedMoves =
         updatedPlan.workouts.single.sets.single.moves;
     expect(savedMoves.map((WorkoutMove move) => move.moveId), <String>[
       'squat',
       'push-up',
     ]);
+    expect(
+      savedMoves.map((WorkoutMove move) => move.workoutMoveId),
+      <String>['move-2', 'move-1'],
+    );
   });
 }

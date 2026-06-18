@@ -33,6 +33,26 @@ Future<void> playMoveFinishedDing({
 }) =>
     _invokeSound('playMoveFinishedDing', sound, volume, SystemSoundType.alert);
 
+Future<void> playWorkoutComplete({required double volume}) => _invokeSound(
+    'playWorkoutComplete',
+    _TerminalSound.complete,
+    volume,
+    SystemSoundType.alert);
+
+Future<void> playWorkoutEndedEarly({required double volume}) => _invokeSound(
+    'playWorkoutEndedEarly',
+    _TerminalSound.endedEarly,
+    volume,
+    SystemSoundType.alert);
+
+Future<void> playRestFinished({required double volume}) => _invokeSound(
+    'playRestFinished',
+    _TerminalSound.restFinished,
+    volume,
+    SystemSoundType.alert);
+
+enum _TerminalSound { complete, endedEarly, restFinished }
+
 Future<void> _invokeSound(
   String method,
   Enum sound,

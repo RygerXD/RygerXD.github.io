@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
@@ -36,6 +35,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   double _currentWeight = 0;
   bool _isProcessing = false;
   bool _isExiting = false;
+  bool _playedTerminalCue = false;
   String? _lastMoveKey;
   String? _activeMetronomeKey;
   String? _lastGetReadyCountdownKey;
@@ -485,11 +485,15 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   }
 
   Future<void> _playAudioCue() async {
-    final bool audioCuesEnabled = ref.read(audioCuesEnabledProvider);
-    if (!audioCuesEnabled) {
-      return;
-    }
-    await SystemSound.play(SystemSoundType.alert);
+    await _playConfiguredWorkoutAudio((AppSettings settings) {
+      if (!settings.restFinishedEnabled) {
+        return Future<void>.value();
+      }
+      return WorkoutAudio.playRestFinished(
+        customSound: settings.restFinishedCustomSound,
+        volume: settings.audioVolume,
+      );
+    });
   }
 
   Future<void> _playConfiguredWorkoutAudio(
@@ -504,40 +508,60 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
 
   Future<void> _playGetReadyDing() =>
       _playConfiguredWorkoutAudio((AppSettings settings) {
+        if (!settings.getReadyDingEnabled) {
+          return Future<void>.value();
+        }
         return WorkoutAudio.playGetReadyDing(
           sound: settings.getReadyDingSound,
+          customSound: settings.getReadyDingCustomSound,
           volume: settings.audioVolume,
         );
       });
 
   Future<void> _playGetReadyCountdownCue() =>
       _playConfiguredWorkoutAudio((AppSettings settings) {
+        if (!settings.getReadyCountdownEnabled) {
+          return Future<void>.value();
+        }
         return WorkoutAudio.playGetReadyCountdown(
           sound: settings.getReadyCountdownSound,
+          customSound: settings.getReadyCountdownCustomSound,
           volume: settings.audioVolume,
         );
       });
 
   Future<void> _playMoveCountdownCue() =>
       _playConfiguredWorkoutAudio((AppSettings settings) {
+        if (!settings.moveCountdownEnabled) {
+          return Future<void>.value();
+        }
         return WorkoutAudio.playMoveCountdown(
           sound: settings.moveCountdownSound,
+          customSound: settings.moveCountdownCustomSound,
           volume: settings.audioVolume,
         );
       });
 
   Future<void> _playMoveFinishedDing() =>
       _playConfiguredWorkoutAudio((AppSettings settings) {
+        if (!settings.moveFinishedDingEnabled) {
+          return Future<void>.value();
+        }
         return WorkoutAudio.playMoveFinishedDing(
           sound: settings.moveFinishedDingSound,
+          customSound: settings.moveFinishedDingCustomSound,
           volume: settings.audioVolume,
         );
       });
 
   Future<void> _playMetronomeTick() =>
       _playConfiguredWorkoutAudio((AppSettings settings) {
+        if (!settings.metronomeClickEnabled) {
+          return Future<void>.value();
+        }
         return WorkoutAudio.playMetronomeClick(
           sound: settings.metronomeClickSound,
+          customSound: settings.metronomeClickCustomSound,
           volume: settings.audioVolume,
         );
       });
@@ -637,6 +661,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     }
 
     if (next.isTerminal) {
+      _playTerminalCue(next.phase);
       _exitPlayer();
       return;
     }
@@ -730,6 +755,49 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
         set: set,
       );
     }
+  }
+
+  void _playTerminalCue(WorkoutPhase phase) {
+    if (_playedTerminalCue ||
+        (phase != WorkoutPhase.completed &&
+            phase != WorkoutPhase.completedEarly)) {
+      return;
+    }
+    _playedTerminalCue = true;
+
+    final ActiveWorkoutController controller =
+        ref.read(activeWorkoutControllerProvider.notifier);
+    final Workout? workout = controller.workout;
+    final WorkoutPlan? plan = controller.planSnapshot ??
+        ref
+            .read(loadedWorkoutPlansNotifierProvider)
+            .valueOrNull
+            ?.where((WorkoutPlan plan) => plan.planId == controller.planId)
+            .firstOrNull;
+    final CustomWorkoutSound? planOrWorkoutSound =
+        phase == WorkoutPhase.completed
+            ? workout?.workoutCompleteSound ?? plan?.workoutCompleteSound
+            : workout?.workoutEndedEarlySound ?? plan?.workoutEndedEarlySound;
+
+    unawaited(_playConfiguredWorkoutAudio((AppSettings settings) {
+      final bool enabled = phase == WorkoutPhase.completed
+          ? settings.workoutCompleteEnabled
+          : settings.workoutEndedEarlyEnabled;
+      if (!enabled) {
+        return Future<void>.value();
+      }
+      return phase == WorkoutPhase.completed
+          ? WorkoutAudio.playWorkoutComplete(
+              customSound:
+                  planOrWorkoutSound ?? settings.workoutCompleteCustomSound,
+              volume: settings.audioVolume,
+            )
+          : WorkoutAudio.playWorkoutEndedEarly(
+              customSound:
+                  planOrWorkoutSound ?? settings.workoutEndedEarlyCustomSound,
+              volume: settings.audioVolume,
+            );
+    }));
   }
 
   Future<void> _loadLastRepsForMove({
@@ -988,16 +1056,16 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   }
 
   Future<bool> _confirmExit() async {
-    final bool shouldAbandon = await confirmDestructiveAction(
+    final bool shouldEnd = await confirmDestructiveAction(
       context,
-      title: 'Abandon Workout?',
-      message: 'Progress for this workout session will be lost.',
+      title: 'End Workout?',
+      message: 'Your workout data collected so far will be saved.',
       cancelLabel: 'CANCEL',
-      confirmLabel: 'ABANDON',
+      confirmLabel: 'END WORKOUT',
     );
 
-    if (shouldAbandon) {
-      ref.read(activeWorkoutControllerProvider.notifier).abandon();
+    if (shouldEnd) {
+      ref.read(activeWorkoutControllerProvider.notifier).endWorkout();
       return true;
     }
     return false;

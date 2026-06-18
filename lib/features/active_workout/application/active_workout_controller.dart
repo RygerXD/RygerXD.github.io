@@ -22,6 +22,7 @@ class ActiveWorkoutController extends Notifier<WorkoutState> {
 
   Workout? get workout => _machine?.workout;
   String? get planId => _planId;
+  WorkoutPlan? get planSnapshot => _planSnapshot;
   String? get sessionId => _sessionId;
 
   WorkoutSet? get currentSet {
@@ -81,28 +82,7 @@ class ActiveWorkoutController extends Notifier<WorkoutState> {
   void pause() => _run((WorkoutStateMachine m) => m.pause());
   void resume() => _run((WorkoutStateMachine m) => m.resume());
 
-  void abandon() {
-    final WorkoutStateMachine? machine = _machine;
-    final String? planId = _planId;
-    final WorkoutPlan? planSnapshot = _planSnapshot;
-    final String? sessionId = _sessionId;
-    final DateTime? startedAt = _startedAt;
-    _run((WorkoutStateMachine m) => m.abandon());
-    if (machine != null &&
-        planId != null &&
-        sessionId != null &&
-        startedAt != null) {
-      _saveSession(
-          machine: machine,
-          planId: planId,
-          planSnapshot: planSnapshot,
-          sessionId: sessionId,
-          startedAt: startedAt,
-          status: 'abandoned');
-    }
-  }
-
-  void finishEarly() {
+  void endWorkout() {
     final WorkoutStateMachine? machine = _machine;
     final String? planId = _planId;
     final WorkoutPlan? planSnapshot = _planSnapshot;

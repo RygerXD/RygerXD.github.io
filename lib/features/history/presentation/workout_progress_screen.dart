@@ -252,6 +252,7 @@ List<_MoveSeries> _buildMoveSeries({
 }) {
   final Map<String, List<_MovePoint>> pointsByKey =
       <String, List<_MovePoint>>{};
+  final Map<String, _MoveMetadata> metadataByKey = <String, _MoveMetadata>{};
   for (final WorkoutMovePerformanceEntity performance in performances) {
     final WorkoutSessionEntity? session = sessionsById[performance.sessionId];
     if (session == null) {
@@ -273,6 +274,19 @@ List<_MoveSeries> _buildMoveSeries({
             isSelected: performance.sessionId == selectedSessionId,
           ),
         );
+    final _MoveMetadata? metadata = _resolveMoveMetadata(
+      performance: performance,
+      session: session,
+      fallbackPlan: plan,
+    );
+    final _MoveMetadata? existingMetadata = metadataByKey[key];
+    if (metadata != null &&
+        (existingMetadata == null ||
+            metadata.sessionStartedAt.isAfter(
+              existingMetadata.sessionStartedAt,
+            ))) {
+      metadataByKey[key] = metadata;
+    }
   }
 
   for (final List<_MovePoint> points in pointsByKey.values) {
@@ -293,6 +307,7 @@ List<_MoveSeries> _buildMoveSeries({
   }
 
   final List<_MoveSeries> series = <_MoveSeries>[];
+  final Set<String> addedKeys = <String>{};
   final Workout expandedWorkout = expandRepeatedMoveSets(workout);
   for (int setIndex = 0;
       setIndex < expandedWorkout.sets.length;
@@ -322,10 +337,67 @@ List<_MoveSeries> _buildMoveSeries({
             moveType: move.type,
           ),
         );
+        addedKeys.add(key);
       }
     }
   }
+  for (final MapEntry<String, List<_MovePoint>> entry in pointsByKey.entries) {
+    if (addedKeys.contains(entry.key)) {
+      continue;
+    }
+    final _MoveMetadata? metadata = metadataByKey[entry.key];
+    series.add(
+      _MoveSeries(
+        label: metadata?.label ?? entry.key,
+        points: entry.value,
+        moveType: metadata?.moveType,
+      ),
+    );
+  }
   return series;
+}
+
+_MoveMetadata? _resolveMoveMetadata({
+  required WorkoutMovePerformanceEntity performance,
+  required WorkoutSessionEntity session,
+  required WorkoutPlan? fallbackPlan,
+}) {
+  final HistoryWorkoutSnapshot? snapshot =
+      decodeHistoryWorkoutSnapshot(session.workoutSnapshotJson);
+  final WorkoutPlan? sourcePlan = snapshot?.toWorkoutPlan() ?? fallbackPlan;
+  final Workout? sourceWorkout = snapshot?.workout ??
+      sourcePlan?.workouts
+          .where((Workout workout) => workout.workoutId == session.workoutId)
+          .firstOrNull;
+  if (sourceWorkout == null) {
+    return null;
+  }
+
+  final Workout expandedWorkout = expandRepeatedMoveSets(sourceWorkout);
+  for (int setIndex = 0;
+      setIndex < expandedWorkout.sets.length;
+      setIndex += 1) {
+    final WorkoutSet set = expandedWorkout.sets[setIndex];
+    if (set.setId != performance.setId) {
+      continue;
+    }
+    for (final WorkoutMove move in set.moves) {
+      if (move.workoutMoveId != performance.workoutMoveId ||
+          move.moveId != performance.moveId) {
+        continue;
+      }
+      final String setName = set.name?.trim().isNotEmpty == true
+          ? set.name!.trim()
+          : 'Set ${setIndex + 1}';
+      return _MoveMetadata(
+        label:
+            '${_moveName(move, sourcePlan)} - $setName, Lap ${performance.lapIndex + 1}',
+        moveType: move.type,
+        sessionStartedAt: _dateFromMs(session.startedAt),
+      );
+    }
+  }
+  return null;
 }
 
 String _moveKey({
@@ -413,6 +485,18 @@ class _MoveSeries {
     }
     return points[selectedIndex - 1];
   }
+}
+
+class _MoveMetadata {
+  const _MoveMetadata({
+    required this.label,
+    required this.moveType,
+    required this.sessionStartedAt,
+  });
+
+  final String label;
+  final MoveType moveType;
+  final DateTime sessionStartedAt;
 }
 
 class _MovePoint {

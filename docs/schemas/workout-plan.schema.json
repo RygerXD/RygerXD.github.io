@@ -34,6 +34,12 @@
       "type": "string",
       "format": "uri"
     },
+    "workoutCompleteSound": {
+      "$ref": "#/$defs/customSound"
+    },
+    "workoutEndedEarlySound": {
+      "$ref": "#/$defs/customSound"
+    },
     "tags": {
       "type": "array",
       "items": {
@@ -58,6 +64,16 @@
     }
   },
   "$defs": {
+    "customSound": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fileName", "mimeType", "base64Data"],
+      "properties": {
+        "fileName": {"type": "string", "minLength": 1},
+        "mimeType": {"type": "string", "enum": ["audio/mpeg", "audio/wav"]},
+        "base64Data": {"type": "string", "contentEncoding": "base64"}
+      }
+    },
     "move": {
       "type": "object",
       "additionalProperties": false,
@@ -103,6 +119,12 @@
         "imageUrl": {
           "type": "string",
           "format": "uri"
+        },
+        "workoutCompleteSound": {
+          "$ref": "#/$defs/customSound"
+        },
+        "workoutEndedEarlySound": {
+          "$ref": "#/$defs/customSound"
         },
         "sets": {
           "type": "array",

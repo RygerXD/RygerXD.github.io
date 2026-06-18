@@ -1,3 +1,4 @@
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -5,11 +6,93 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/active_workout_controller.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/rep_history_service.dart';
 import 'package:workout_app_rewrite/features/active_workout/presentation/active_workout_screen.dart';
+import 'package:workout_app_rewrite/features/history/application/history_providers.dart';
+import 'package:workout_app_rewrite/features/history/data/history_db.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
 import 'package:workout_app_rewrite/features/workout_plan/data/in_memory_workout_repository.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
 
 void main() {
+  test('ending a workout saves the session as completed', () async {
+    final HistoryDatabase database = HistoryDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    final ProviderContainer container = ProviderContainer(
+      overrides: <Override>[
+        historyDatabaseProvider.overrideWithValue(database),
+      ],
+    );
+    addTearDown(container.dispose);
+    final WorkoutPlan plan = _planWithMove(
+      const WorkoutMove(
+        workoutMoveId: 'move-1',
+        moveId: 'move-1',
+        type: MoveType.reps,
+        repCount: 15,
+      ),
+    );
+
+    final ActiveWorkoutController controller =
+        container.read(activeWorkoutControllerProvider.notifier);
+    controller.startWithWorkout(
+      plan.workouts.single,
+      plan.planId,
+      planSnapshot: plan,
+    );
+    controller.startPrepNow();
+    controller.endWorkout();
+
+    await Future<void>.delayed(Duration.zero);
+    final List<WorkoutSessionEntity> sessions = await database.getAllSessions();
+    expect(sessions, hasLength(1));
+    expect(sessions.single.status, 'completed');
+    expect(sessions.single.workoutName, plan.workouts.single.title);
+  });
+
+  testWidgets('exit confirmation explains that workout data will be saved',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    final SharedPreferences preferences = await SharedPreferences.getInstance();
+    final WorkoutPlan plan = _planWithMove(
+      const WorkoutMove(
+        workoutMoveId: 'move-1',
+        moveId: 'move-1',
+        type: MoveType.reps,
+        repCount: 15,
+      ),
+    );
+    final ProviderContainer container = ProviderContainer(
+      overrides: <Override>[
+        sharedPreferencesProvider.overrideWithValue(preferences),
+      ],
+    );
+    addTearDown(container.dispose);
+    container
+        .read(activeWorkoutControllerProvider.notifier)
+        .startWithWorkout(plan.workouts.single, plan.planId);
+    container.read(activeWorkoutControllerProvider.notifier).startPrepNow();
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(home: ActiveWorkoutScreen()),
+      ),
+    );
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.close));
+    await tester.pumpAndSettle();
+
+    expect(find.text('End Workout?'), findsOneWidget);
+    expect(
+      find.text('Your workout data collected so far will be saved.'),
+      findsOneWidget,
+    );
+    expect(find.text('END WORKOUT'), findsOneWidget);
+    expect(find.text('ABANDON'), findsNothing);
+
+    await tester.tap(find.text('CANCEL'));
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('rep and weight controls fit in a tight active workout viewport',
       (WidgetTester tester) async {
     tester.view.devicePixelRatio = 1;

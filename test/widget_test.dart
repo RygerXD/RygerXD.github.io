@@ -61,7 +61,21 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('Theme'), findsOneWidget);
+    expect(find.text('Sounds'), findsOneWidget);
+
+    await tester.tap(find.text('Sounds'));
+    await tester.pumpAndSettle();
+
     expect(find.text('Audio cues'), findsOneWidget);
+    expect(find.text('Metronome click'), findsOneWidget);
+    await tester.tap(
+      find.widgetWithText(SwitchListTile, 'Metronome click'),
+    );
+    await tester.pump();
+    expect(
+      sharedPreferences.getBool('settings.metronome_click_enabled.v1'),
+      isFalse,
+    );
 
     await tester.scrollUntilVisible(
       find.text('Get ready ding'),
@@ -76,6 +90,15 @@ void main() {
       scrollable: find.byType(Scrollable),
     );
     expect(find.text('Move finished ding'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('Workout ended early'),
+      500,
+      scrollable: find.byType(Scrollable),
+    );
+    expect(find.text('Workout complete'), findsOneWidget);
+    expect(find.text('Rest finished'), findsOneWidget);
+    expect(find.text('Workout ended early'), findsOneWidget);
   });
 
   testWidgets('moves tab returns to moves after archiving a workout',

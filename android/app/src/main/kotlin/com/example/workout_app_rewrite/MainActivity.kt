@@ -79,6 +79,24 @@ class MainActivity : FlutterActivity() {
                     result.success(null)
                 }
 
+                "playWorkoutComplete" -> {
+                    val volume = call.argument<Double>("volume") ?: 0.8
+                    playPcm(buildTerminalPcm(completed = true), volume)
+                    result.success(null)
+                }
+
+                "playWorkoutEndedEarly" -> {
+                    val volume = call.argument<Double>("volume") ?: 0.8
+                    playPcm(buildTerminalPcm(completed = false), volume)
+                    result.success(null)
+                }
+
+                "playRestFinished" -> {
+                    val volume = call.argument<Double>("volume") ?: 0.8
+                    playPcm(buildRestFinishedPcm(), volume)
+                    result.success(null)
+                }
+
                 else -> result.notImplemented()
             }
         }
@@ -197,6 +215,55 @@ class MainActivity : FlutterActivity() {
         )
         activeTracks.add(audioTrack)
         audioTrack.play()
+    }
+
+    private fun buildTerminalPcm(completed: Boolean): ByteArray {
+        val durationMs = if (completed) 420 else 300
+        val frameCount = sampleRate * durationMs / 1000
+        val pcm = ByteArray(frameCount * 2)
+
+        for (frame in 0 until frameCount) {
+            val t = frame.toDouble() / sampleRate
+            val normalized = frame.toDouble() / frameCount
+            val envelope = exp(-normalized * if (completed) 3.8 else 5.0)
+            val sample = if (completed) {
+                envelope * (
+                    sin(2.0 * PI * 784.0 * t) +
+                        0.55 * sin(2.0 * PI * 1175.0 * t) +
+                        0.35 * sin(2.0 * PI * 1568.0 * t)
+                    )
+            } else {
+                envelope * (
+                    sin(2.0 * PI * 587.0 * t) +
+                        0.5 * sin(2.0 * PI * 440.0 * t)
+                    )
+            }
+            val intSample = (sample.coerceIn(-1.0, 1.0) * Short.MAX_VALUE * 0.65).toInt()
+            val byteIndex = frame * 2
+            pcm[byteIndex] = (intSample and 0xff).toByte()
+            pcm[byteIndex + 1] = ((intSample shr 8) and 0xff).toByte()
+        }
+        return pcm
+    }
+
+    private fun buildRestFinishedPcm(): ByteArray {
+        val durationMs = 220
+        val frameCount = sampleRate * durationMs / 1000
+        val pcm = ByteArray(frameCount * 2)
+        for (frame in 0 until frameCount) {
+            val t = frame.toDouble() / sampleRate
+            val normalized = frame.toDouble() / frameCount
+            val envelope = exp(-normalized * 5.0)
+            val sample = envelope * (
+                sin(2.0 * PI * 880.0 * t) +
+                    0.5 * sin(2.0 * PI * 1320.0 * t)
+                )
+            val intSample = (sample.coerceIn(-1.0, 1.0) * Short.MAX_VALUE * 0.65).toInt()
+            val byteIndex = frame * 2
+            pcm[byteIndex] = (intSample and 0xff).toByte()
+            pcm[byteIndex + 1] = ((intSample shr 8) and 0xff).toByte()
+        }
+        return pcm
     }
 
     override fun onDestroy() {

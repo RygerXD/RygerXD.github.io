@@ -50,6 +50,21 @@ Future<void> playMoveFinishedDing({
       volume: volume,
     );
 
+Future<void> playWorkoutComplete({required double volume}) => _playProfile(
+      profile: _SoundProfile.workoutComplete,
+      volume: volume,
+    );
+
+Future<void> playRestFinished({required double volume}) => _playProfile(
+      profile: _SoundProfile.restFinished,
+      volume: volume,
+    );
+
+Future<void> playWorkoutEndedEarly({required double volume}) => _playProfile(
+      profile: _SoundProfile.workoutEndedEarly,
+      volume: volume,
+    );
+
 Future<void> _playProfile({
   required _SoundProfile profile,
   required double volume,
@@ -83,6 +98,22 @@ class _SoundProfile {
 
   final double duration;
   final List<_Tone> tones;
+
+  static const _SoundProfile workoutComplete = _SoundProfile(0.42, <_Tone>[
+    _Tone(784, 'sine'),
+    _Tone(1175, 'sine'),
+    _Tone(1568, 'sine'),
+  ]);
+
+  static const _SoundProfile workoutEndedEarly = _SoundProfile(0.3, <_Tone>[
+    _Tone(587, 'triangle'),
+    _Tone(440, 'sine'),
+  ]);
+
+  static const _SoundProfile restFinished = _SoundProfile(0.22, <_Tone>[
+    _Tone(880, 'sine'),
+    _Tone(1320, 'sine'),
+  ]);
 
   static _SoundProfile forMetronomeClick(MetronomeClickSound sound) =>
       switch (sound) {

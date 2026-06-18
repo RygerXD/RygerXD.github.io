@@ -9,6 +9,7 @@ import 'package:workout_app_rewrite/features/history/presentation/analysis_scree
 import 'package:workout_app_rewrite/features/history/presentation/workout_progress_screen.dart';
 import 'package:workout_app_rewrite/features/moves/presentation/moves_screen.dart';
 import 'package:workout_app_rewrite/features/settings/presentation/settings_screen.dart';
+import 'package:workout_app_rewrite/features/settings/presentation/sounds_screen.dart';
 import 'package:workout_app_rewrite/features/workout_detail/presentation/workout_detail_screen.dart';
 import 'package:workout_app_rewrite/features/workout_summary/presentation/workout_summary_screen.dart';
 
@@ -119,6 +120,14 @@ final Provider<GoRouter> appRouterProvider =
                 builder: (BuildContext context, GoRouterState state) {
                   return const SettingsScreen();
                 },
+                routes: <RouteBase>[
+                  GoRoute(
+                    path: 'sounds',
+                    builder: (BuildContext context, GoRouterState state) {
+                      return const SoundsScreen();
+                    },
+                  ),
+                ],
               ),
             ],
           ),

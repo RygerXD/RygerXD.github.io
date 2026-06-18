@@ -1,9 +1,12 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workout_app_rewrite/features/settings/application/app_settings_controller.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
+import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -31,6 +34,16 @@ void main() {
       expect(settings.getReadyDingSound, GetReadyDingSound.classic);
       expect(settings.moveCountdownSound, CountdownSound.pulse);
       expect(settings.moveFinishedDingSound, MoveFinishedDingSound.classic);
+      expect(settings.metronomeClickCustomSound, isNull);
+      expect(settings.workoutCompleteCustomSound, isNull);
+      expect(settings.metronomeClickEnabled, isTrue);
+      expect(settings.getReadyCountdownEnabled, isTrue);
+      expect(settings.getReadyDingEnabled, isTrue);
+      expect(settings.moveCountdownEnabled, isTrue);
+      expect(settings.moveFinishedDingEnabled, isTrue);
+      expect(settings.restFinishedEnabled, isTrue);
+      expect(settings.workoutCompleteEnabled, isTrue);
+      expect(settings.workoutEndedEarlyEnabled, isTrue);
       expect(container.read(appThemeModeProvider), ThemeMode.system);
     });
 
@@ -56,6 +69,16 @@ void main() {
       await controller.setGetReadyDingSound(GetReadyDingSound.bright);
       await controller.setMoveCountdownSound(CountdownSound.low);
       await controller.setMoveFinishedDingSound(MoveFinishedDingSound.bell);
+      final CustomWorkoutSound customSound = CustomWorkoutSound.fromBytes(
+        fileName: 'custom.mp3',
+        mimeType: 'audio/mpeg',
+        bytes: Uint8List.fromList(<int>[1, 2, 3]),
+      );
+      await controller.setMetronomeClickCustomSound(customSound);
+      await controller.setWorkoutCompleteCustomSound(customSound);
+      await controller.setMetronomeClickEnabled(false);
+      await controller.setRestFinishedEnabled(false);
+      await controller.setWorkoutEndedEarlyEnabled(false);
 
       final ProviderContainer reloadedContainer = ProviderContainer(
         overrides: <Override>[
@@ -77,6 +100,13 @@ void main() {
       expect(reloadedSettings.moveCountdownSound, CountdownSound.low);
       expect(
           reloadedSettings.moveFinishedDingSound, MoveFinishedDingSound.bell);
+      expect(
+          reloadedSettings.metronomeClickCustomSound?.fileName, 'custom.mp3');
+      expect(
+          reloadedSettings.workoutCompleteCustomSound?.bytes, <int>[1, 2, 3]);
+      expect(reloadedSettings.metronomeClickEnabled, isFalse);
+      expect(reloadedSettings.restFinishedEnabled, isFalse);
+      expect(reloadedSettings.workoutEndedEarlyEnabled, isFalse);
       expect(reloadedContainer.read(appThemeModeProvider), ThemeMode.dark);
     });
 

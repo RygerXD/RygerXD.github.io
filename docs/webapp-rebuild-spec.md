@@ -195,7 +195,8 @@ Web routes should preserve these paths where possible:
 | `/library/detail/$planId/edit-workout?workoutId=$workoutId` | Edit Workout | Edits existing workout. |
 | `/analysis` | Analysis | Summary cards, heatmap, grouped sessions. |
 | `/analysis/session/$sessionId` | Workout Progress | Move-level progress charts for comparable sessions. |
-| `/settings` | Settings | Theme, units, streak, audio cues. |
+| `/settings` | Settings | Theme, units, streak, backup/restore, and link to Sounds. |
+| `/settings/sounds` | Sounds | Master volume, per-cue toggles, built-ins, custom files, and previews. |
 | `/active` | Active Workout | Full-screen workout player. |
 
 Web navigation shell:
@@ -425,16 +426,17 @@ Defaults:
 - Unit system: `metric`
 - Streak goal: `3` workouts per week
 - Audio cues enabled: `true`
+- Shared audio volume: `0.8`
 - Metronome click sound: `classic`
-- Metronome volume: `0.8`
 - Get ready countdown sound: `click`
-- Get ready countdown volume: `0.8`
 - Get ready ding sound: `classic`
-- Get ready ding volume: `0.8`
 - Move countdown sound: `pulse`
-- Move countdown volume: `0.8`
 - Move finished ding sound: `classic`
-- Move finished volume: `0.8`
+- Rest finished sound: built-in
+- Workout complete sound: built-in
+- Workout ended early sound: built-in
+- Every cue enabled: `true`
+- Every cue custom override: none
 
 Enums:
 
@@ -993,7 +995,10 @@ Browser constraints:
 Audio settings:
 
 - Respect global audio-cues-enabled switch.
-- Respect per-sound volume.
+- Respect the shared audio volume.
+- Respect the enabled switch for each individual cue.
+- Prefer a cue's custom MP3/WAV override when configured, otherwise use its selected built-in sound.
+- Workout-level terminal sounds override plan sounds, which override global Sounds settings.
 - Volume 0 means do not play.
 
 Events:
@@ -1196,11 +1201,19 @@ Controls:
   - Display `{n} workout(s) per week`.
   - Decrement and increment icon buttons.
   - Clamp `1...14`.
-- Audio cues:
-  - Switch enabled/disabled.
-- Sound settings:
-  - Each setting has current label, test button, dropdown, and volume slider.
-  - Test button plays using current selected sound and current volume.
+- Sounds:
+  - Opens `/settings/sounds`.
+  - Settings retains only the navigation row; detailed audio controls live on the Sounds page.
+
+### 9.14.1 Sounds
+
+Route: `/settings/sounds`
+
+- Master Audio cues switch and one shared volume slider.
+- Separate enabled switch for metronome click, get-ready countdown, get-ready ding, move countdown, move-finished ding, rest finished, workout complete, and workout ended early.
+- Existing built-in dropdowns remain available where multiple built-ins exist.
+- Every cue accepts an MP3/WAV custom override, supports preview and removal, and retains its built-in choice as fallback.
+- Custom clips are limited to 512 KB and must be included in settings backup/restore.
 
 Labels:
 

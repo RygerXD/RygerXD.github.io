@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
 import 'package:workout_app_rewrite/core/widgets/confirm_destructive_action.dart';
-import 'package:workout_app_rewrite/features/active_workout/application/metronome_audio.dart';
 import 'package:workout_app_rewrite/features/settings/application/app_settings_controller.dart';
 import 'package:workout_app_rewrite/features/settings/application/data_backup_service.dart';
 
@@ -114,16 +114,14 @@ class SettingsScreen extends ConsumerWidget {
           ),
         ),
         Divider(),
-        SwitchListTile(
-          title: Text('Audio cues'),
-          subtitle: Text(settings.audioCuesEnabled ? 'Enabled' : 'Disabled'),
-          value: settings.audioCuesEnabled,
-          onChanged: controller.setAudioCuesEnabled,
-        ),
-        _VolumeSetting(
-          title: 'Sound volume',
-          value: settings.audioVolume,
-          onChanged: controller.setAudioVolume,
+        ListTile(
+          leading: const Icon(Icons.volume_up_outlined),
+          title: const Text('Sounds'),
+          subtitle: Text(
+            settings.audioCuesEnabled ? 'Audio cues enabled' : 'Muted',
+          ),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => context.push('/settings/sounds'),
         ),
         Divider(),
         ListTile(
@@ -146,81 +144,6 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ],
         ),
-        const SizedBox(height: AppSpacing.md),
-        _SoundSetting<MetronomeClickSound>(
-          title: 'Metronome click',
-          dropdownLabel: 'Click sound',
-          value: settings.metronomeClickSound,
-          values: MetronomeClickSound.values,
-          labelFor: _metronomeClickLabel,
-          onChanged: controller.setMetronomeClickSound,
-          onTest: () => unawaited(
-            WorkoutAudio.playMetronomeClick(
-              sound: settings.metronomeClickSound,
-              volume: settings.audioVolume,
-            ),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        _SoundSetting<CountdownSound>(
-          title: 'Get ready countdown',
-          dropdownLabel: 'Countdown sound',
-          value: settings.getReadyCountdownSound,
-          values: CountdownSound.values,
-          labelFor: _countdownLabel,
-          onChanged: controller.setGetReadyCountdownSound,
-          onTest: () => unawaited(
-            WorkoutAudio.playGetReadyCountdown(
-              sound: settings.getReadyCountdownSound,
-              volume: settings.audioVolume,
-            ),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        _SoundSetting<GetReadyDingSound>(
-          title: 'Get ready ding',
-          dropdownLabel: 'Ding sound',
-          value: settings.getReadyDingSound,
-          values: GetReadyDingSound.values,
-          labelFor: _getReadyDingLabel,
-          onChanged: controller.setGetReadyDingSound,
-          onTest: () => unawaited(
-            WorkoutAudio.playGetReadyDing(
-              sound: settings.getReadyDingSound,
-              volume: settings.audioVolume,
-            ),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        _SoundSetting<CountdownSound>(
-          title: 'Move countdown',
-          dropdownLabel: 'Move countdown sound',
-          value: settings.moveCountdownSound,
-          values: CountdownSound.values,
-          labelFor: _countdownLabel,
-          onChanged: controller.setMoveCountdownSound,
-          onTest: () => unawaited(
-            WorkoutAudio.playMoveCountdown(
-              sound: settings.moveCountdownSound,
-              volume: settings.audioVolume,
-            ),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        _SoundSetting<MoveFinishedDingSound>(
-          title: 'Move finished ding',
-          dropdownLabel: 'Finished ding sound',
-          value: settings.moveFinishedDingSound,
-          values: MoveFinishedDingSound.values,
-          labelFor: _moveFinishedDingLabel,
-          onChanged: controller.setMoveFinishedDingSound,
-          onTest: () => unawaited(
-            WorkoutAudio.playMoveFinishedDing(
-              sound: settings.moveFinishedDingSound,
-              volume: settings.audioVolume,
-            ),
-          ),
-        ),
       ],
     );
   }
@@ -241,36 +164,6 @@ class SettingsScreen extends ConsumerWidget {
     final String workoutLabel = workoutsPerWeek == 1 ? 'workout' : 'workouts';
     return '$workoutsPerWeek $workoutLabel per week';
   }
-
-  static String _metronomeClickLabel(MetronomeClickSound sound) =>
-      switch (sound) {
-        MetronomeClickSound.classic => 'Classic',
-        MetronomeClickSound.sharp => 'Sharp',
-        MetronomeClickSound.low => 'Low',
-        MetronomeClickSound.bell => 'Bell',
-      };
-
-  static String _getReadyDingLabel(GetReadyDingSound sound) => switch (sound) {
-        GetReadyDingSound.classic => 'Classic ding',
-        GetReadyDingSound.bright => 'Bright chime',
-        GetReadyDingSound.soft => 'Soft ding',
-        GetReadyDingSound.bell => 'Bell',
-      };
-
-  static String _countdownLabel(CountdownSound sound) => switch (sound) {
-        CountdownSound.click => 'Click',
-        CountdownSound.pulse => 'Pulse',
-        CountdownSound.wood => 'Wood',
-        CountdownSound.low => 'Low',
-      };
-
-  static String _moveFinishedDingLabel(MoveFinishedDingSound sound) =>
-      switch (sound) {
-        MoveFinishedDingSound.classic => 'Classic finish',
-        MoveFinishedDingSound.bright => 'Bright finish',
-        MoveFinishedDingSound.soft => 'Soft finish',
-        MoveFinishedDingSound.bell => 'Bell',
-      };
 
   static Future<void> _backUpData(BuildContext context, WidgetRef ref) async {
     try {
@@ -348,102 +241,6 @@ class SettingsScreen extends ConsumerWidget {
       message:
           'This will replace current plans, workout history, and settings.',
       confirmLabel: 'Restore',
-    );
-  }
-}
-
-class _SoundSetting<T> extends StatelessWidget {
-  const _SoundSetting({
-    required this.title,
-    required this.dropdownLabel,
-    required this.value,
-    required this.values,
-    required this.labelFor,
-    required this.onChanged,
-    required this.onTest,
-  });
-
-  final String title;
-  final String dropdownLabel;
-  final T value;
-  final List<T> values;
-  final String Function(T value) labelFor;
-  final ValueChanged<T> onChanged;
-  final VoidCallback onTest;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        ListTile(
-          title: Text(title),
-          subtitle: Text(labelFor(value)),
-          trailing: FilledButton.icon(
-            onPressed: onTest,
-            icon: const Icon(Icons.volume_up),
-            label: const Text('Test'),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        DropdownButtonFormField<T>(
-          initialValue: value,
-          decoration: InputDecoration(
-            labelText: dropdownLabel,
-            border: const OutlineInputBorder(),
-          ),
-          items: values
-              .map(
-                (T value) => DropdownMenuItem<T>(
-                  value: value,
-                  child: Text(labelFor(value)),
-                ),
-              )
-              .toList(growable: false),
-          onChanged: (T? value) {
-            if (value != null) {
-              onChanged(value);
-            }
-          },
-        ),
-        const SizedBox(height: AppSpacing.md),
-      ],
-    );
-  }
-}
-
-class _VolumeSetting extends StatelessWidget {
-  const _VolumeSetting({
-    required this.title,
-    required this.value,
-    required this.onChanged,
-  });
-
-  final String title;
-  final double value;
-  final ValueChanged<double> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final int percent = (value * 100).round();
-
-    return ListTile(
-      title: Text(title),
-      subtitle: Slider(
-        value: value,
-        min: 0,
-        max: 1,
-        divisions: 20,
-        label: '$percent%',
-        onChanged: onChanged,
-      ),
-      trailing: SizedBox(
-        width: 48,
-        child: Text(
-          '$percent%',
-          textAlign: TextAlign.end,
-        ),
-      ),
     );
   }
 }

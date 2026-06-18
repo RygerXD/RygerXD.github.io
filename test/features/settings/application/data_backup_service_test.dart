@@ -124,6 +124,14 @@ void main() {
           AppThemePreference.dark);
       expect(container.read(appSettingsProvider).unitSystem,
           AppUnitSystem.imperial);
+      expect(
+        container.read(appSettingsProvider).moveCountdownCustomSound?.fileName,
+        'move-countdown.mp3',
+      );
+      expect(
+        container.read(appSettingsProvider).moveCountdownEnabled,
+        isFalse,
+      );
 
       final List<WorkoutSessionEntity> sessions =
           await database.getAllSessions();
@@ -235,6 +243,12 @@ Map<String, dynamic> _backupJson() {
       getReadyDingSound: GetReadyDingSound.bright,
       moveCountdownSound: CountdownSound.low,
       moveFinishedDingSound: MoveFinishedDingSound.bell,
+      moveCountdownCustomSound: CustomWorkoutSound(
+        fileName: 'move-countdown.mp3',
+        mimeType: 'audio/mpeg',
+        base64Data: 'AQID',
+      ),
+      moveCountdownEnabled: false,
     ).toJson(),
     'workoutPlans': <Map<String, dynamic>>[_samplePlan.toJson()],
     'history': <String, dynamic>{
