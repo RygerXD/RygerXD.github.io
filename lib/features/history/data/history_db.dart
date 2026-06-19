@@ -52,32 +52,48 @@ class HistoryDatabase extends _$HistoryDatabase {
         await m.createAll();
       },
       onUpgrade: (Migrator m, int from, int to) async {
-        if (from < 3) {
-          await m.createTable(workoutMovePerformances);
-        }
-        if (from == 3) {
-          await m.addColumn(
-              workoutMovePerformances, workoutMovePerformances.actualWeight);
-          await m.addColumn(workoutMovePerformances,
-              workoutMovePerformances.actualWeightUnit);
-        }
-        if (from < 5) {
+        final Set<String> sessionColumns = (await customSelect(
+          'PRAGMA table_info(workout_sessions)',
+        ).get())
+            .map((QueryRow row) => row.read<String>('name'))
+            .toSet();
+        if (!sessionColumns.contains('plan_name')) {
           await m.addColumn(workoutSessions, workoutSessions.planName);
+        }
+        if (!sessionColumns.contains('workout_name')) {
           await m.addColumn(workoutSessions, workoutSessions.workoutName);
+        }
+        if (!sessionColumns.contains('workout_snapshot_json')) {
           await m.addColumn(
               workoutSessions, workoutSessions.workoutSnapshotJson);
         }
-        if (from < 6) {
-          await m.deleteTable('workout_move_performances');
+
+        final Set<String> performanceColumns = (await customSelect(
+          'PRAGMA table_info(workout_move_performances)',
+        ).get())
+            .map((QueryRow row) => row.read<String>('name'))
+            .toSet();
+        const Set<String> currentPerformanceColumns = <String>{
+          'performance_id',
+          'session_id',
+          'workout_id',
+          'set_id',
+          'lap_index',
+          'workout_move_id',
+          'move_id',
+          'rep_count',
+          'actual_weight',
+          'actual_weight_unit',
+          'elapsed_seconds',
+          'completed_at',
+        };
+        if (!performanceColumns.containsAll(currentPerformanceColumns)) {
+          await customStatement(
+              'DROP TABLE IF EXISTS workout_move_performances');
           await m.createTable(workoutMovePerformances);
         }
-        if (from < 7) {
-          await m.deleteTable('workout_move_performances');
-          await m.createTable(workoutMovePerformances);
-        }
-        if (from >= 2 && from < 8) {
-          await m.deleteTable('workout_plans_table');
-        }
+
+        await customStatement('DROP TABLE IF EXISTS workout_plans_table');
       },
     );
   }

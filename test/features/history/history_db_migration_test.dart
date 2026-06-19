@@ -115,4 +115,73 @@ void main() {
     expect(sessions.single.sessionId, 'session-1');
     expect(obsoleteTable.data['table_count'], 0);
   });
+
+  test('recovers schema 1 database created by the broken web release',
+      () async {
+    final HistoryDatabase db = HistoryDatabase(
+      NativeDatabase.memory(
+        setup: (database) {
+          database
+            ..execute('''
+              CREATE TABLE workout_sessions (
+                session_id TEXT NOT NULL PRIMARY KEY,
+                plan_id TEXT NOT NULL,
+                workout_id TEXT NOT NULL,
+                plan_name TEXT,
+                workout_name TEXT,
+                workout_snapshot_json TEXT,
+                started_at INTEGER NOT NULL,
+                ended_at INTEGER,
+                duration_seconds INTEGER NOT NULL,
+                status TEXT NOT NULL
+              )
+            ''')
+            ..execute('''
+              CREATE TABLE workout_move_performances (
+                performance_id TEXT NOT NULL PRIMARY KEY,
+                session_id TEXT NOT NULL,
+                workout_id TEXT NOT NULL,
+                set_id TEXT NOT NULL,
+                lap_index INTEGER NOT NULL,
+                workout_move_id TEXT NOT NULL,
+                move_id TEXT NOT NULL,
+                rep_count INTEGER NOT NULL,
+                actual_weight REAL,
+                actual_weight_unit TEXT,
+                elapsed_seconds INTEGER NOT NULL,
+                completed_at INTEGER NOT NULL
+              )
+            ''')
+            ..execute('''
+              INSERT INTO workout_sessions (
+                session_id, plan_id, workout_id, started_at, ended_at,
+                duration_seconds, status
+              ) VALUES (
+                'session-1', 'plan-1', 'workout-1', 1000, 1060, 60,
+                'completed'
+              )
+            ''')
+            ..execute('''
+              INSERT INTO workout_move_performances (
+                performance_id, session_id, workout_id, set_id, lap_index,
+                workout_move_id, move_id, rep_count, elapsed_seconds,
+                completed_at
+              ) VALUES (
+                'performance-1', 'session-1', 'workout-1', 'set-1', 0,
+                'workout-move-1', 'move-1', 10, 30, 1030
+              )
+            ''')
+            ..execute('PRAGMA user_version = 1');
+        },
+      ),
+    );
+    addTearDown(db.close);
+
+    final List<WorkoutSessionEntity> sessions = await db.getAllSessions();
+    final List<WorkoutMovePerformanceEntity> performances =
+        await db.getAllMovePerformances();
+
+    expect(sessions.single.sessionId, 'session-1');
+    expect(performances.single.performanceId, 'performance-1');
+  });
 }
