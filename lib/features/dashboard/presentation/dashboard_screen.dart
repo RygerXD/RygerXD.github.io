@@ -10,6 +10,7 @@ import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
 import 'package:workout_app_rewrite/features/history/application/history_providers.dart';
 import 'package:workout_app_rewrite/features/history/data/history_db.dart';
 import 'package:workout_app_rewrite/features/history/domain/workout_streak.dart';
+import 'package:workout_app_rewrite/features/history/domain/workout_time_estimate.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_metrics.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
@@ -38,6 +39,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ref.watch(allSessionsProvider);
     final List<WorkoutSessionEntity> sessions =
         sessionsAsync.value ?? <WorkoutSessionEntity>[];
+    final List<WorkoutMovePerformanceEntity> performances =
+        ref.watch(allMovePerformancesProvider).value ??
+            <WorkoutMovePerformanceEntity>[];
     final AsyncValue<List<WorkoutPlan>> plansState =
         ref.watch(loadedWorkoutPlansNotifierProvider);
 
@@ -121,6 +125,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       children: workouts.map((_WorkoutListItem item) {
                         return _WorkoutCard(
                           item: item,
+                          performances: performances,
                           onTap: () => context.go(
                             '/library/detail/${item.plan.planId}/workout/${item.workout.workoutId}',
                           ),
@@ -330,10 +335,12 @@ class _WorkoutListItem {
 class _WorkoutCard extends StatelessWidget {
   const _WorkoutCard({
     required this.item,
+    required this.performances,
     required this.onTap,
   });
 
   final _WorkoutListItem item;
+  final List<WorkoutMovePerformanceEntity> performances;
   final VoidCallback onTap;
 
   @override
@@ -382,7 +389,10 @@ class _WorkoutCard extends StatelessWidget {
                         Flexible(
                           child: Text(
                             formatWorkoutEstimate(
-                              estimateWorkoutSeconds(workout),
+                              estimateWorkoutSecondsFromHistory(
+                                workout,
+                                performances,
+                              ),
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,

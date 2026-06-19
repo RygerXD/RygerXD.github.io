@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
-import 'package:workout_app_rewrite/core/audio/custom_sound_field.dart';
 import 'package:workout_app_rewrite/core/media/image_or_gif_url_field.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
 import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
@@ -32,8 +31,6 @@ class _CreatePlanScreenState extends ConsumerState<CreatePlanScreen> {
   final TextEditingController _tagController = TextEditingController();
 
   final List<String> _tags = <String>[];
-  CustomWorkoutSound? _workoutCompleteSound;
-  CustomWorkoutSound? _workoutEndedEarlySound;
   WorkoutPlan? _existingPlan;
   bool _isInitializing = false;
   bool _isLoading = false;
@@ -80,8 +77,6 @@ class _CreatePlanScreenState extends ConsumerState<CreatePlanScreen> {
         _tags
           ..clear()
           ..addAll(plan.tags);
-        _workoutCompleteSound = plan.workoutCompleteSound;
-        _workoutEndedEarlySound = plan.workoutEndedEarlySound;
       }
       _isInitializing = false;
     });
@@ -124,8 +119,6 @@ class _CreatePlanScreenState extends ConsumerState<CreatePlanScreen> {
             description: description,
             author: author,
             tags: tags,
-            workoutCompleteSound: _workoutCompleteSound,
-            workoutEndedEarlySound: _workoutEndedEarlySound,
           ) ??
           WorkoutPlan(
             schemaVersion: workoutPlanSchemaVersion,
@@ -135,8 +128,6 @@ class _CreatePlanScreenState extends ConsumerState<CreatePlanScreen> {
             description: description,
             author: author,
             tags: tags,
-            workoutCompleteSound: _workoutCompleteSound,
-            workoutEndedEarlySound: _workoutEndedEarlySound,
             workouts: <Workout>[],
             moves: <Move>[],
           );
@@ -161,62 +152,12 @@ class _CreatePlanScreenState extends ConsumerState<CreatePlanScreen> {
     }
   }
 
-  void _showSoundSettings(double volume) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (BuildContext context) => StatefulBuilder(
-        builder: (BuildContext context, StateSetter setModalState) {
-          return SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  Text('Plan workout sounds',
-                      style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: AppSpacing.sm),
-                  const Text(
-                      'Workouts inherit these sounds unless overridden.'),
-                  const SizedBox(height: AppSpacing.md),
-                  CustomSoundField(
-                    title: 'Workout complete',
-                    value: _workoutCompleteSound,
-                    volume: volume,
-                    onChanged: (CustomWorkoutSound? sound) {
-                      setModalState(() => _workoutCompleteSound = sound);
-                    },
-                  ),
-                  CustomSoundField(
-                    title: 'Workout ended early',
-                    value: _workoutEndedEarlySound,
-                    volume: volume,
-                    onChanged: (CustomWorkoutSound? sound) {
-                      setModalState(() => _workoutEndedEarlySound = sound);
-                    },
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    const double audioVolume = 0.8;
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEditing ? 'Edit Workout Plan' : 'Create Workout Plan'),
         actions: <Widget>[
-          IconButton(
-            tooltip: 'Workout sounds',
-            onPressed: () => _showSoundSettings(audioVolume),
-            icon: const Icon(Icons.music_note_outlined),
-          ),
           TextButton.icon(
             onPressed: _isLoading || _isInitializing ? null : _savePlan,
             icon: _isLoading

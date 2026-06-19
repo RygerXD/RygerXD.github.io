@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
-import 'package:workout_app_rewrite/core/audio/custom_sound_field.dart';
 import 'package:workout_app_rewrite/core/media/image_or_gif_url_field.dart';
 import 'package:workout_app_rewrite/core/media/media_thumbnail.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
@@ -31,8 +30,6 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
   final TextEditingController _imageUrlController = TextEditingController();
   final List<WorkoutSet> _sets = <WorkoutSet>[];
   final Map<String, Move> _movesById = <String, Move>{};
-  CustomWorkoutSound? _workoutCompleteSound;
-  CustomWorkoutSound? _workoutEndedEarlySound;
 
   bool _isInit = true;
 
@@ -70,8 +67,6 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
       if (workout != null) {
         _titleController.text = workout.title;
         _imageUrlController.text = workout.imageUrl ?? '';
-        _workoutCompleteSound = workout.workoutCompleteSound;
-        _workoutEndedEarlySound = workout.workoutEndedEarlySound;
         _sets.addAll(workout.sets);
       } else {
         _addSet();
@@ -217,8 +212,6 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
           ? 'Draft Workout'
           : _titleController.text.trim(),
       imageUrl: optionalText(_imageUrlController.text),
-      workoutCompleteSound: _workoutCompleteSound,
-      workoutEndedEarlySound: _workoutEndedEarlySound,
       sets: List<WorkoutSet>.from(_sets),
     );
     final List<Workout> workouts = List<Workout>.from(plan.workouts);
@@ -348,8 +341,6 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
         .copyWith(
       title: title,
       imageUrl: optionalText(_imageUrlController.text),
-      workoutCompleteSound: _workoutCompleteSound,
-      workoutEndedEarlySound: _workoutEndedEarlySound,
       sets: _sets,
     );
 
@@ -381,65 +372,13 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
     return movesById.values.toList(growable: false);
   }
 
-  void _showSoundSettings(WorkoutPlan? plan, double volume) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (BuildContext context) => StatefulBuilder(
-        builder: (BuildContext context, StateSetter setModalState) {
-          return SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  Text('Workout sounds',
-                      style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: AppSpacing.sm),
-                  const Text('Choose overrides or keep the plan defaults.'),
-                  const SizedBox(height: AppSpacing.md),
-                  CustomSoundField(
-                    title: 'Workout complete',
-                    value: _workoutCompleteSound,
-                    inheritedValue: plan?.workoutCompleteSound,
-                    volume: volume,
-                    onChanged: (CustomWorkoutSound? sound) {
-                      setModalState(() => _workoutCompleteSound = sound);
-                    },
-                  ),
-                  CustomSoundField(
-                    title: 'Workout ended early',
-                    value: _workoutEndedEarlySound,
-                    inheritedValue: plan?.workoutEndedEarlySound,
-                    volume: volume,
-                    onChanged: (CustomWorkoutSound? sound) {
-                      setModalState(() => _workoutEndedEarlySound = sound);
-                    },
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final WorkoutPlan? plan = _currentPlan;
-    const double audioVolume = 0.8;
     return Scaffold(
       appBar: AppBar(
         title:
             Text(widget.workoutId == null ? 'Create Workout' : 'Edit Workout'),
         actions: <Widget>[
-          IconButton(
-            tooltip: 'Workout sounds',
-            onPressed: () => _showSoundSettings(plan, audioVolume),
-            icon: const Icon(Icons.music_note_outlined),
-          ),
           TextButton(
             onPressed: _saveWorkout,
             child: const Text('SAVE'),

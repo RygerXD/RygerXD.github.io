@@ -8,7 +8,7 @@ script = ""
 [[actions]]
 name = "Run Chrome"
 icon = "run"
-command = "$env:DART_ANALYTICS_HOME='C:\\tmp\\dart-analytics'; New-Item -ItemType Directory -Force -Path $env:DART_ANALYTICS_HOME | Out-Null; & 'C:\\src\\flutter\\bin\\flutter.bat' run -d chrome"
+command = "powershell -NoProfile -ExecutionPolicy Bypass -File .codex\\scripts\\run-chrome.ps1"
 
 [[actions]]
 name = "Run Android (Keep Data)"

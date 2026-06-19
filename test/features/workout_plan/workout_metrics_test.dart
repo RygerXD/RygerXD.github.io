@@ -118,5 +118,18 @@ void main() {
       expect(countWorkoutMoves(workout), 6);
       expect(formatMoveTarget(move), '3 sets x 10 reps');
     });
+
+    test('uses previous active time for rep-based move estimates', () {
+      const WorkoutMove move = WorkoutMove(
+        workoutMoveId: 'm-1',
+        moveId: 'ex-1',
+        type: MoveType.reps,
+        repCount: 10,
+        prepTimeSeconds: 5,
+        finishTimeSeconds: 15,
+      );
+
+      expect(estimateMoveSeconds(move, previousActiveSeconds: 42), 62);
+    });
   });
 }

@@ -327,16 +327,12 @@ class Workout {
     required this.title,
     required this.sets,
     this.imageUrl,
-    this.workoutCompleteSound,
-    this.workoutEndedEarlySound,
     this.archivedAt,
   });
 
   final String workoutId;
   final String title;
   final String? imageUrl;
-  final CustomWorkoutSound? workoutCompleteSound;
-  final CustomWorkoutSound? workoutEndedEarlySound;
   final List<WorkoutSet> sets;
   final int? archivedAt;
 
@@ -346,8 +342,6 @@ class Workout {
     String? workoutId,
     String? title,
     Object? imageUrl = _copyWithUnset,
-    Object? workoutCompleteSound = _copyWithUnset,
-    Object? workoutEndedEarlySound = _copyWithUnset,
     List<WorkoutSet>? sets,
     Object? archivedAt = _copyWithUnset,
   }) {
@@ -357,12 +351,6 @@ class Workout {
       imageUrl: identical(imageUrl, _copyWithUnset)
           ? this.imageUrl
           : imageUrl as String?,
-      workoutCompleteSound: identical(workoutCompleteSound, _copyWithUnset)
-          ? this.workoutCompleteSound
-          : workoutCompleteSound as CustomWorkoutSound?,
-      workoutEndedEarlySound: identical(workoutEndedEarlySound, _copyWithUnset)
-          ? this.workoutEndedEarlySound
-          : workoutEndedEarlySound as CustomWorkoutSound?,
       sets: sets ?? this.sets,
       archivedAt: identical(archivedAt, _copyWithUnset)
           ? this.archivedAt
@@ -375,16 +363,6 @@ class Workout {
       workoutId: json['workoutId'] as String,
       title: json['title'] as String,
       imageUrl: json['imageUrl'] as String?,
-      workoutCompleteSound: json['workoutCompleteSound'] == null
-          ? null
-          : CustomWorkoutSound.fromJson(
-              json['workoutCompleteSound'] as Map<String, dynamic>,
-            ),
-      workoutEndedEarlySound: json['workoutEndedEarlySound'] == null
-          ? null
-          : CustomWorkoutSound.fromJson(
-              json['workoutEndedEarlySound'] as Map<String, dynamic>,
-            ),
       archivedAt: (json['archivedAt'] as num?)?.toInt(),
       sets: (json['sets'] as List<dynamic>)
           .cast<Map<String, dynamic>>()
@@ -399,16 +377,6 @@ class Workout {
       'title': title,
     };
     _putIfNotNull(json, 'imageUrl', imageUrl);
-    _putIfNotNull(
-      json,
-      'workoutCompleteSound',
-      workoutCompleteSound?.toJson(),
-    );
-    _putIfNotNull(
-      json,
-      'workoutEndedEarlySound',
-      workoutEndedEarlySound?.toJson(),
-    );
     _putIfNotNull(json, 'archivedAt', archivedAt);
     json['sets'] =
         sets.map((WorkoutSet set) => set.toJson()).toList(growable: false);
@@ -426,8 +394,6 @@ class WorkoutPlan {
     this.description,
     this.author,
     this.imageUrl,
-    this.workoutCompleteSound,
-    this.workoutEndedEarlySound,
     this.tags = const <String>[],
   });
 
@@ -437,8 +403,6 @@ class WorkoutPlan {
   final String? description;
   final String? author;
   final String? imageUrl;
-  final CustomWorkoutSound? workoutCompleteSound;
-  final CustomWorkoutSound? workoutEndedEarlySound;
   final List<String> tags;
   final List<Workout> workouts;
   final List<Move> moves;
@@ -450,8 +414,6 @@ class WorkoutPlan {
     Object? description = _copyWithUnset,
     Object? author = _copyWithUnset,
     Object? imageUrl = _copyWithUnset,
-    Object? workoutCompleteSound = _copyWithUnset,
-    Object? workoutEndedEarlySound = _copyWithUnset,
     List<String>? tags,
     List<Workout>? workouts,
     List<Move>? moves,
@@ -468,12 +430,6 @@ class WorkoutPlan {
       imageUrl: identical(imageUrl, _copyWithUnset)
           ? this.imageUrl
           : imageUrl as String?,
-      workoutCompleteSound: identical(workoutCompleteSound, _copyWithUnset)
-          ? this.workoutCompleteSound
-          : workoutCompleteSound as CustomWorkoutSound?,
-      workoutEndedEarlySound: identical(workoutEndedEarlySound, _copyWithUnset)
-          ? this.workoutEndedEarlySound
-          : workoutEndedEarlySound as CustomWorkoutSound?,
       tags: tags ?? this.tags,
       workouts: workouts ?? this.workouts,
       moves: moves ?? this.moves,
@@ -488,16 +444,6 @@ class WorkoutPlan {
       description: json['description'] as String?,
       author: json['author'] as String?,
       imageUrl: json['imageUrl'] as String?,
-      workoutCompleteSound: json['workoutCompleteSound'] == null
-          ? null
-          : CustomWorkoutSound.fromJson(
-              json['workoutCompleteSound'] as Map<String, dynamic>,
-            ),
-      workoutEndedEarlySound: json['workoutEndedEarlySound'] == null
-          ? null
-          : CustomWorkoutSound.fromJson(
-              json['workoutEndedEarlySound'] as Map<String, dynamic>,
-            ),
       tags: ((json['tags'] as List<dynamic>?) ?? <dynamic>[])
           .cast<String>()
           .toList(growable: false),
@@ -521,16 +467,6 @@ class WorkoutPlan {
     _putIfNotNull(json, 'description', description);
     _putIfNotNull(json, 'author', author);
     _putIfNotNull(json, 'imageUrl', imageUrl);
-    _putIfNotNull(
-      json,
-      'workoutCompleteSound',
-      workoutCompleteSound?.toJson(),
-    );
-    _putIfNotNull(
-      json,
-      'workoutEndedEarlySound',
-      workoutEndedEarlySound?.toJson(),
-    );
     if (tags.isNotEmpty) {
       json['tags'] = tags;
     }

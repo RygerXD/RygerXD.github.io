@@ -6,6 +6,9 @@ import 'package:workout_app_rewrite/core/media/move_media_image.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
 import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
 import 'package:workout_app_rewrite/core/widgets/confirm_destructive_action.dart';
+import 'package:workout_app_rewrite/features/history/application/history_providers.dart';
+import 'package:workout_app_rewrite/features/history/data/history_db.dart';
+import 'package:workout_app_rewrite/features/history/domain/workout_time_estimate.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_metrics.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
@@ -23,6 +26,9 @@ class WorkoutDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final AsyncValue<List<WorkoutPlan>> plansState =
         ref.watch(loadedWorkoutPlansNotifierProvider);
+    final List<WorkoutMovePerformanceEntity> performances =
+        ref.watch(allMovePerformancesProvider).value ??
+            <WorkoutMovePerformanceEntity>[];
 
     return plansState.when(
       loading: () =>
@@ -128,6 +134,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
               ...activeWorkouts.map((Workout workout) {
                 return _PlanWorkoutCard(
                   workout: workout,
+                  performances: performances,
                   onTap: () => context.go(
                     '/library/detail/$planId/workout/${workout.workoutId}',
                   ),
@@ -144,10 +151,12 @@ class WorkoutDetailScreen extends ConsumerWidget {
 class _PlanWorkoutCard extends StatelessWidget {
   const _PlanWorkoutCard({
     required this.workout,
+    required this.performances,
     required this.onTap,
   });
 
   final Workout workout;
+  final List<WorkoutMovePerformanceEntity> performances;
   final VoidCallback onTap;
 
   @override
@@ -197,7 +206,10 @@ class _PlanWorkoutCard extends StatelessWidget {
                         Flexible(
                           child: Text(
                             formatWorkoutEstimate(
-                              estimateWorkoutSeconds(workout),
+                              estimateWorkoutSecondsFromHistory(
+                                workout,
+                                performances,
+                              ),
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,

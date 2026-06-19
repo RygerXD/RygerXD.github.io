@@ -8,15 +8,14 @@ Workout expandRepeatedMoveSets(Workout workout) {
   return workout.copyWith(
     sets: workout.sets
         .map((WorkoutSet set) => set.copyWith(
-              moves: set.moves
-                  .expand((WorkoutMove move) => _expandedMoveSets(move))
-                  .toList(growable: false),
+              moves:
+                  set.moves.expand(expandWorkoutMove).toList(growable: false),
             ))
         .toList(growable: false),
   );
 }
 
-Iterable<WorkoutMove> _expandedMoveSets(WorkoutMove move) sync* {
+Iterable<WorkoutMove> expandWorkoutMove(WorkoutMove move) sync* {
   final int setCount = effectiveMoveSetCount(move);
   yield* _expandedMoveSides(move.copyWith(setCount: 1));
   for (int setNumber = 2; setNumber <= setCount; setNumber += 1) {

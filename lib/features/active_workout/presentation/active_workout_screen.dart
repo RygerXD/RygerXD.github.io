@@ -743,20 +743,6 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     }
     _playedTerminalCue = true;
 
-    final ActiveWorkoutController controller =
-        ref.read(activeWorkoutControllerProvider.notifier);
-    final Workout? workout = controller.workout;
-    final WorkoutPlan? plan = controller.planSnapshot ??
-        ref
-            .read(loadedWorkoutPlansNotifierProvider)
-            .valueOrNull
-            ?.where((WorkoutPlan plan) => plan.planId == controller.planId)
-            .firstOrNull;
-    final CustomWorkoutSound? planOrWorkoutSound =
-        phase == WorkoutPhase.completed
-            ? workout?.workoutCompleteSound ?? plan?.workoutCompleteSound
-            : workout?.workoutEndedEarlySound ?? plan?.workoutEndedEarlySound;
-
     unawaited(_playConfiguredWorkoutAudio((AppSettings settings) {
       final bool enabled = phase == WorkoutPhase.completed
           ? settings.workoutCompleteEnabled
@@ -768,10 +754,9 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
         sound: settings.soundFor(phase == WorkoutPhase.completed
             ? WorkoutSoundCue.workoutComplete
             : WorkoutSoundCue.workoutEndedEarly),
-        customSound: planOrWorkoutSound ??
-            (phase == WorkoutPhase.completed
-                ? settings.workoutCompleteCustomSound
-                : settings.workoutEndedEarlyCustomSound),
+        customSound: phase == WorkoutPhase.completed
+            ? settings.workoutCompleteCustomSound
+            : settings.workoutEndedEarlyCustomSound,
         volume: settings.audioVolume,
       );
     }));

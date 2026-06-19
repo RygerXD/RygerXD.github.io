@@ -7,6 +7,9 @@ import 'package:workout_app_rewrite/core/theme/tokens.dart';
 import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
 import 'package:workout_app_rewrite/core/widgets/confirm_destructive_action.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/active_workout_controller.dart';
+import 'package:workout_app_rewrite/features/history/application/history_providers.dart';
+import 'package:workout_app_rewrite/features/history/data/history_db.dart';
+import 'package:workout_app_rewrite/features/history/domain/workout_time_estimate.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_metrics.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
@@ -26,6 +29,9 @@ class WorkoutSummaryScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final AsyncValue<List<WorkoutPlan>> plansState =
         ref.watch(loadedWorkoutPlansNotifierProvider);
+    final List<WorkoutMovePerformanceEntity> performances =
+        ref.watch(allMovePerformancesProvider).value ??
+            <WorkoutMovePerformanceEntity>[];
 
     return plansState.when(
       loading: () =>
@@ -50,7 +56,8 @@ class WorkoutSummaryScreen extends ConsumerWidget {
         final Map<String, Move> movesById = <String, Move>{
           for (final Move move in plan.moves) move.moveId: move,
         };
-        final int estimatedSeconds = estimateWorkoutSeconds(workout);
+        final int estimatedSeconds =
+            estimateWorkoutSecondsFromHistory(workout, performances);
 
         return Scaffold(
           appBar: AppBar(
