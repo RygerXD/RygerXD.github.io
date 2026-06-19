@@ -1,14 +1,14 @@
 import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
-import 'package:workout_app_rewrite/features/active_workout/application/metronome_audio_platform.dart'
-    if (dart.library.html) 'package:workout_app_rewrite/features/active_workout/application/metronome_audio_web.dart'
-    as platform;
+import 'package:flutter/services.dart';
 import 'package:workout_app_rewrite/features/settings/application/app_settings_controller.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
 
 class WorkoutAudio {
-  static final Set<AudioPlayer> _customSoundPlayers = <AudioPlayer>{};
+  static final Set<AudioPlayer> _players = <AudioPlayer>{};
+  static final Map<SharedWorkoutSound, Future<Uint8List>> _builtInSoundBytes =
+      <SharedWorkoutSound, Future<Uint8List>>{};
 
   static Future<void> playSharedSound({
     required SharedWorkoutSound sound,
@@ -20,26 +20,7 @@ class WorkoutAudio {
         (double volume) => _playCustomOrFallback(
           customSound,
           volume,
-          () => switch (sound) {
-            SharedWorkoutSound.classic => platform.playMoveFinishedDing(
-                sound: MoveFinishedDingSound.classic, volume: volume),
-            SharedWorkoutSound.sharp => platform.playMetronomeClick(
-                sound: MetronomeClickSound.sharp, volume: volume),
-            SharedWorkoutSound.low => platform.playMoveCountdown(
-                sound: CountdownSound.low, volume: volume),
-            SharedWorkoutSound.bell => platform.playMoveFinishedDing(
-                sound: MoveFinishedDingSound.bell, volume: volume),
-            SharedWorkoutSound.bright => platform.playMoveFinishedDing(
-                sound: MoveFinishedDingSound.bright, volume: volume),
-            SharedWorkoutSound.soft => platform.playMoveFinishedDing(
-                sound: MoveFinishedDingSound.soft, volume: volume),
-            SharedWorkoutSound.click => platform.playMoveCountdown(
-                sound: CountdownSound.click, volume: volume),
-            SharedWorkoutSound.pulse => platform.playMoveCountdown(
-                sound: CountdownSound.pulse, volume: volume),
-            SharedWorkoutSound.wood => platform.playMoveCountdown(
-                sound: CountdownSound.wood, volume: volume),
-          },
+          () => _playBuiltIn(sound, volume),
         ),
       );
 
@@ -53,7 +34,8 @@ class WorkoutAudio {
         (double volume) => _playCustomOrFallback(
           customSound,
           volume,
-          () => platform.playMetronomeClick(sound: sound, volume: volume),
+          () => _playBuiltIn(
+              SharedWorkoutSound.values.byName(sound.name), volume),
         ),
       );
 
@@ -67,7 +49,8 @@ class WorkoutAudio {
         (double volume) => _playCustomOrFallback(
           customSound,
           volume,
-          () => platform.playGetReadyDing(sound: sound, volume: volume),
+          () => _playBuiltIn(
+              SharedWorkoutSound.values.byName(sound.name), volume),
         ),
       );
 
@@ -81,7 +64,8 @@ class WorkoutAudio {
         (double volume) => _playCustomOrFallback(
           customSound,
           volume,
-          () => platform.playGetReadyCountdown(sound: sound, volume: volume),
+          () => _playBuiltIn(
+              SharedWorkoutSound.values.byName(sound.name), volume),
         ),
       );
 
@@ -95,7 +79,8 @@ class WorkoutAudio {
         (double volume) => _playCustomOrFallback(
           customSound,
           volume,
-          () => platform.playMoveCountdown(sound: sound, volume: volume),
+          () => _playBuiltIn(
+              SharedWorkoutSound.values.byName(sound.name), volume),
         ),
       );
 
@@ -109,7 +94,8 @@ class WorkoutAudio {
         (double volume) => _playCustomOrFallback(
           customSound,
           volume,
-          () => platform.playMoveFinishedDing(sound: sound, volume: volume),
+          () => _playBuiltIn(
+              SharedWorkoutSound.values.byName(sound.name), volume),
         ),
       );
 
@@ -122,10 +108,7 @@ class WorkoutAudio {
         (double volume) => _playCustomOrFallback(
           customSound,
           volume,
-          () => platform.playMoveFinishedDing(
-            sound: MoveFinishedDingSound.soft,
-            volume: volume,
-          ),
+          () => _playBuiltIn(SharedWorkoutSound.soft, volume),
         ),
       );
 
@@ -138,7 +121,7 @@ class WorkoutAudio {
         (double volume) => _playCustomOrFallback(
           customSound,
           volume,
-          () => platform.playWorkoutComplete(volume: volume),
+          () => _playBuiltIn(SharedWorkoutSound.bright, volume),
         ),
       );
 
@@ -151,7 +134,7 @@ class WorkoutAudio {
         (double volume) => _playCustomOrFallback(
           customSound,
           volume,
-          () => platform.playRestFinished(volume: volume),
+          () => _playBuiltIn(SharedWorkoutSound.bell, volume),
         ),
       );
 
@@ -164,7 +147,7 @@ class WorkoutAudio {
         (double volume) => _playCustomOrFallback(
           customSound,
           volume,
-          () => platform.playWorkoutEndedEarly(volume: volume),
+          () => _playBuiltIn(SharedWorkoutSound.low, volume),
         ),
       );
 
@@ -193,13 +176,35 @@ class WorkoutAudio {
   static Future<void> _playCustom(
     CustomWorkoutSound sound,
     double volume,
+  ) =>
+      _playBytes(sound.bytes, sound.mimeType, volume);
+
+  static Future<void> _playBuiltIn(
+    SharedWorkoutSound sound,
+    double volume,
+  ) async {
+    final Uint8List bytes = await _builtInSoundBytes.putIfAbsent(
+      sound,
+      () async {
+        final ByteData data =
+            await rootBundle.load('assets/audio/${sound.name}.wav');
+        return data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+      },
+    );
+    await _playBytes(bytes, 'audio/wav', volume);
+  }
+
+  static Future<void> _playBytes(
+    Uint8List bytes,
+    String mimeType,
+    double volume,
   ) async {
     final AudioPlayer player = AudioPlayer();
-    _customSoundPlayers.add(player);
+    _players.add(player);
     unawaited(player.onPlayerComplete.first.then((_) => _dispose(player)));
     try {
       await player.play(
-        BytesSource(sound.bytes, mimeType: sound.mimeType),
+        BytesSource(bytes, mimeType: mimeType),
         volume: volume,
         mode: PlayerMode.lowLatency,
       );
@@ -210,7 +215,7 @@ class WorkoutAudio {
   }
 
   static Future<void> _dispose(AudioPlayer player) async {
-    _customSoundPlayers.remove(player);
+    _players.remove(player);
     await player.dispose();
   }
 
