@@ -43,7 +43,44 @@ class HistoryDatabase extends _$HistoryDatabase {
   HistoryDatabase(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 8;
+
+  @override
+  MigrationStrategy get migration {
+    return MigrationStrategy(
+      onCreate: (Migrator m) async {
+        await m.createAll();
+      },
+      onUpgrade: (Migrator m, int from, int to) async {
+        if (from < 3) {
+          await m.createTable(workoutMovePerformances);
+        }
+        if (from == 3) {
+          await m.addColumn(
+              workoutMovePerformances, workoutMovePerformances.actualWeight);
+          await m.addColumn(workoutMovePerformances,
+              workoutMovePerformances.actualWeightUnit);
+        }
+        if (from < 5) {
+          await m.addColumn(workoutSessions, workoutSessions.planName);
+          await m.addColumn(workoutSessions, workoutSessions.workoutName);
+          await m.addColumn(
+              workoutSessions, workoutSessions.workoutSnapshotJson);
+        }
+        if (from < 6) {
+          await m.deleteTable('workout_move_performances');
+          await m.createTable(workoutMovePerformances);
+        }
+        if (from < 7) {
+          await m.deleteTable('workout_move_performances');
+          await m.createTable(workoutMovePerformances);
+        }
+        if (from >= 2 && from < 8) {
+          await m.deleteTable('workout_plans_table');
+        }
+      },
+    );
+  }
 
   Future<List<WorkoutSessionEntity>> getAllSessions() =>
       select(workoutSessions).get();

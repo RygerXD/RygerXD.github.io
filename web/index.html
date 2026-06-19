@@ -31,10 +31,9 @@
 
   <title>Workout App</title>
   <link rel="manifest" href="manifest.json">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js"></script>
+  <script src="sqljs/sql-wasm.js"></script>
   <script>
     (function () {
-      const sqlJsCdnBase = 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/';
       const originalInitSqlJs = window.initSqlJs;
       if (typeof originalInitSqlJs !== 'function') {
         return;
@@ -44,7 +43,7 @@
         const mergedConfig = config ? { ...config } : {};
         if (!mergedConfig.locateFile) {
           mergedConfig.locateFile = function (file) {
-            return sqlJsCdnBase + file;
+            return new URL('sqljs/' + file, document.baseURI).toString();
           };
         }
         return originalInitSqlJs(mergedConfig);

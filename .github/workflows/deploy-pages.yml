@@ -41,7 +41,7 @@ jobs:
             base_href="/"
           fi
 
-          flutter build web --release --base-href "${base_href}"
+          flutter build web --release --no-web-resources-cdn --base-href "${base_href}"
           cp build/web/index.html build/web/404.html
 
       - name: Configure GitHub Pages
