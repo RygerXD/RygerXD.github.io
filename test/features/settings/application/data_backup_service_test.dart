@@ -143,11 +143,11 @@ void main() {
       expect(container.read(appSettingsProvider).unitSystem,
           AppUnitSystem.imperial);
       expect(
-        container.read(appSettingsProvider).moveCountdownCustomSound?.fileName,
-        'move-countdown.mp3',
+        container.read(appSettingsProvider).moveHalfwayCustomSound?.fileName,
+        'move-halfway.mp3',
       );
       expect(
-        container.read(appSettingsProvider).moveCountdownEnabled,
+        container.read(appSettingsProvider).moveHalfwayEnabled,
         isFalse,
       );
 
@@ -255,18 +255,17 @@ Map<String, dynamic> _backupJson() {
     audioVolume: 0.35,
     getReadyCountdownSound: CountdownSound.wood,
     getReadyDingSound: GetReadyDingSound.bright,
-    moveCountdownSound: CountdownSound.low,
     moveFinishedDingSound: MoveFinishedDingSound.bell,
-    moveCountdownCustomSound: CustomWorkoutSound(
-      fileName: 'move-countdown.mp3',
+    moveHalfwayCustomSound: CustomWorkoutSound(
+      fileName: 'move-halfway.mp3',
       mimeType: 'audio/mpeg',
       base64Data: 'AQID',
     ),
-    moveCountdownEnabled: false,
+    moveHalfwayEnabled: false,
   );
   final Map<String, dynamic> settingsJson = settings.toJson()
     ..remove('customSoundLibrary')
-    ..remove('moveCountdownCustomSound');
+    ..remove('moveHalfwayCustomSound');
   return <String, dynamic>{
     'format': 'workout_app_rewrite.backup',
     'formatVersion': 1,

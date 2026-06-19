@@ -39,7 +39,6 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   String? _lastMoveKey;
   String? _activeMetronomeKey;
   String? _lastGetReadyCountdownKey;
-  String? _lastMoveCountdownKey;
   String? _lastMoveHalfwayKey;
   int? _lastRepsForCurrentMove;
   double? _lastWeightForCurrentMove;
@@ -49,6 +48,9 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   @override
   void initState() {
     super.initState();
+    unawaited(WorkoutAudio.preloadBuiltInSounds(
+      ref.read(appSettingsProvider).soundSelections.values,
+    ));
     _startTicker();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _syncUiWithState(null, ref.read(activeWorkoutControllerProvider));
@@ -441,11 +443,6 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
 
       if (_timerSeconds > 0) {
         _playGetReadyCountdownCueIfNeeded(state, _timerSeconds);
-        _playMoveCountdownCueIfNeeded(
-          state,
-          currentMove: currentMove,
-          seconds: _timerSeconds,
-        );
         _playMoveHalfwayCueIfNeeded(state, currentMove, _timerSeconds);
       }
 
@@ -474,8 +471,6 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       return _completeCurrentMove();
     }
 
-    await _playAudioCue();
-
     if (displayPhase == WorkoutPhase.restBetweenLaps) {
       return _runGuarded(() => controller.completeRestBetweenLaps());
     }
@@ -484,19 +479,6 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     }
 
     return Future<void>.value();
-  }
-
-  Future<void> _playAudioCue() async {
-    await _playConfiguredWorkoutAudio((AppSettings settings) {
-      if (!settings.restFinishedEnabled) {
-        return Future<void>.value();
-      }
-      return WorkoutAudio.playSharedSound(
-        sound: settings.soundFor(WorkoutSoundCue.restFinished),
-        customSound: settings.restFinishedCustomSound,
-        volume: settings.audioVolume,
-      );
-    });
   }
 
   Future<void> _playConfiguredWorkoutAudio(
@@ -529,18 +511,6 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
         return WorkoutAudio.playSharedSound(
           sound: settings.soundFor(WorkoutSoundCue.getReadyCountdown),
           customSound: settings.getReadyCountdownCustomSound,
-          volume: settings.audioVolume,
-        );
-      });
-
-  Future<void> _playMoveCountdownCue() =>
-      _playConfiguredWorkoutAudio((AppSettings settings) {
-        if (!settings.moveCountdownEnabled) {
-          return Future<void>.value();
-        }
-        return WorkoutAudio.playSharedSound(
-          sound: settings.soundFor(WorkoutSoundCue.moveCountdown),
-          customSound: settings.moveCountdownCustomSound,
           volume: settings.audioVolume,
         );
       });
@@ -721,7 +691,6 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       if (moveChanged) {
         _lastMoveKey = moveKey;
         _lastGetReadyCountdownKey = null;
-        _lastMoveCountdownKey = null;
         _lastMoveHalfwayKey = null;
         _currentReps = move.repCount ?? 0;
         _currentWeight = move.targetWeight ?? 0;
@@ -736,11 +705,6 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
 
     if (nextTimer != null) {
       _playGetReadyCountdownCueIfNeeded(next, nextTimer);
-      _playMoveCountdownCueIfNeeded(
-        next,
-        currentMove: move,
-        seconds: nextTimer,
-      );
     }
 
     if (moveChanged && move.type == MoveType.reps) {
@@ -1021,23 +985,6 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       lastKey: _lastGetReadyCountdownKey,
       rememberKey: (String key) => _lastGetReadyCountdownKey = key,
       playCue: _playGetReadyCountdownCue,
-    );
-  }
-
-  void _playMoveCountdownCueIfNeeded(
-    WorkoutState state, {
-    required WorkoutMove? currentMove,
-    required int seconds,
-  }) {
-    _playCountdownCueIfNeeded(
-      state,
-      currentMove: currentMove,
-      seconds: seconds,
-      phase: WorkoutPhase.move,
-      moveMatches: (WorkoutMove? move) => move?.type == MoveType.duration,
-      lastKey: _lastMoveCountdownKey,
-      rememberKey: (String key) => _lastMoveCountdownKey = key,
-      playCue: _playMoveCountdownCue,
     );
   }
 

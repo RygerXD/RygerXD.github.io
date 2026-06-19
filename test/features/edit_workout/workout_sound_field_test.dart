@@ -7,12 +7,12 @@ import 'package:workout_app_rewrite/core/audio/custom_sound_field.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
 
 void main() {
-  testWidgets('imports an MP3 as a portable custom sound',
+  testWidgets('imports an OGG as a portable custom sound',
       (WidgetTester tester) async {
     final _FakeFilePicker picker = _FakeFilePicker()
       ..pickResult = FilePickerResult(<PlatformFile>[
         PlatformFile(
-          name: 'celebrate.mp3',
+          name: 'celebrate.ogg',
           size: 3,
           bytes: Uint8List.fromList(<int>[1, 2, 3]),
         ),
@@ -34,8 +34,8 @@ void main() {
     await tester.tap(find.byTooltip('Choose sound'));
     await tester.pump();
 
-    expect(selected?.fileName, 'celebrate.mp3');
-    expect(selected?.mimeType, 'audio/mpeg');
+    expect(selected?.fileName, 'celebrate.ogg');
+    expect(selected?.mimeType, 'audio/ogg');
     expect(selected?.bytes, <int>[1, 2, 3]);
   });
 }

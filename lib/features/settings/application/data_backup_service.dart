@@ -301,10 +301,8 @@ class DataBackupService {
       'metronomeClickCustomSound',
       'getReadyCountdownCustomSound',
       'getReadyDingCustomSound',
-      'moveCountdownCustomSound',
       'moveFinishedDingCustomSound',
       'moveHalfwayCustomSound',
-      'restFinishedCustomSound',
       'workoutCompleteCustomSound',
       'workoutEndedEarlyCustomSound',
     ]) {

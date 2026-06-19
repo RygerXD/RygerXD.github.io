@@ -5,12 +5,18 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:workout_app_rewrite/core/audio/built_in_sound_catalog.dart';
 import 'package:workout_app_rewrite/core/audio/custom_sound_field.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/metronome_audio.dart';
 import 'package:workout_app_rewrite/features/settings/application/app_settings_controller.dart';
 import 'package:workout_app_rewrite/features/settings/application/sound_settings_transfer.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
+
+final FutureProvider<List<BuiltInWorkoutSound>> builtInSoundsProvider =
+    FutureProvider<List<BuiltInWorkoutSound>>(
+  (Ref ref) => BuiltInSoundCatalog.load(),
+);
 
 class SoundsScreen extends ConsumerWidget {
   const SoundsScreen({super.key});
@@ -21,6 +27,9 @@ class SoundsScreen extends ConsumerWidget {
     final AppSettingsController controller =
         ref.read(appSettingsProvider.notifier);
     final List<CustomWorkoutSound> library = _soundPool(settings);
+    final List<BuiltInWorkoutSound> builtInSounds =
+        ref.watch(builtInSoundsProvider).valueOrNull ??
+            const <BuiltInWorkoutSound>[];
 
     return Scaffold(
       appBar: AppBar(
@@ -103,9 +112,62 @@ class SoundsScreen extends ConsumerWidget {
             ),
           const SizedBox(height: AppSpacing.sm),
           _SoundSetting(
-            title: 'Metronome click',
+            title: 'Get ready countdown',
+            builtInSounds: builtInSounds,
+            builtInSound: settings.soundFor(WorkoutSoundCue.getReadyCountdown),
+            onBuiltInChanged: (String sound) => controller.setSoundSelection(
+                WorkoutSoundCue.getReadyCountdown, sound),
+            enabled: settings.getReadyCountdownEnabled,
+            onEnabledChanged: controller.setGetReadyCountdownEnabled,
+            value: settings.getReadyCountdownCustomSound,
+            library: library,
+            onChanged: controller.setGetReadyCountdownCustomSound,
+            volume: settings.audioVolume,
+          ),
+          _SoundSetting(
+            title: 'Move start',
+            builtInSounds: builtInSounds,
+            builtInSound: settings.soundFor(WorkoutSoundCue.getReadyDing),
+            onBuiltInChanged: (String sound) => controller.setSoundSelection(
+                WorkoutSoundCue.getReadyDing, sound),
+            enabled: settings.getReadyDingEnabled,
+            onEnabledChanged: controller.setGetReadyDingEnabled,
+            value: settings.getReadyDingCustomSound,
+            library: library,
+            onChanged: controller.setGetReadyDingCustomSound,
+            volume: settings.audioVolume,
+          ),
+          _SoundSetting(
+            title: 'Move halfway done',
+            builtInSounds: builtInSounds,
+            builtInSound: settings.soundFor(WorkoutSoundCue.moveHalfway),
+            onBuiltInChanged: (String sound) => controller.setSoundSelection(
+                WorkoutSoundCue.moveHalfway, sound),
+            enabled: settings.moveHalfwayEnabled,
+            onEnabledChanged: controller.setMoveHalfwayEnabled,
+            value: settings.moveHalfwayCustomSound,
+            library: library,
+            onChanged: controller.setMoveHalfwayCustomSound,
+            volume: settings.audioVolume,
+          ),
+          _SoundSetting(
+            title: 'Move finished',
+            builtInSounds: builtInSounds,
+            builtInSound: settings.soundFor(WorkoutSoundCue.moveFinished),
+            onBuiltInChanged: (String sound) => controller.setSoundSelection(
+                WorkoutSoundCue.moveFinished, sound),
+            enabled: settings.moveFinishedDingEnabled,
+            onEnabledChanged: controller.setMoveFinishedDingEnabled,
+            value: settings.moveFinishedDingCustomSound,
+            library: library,
+            onChanged: controller.setMoveFinishedDingCustomSound,
+            volume: settings.audioVolume,
+          ),
+          _SoundSetting(
+            title: 'Metronome',
+            builtInSounds: builtInSounds,
             builtInSound: settings.soundFor(WorkoutSoundCue.metronome),
-            onBuiltInChanged: (SharedWorkoutSound sound) =>
+            onBuiltInChanged: (String sound) =>
                 controller.setSoundSelection(WorkoutSoundCue.metronome, sound),
             enabled: settings.metronomeClickEnabled,
             onEnabledChanged: controller.setMetronomeClickEnabled,
@@ -113,134 +175,32 @@ class SoundsScreen extends ConsumerWidget {
             library: library,
             onChanged: controller.setMetronomeClickCustomSound,
             volume: settings.audioVolume,
-            onTestDefault: () => unawaited(WorkoutAudio.playMetronomeClick(
-              sound: settings.metronomeClickSound,
-              volume: settings.audioVolume,
-            )),
-          ),
-          _SoundSetting(
-            title: 'Get ready countdown',
-            builtInSound: settings.soundFor(WorkoutSoundCue.getReadyCountdown),
-            onBuiltInChanged: (SharedWorkoutSound sound) => controller
-                .setSoundSelection(WorkoutSoundCue.getReadyCountdown, sound),
-            enabled: settings.getReadyCountdownEnabled,
-            onEnabledChanged: controller.setGetReadyCountdownEnabled,
-            value: settings.getReadyCountdownCustomSound,
-            library: library,
-            onChanged: controller.setGetReadyCountdownCustomSound,
-            volume: settings.audioVolume,
-            onTestDefault: () => unawaited(WorkoutAudio.playGetReadyCountdown(
-              sound: settings.getReadyCountdownSound,
-              volume: settings.audioVolume,
-            )),
-          ),
-          _SoundSetting(
-            title: 'Get ready ding',
-            builtInSound: settings.soundFor(WorkoutSoundCue.getReadyDing),
-            onBuiltInChanged: (SharedWorkoutSound sound) => controller
-                .setSoundSelection(WorkoutSoundCue.getReadyDing, sound),
-            enabled: settings.getReadyDingEnabled,
-            onEnabledChanged: controller.setGetReadyDingEnabled,
-            value: settings.getReadyDingCustomSound,
-            library: library,
-            onChanged: controller.setGetReadyDingCustomSound,
-            volume: settings.audioVolume,
-            onTestDefault: () => unawaited(WorkoutAudio.playGetReadyDing(
-              sound: settings.getReadyDingSound,
-              volume: settings.audioVolume,
-            )),
-          ),
-          _SoundSetting(
-            title: 'Move countdown',
-            builtInSound: settings.soundFor(WorkoutSoundCue.moveCountdown),
-            onBuiltInChanged: (SharedWorkoutSound sound) => controller
-                .setSoundSelection(WorkoutSoundCue.moveCountdown, sound),
-            enabled: settings.moveCountdownEnabled,
-            onEnabledChanged: controller.setMoveCountdownEnabled,
-            value: settings.moveCountdownCustomSound,
-            library: library,
-            onChanged: controller.setMoveCountdownCustomSound,
-            volume: settings.audioVolume,
-            onTestDefault: () => unawaited(WorkoutAudio.playMoveCountdown(
-              sound: settings.moveCountdownSound,
-              volume: settings.audioVolume,
-            )),
-          ),
-          _SoundSetting(
-            title: 'Move halfway done',
-            builtInSound: settings.soundFor(WorkoutSoundCue.moveHalfway),
-            onBuiltInChanged: (SharedWorkoutSound sound) => controller
-                .setSoundSelection(WorkoutSoundCue.moveHalfway, sound),
-            enabled: settings.moveHalfwayEnabled,
-            onEnabledChanged: controller.setMoveHalfwayEnabled,
-            value: settings.moveHalfwayCustomSound,
-            library: library,
-            onChanged: controller.setMoveHalfwayCustomSound,
-            volume: settings.audioVolume,
-            onTestDefault: () => unawaited(WorkoutAudio.playMoveHalfway(
-              volume: settings.audioVolume,
-            )),
-          ),
-          _SoundSetting(
-            title: 'Move finished ding',
-            builtInSound: settings.soundFor(WorkoutSoundCue.moveFinished),
-            onBuiltInChanged: (SharedWorkoutSound sound) => controller
-                .setSoundSelection(WorkoutSoundCue.moveFinished, sound),
-            enabled: settings.moveFinishedDingEnabled,
-            onEnabledChanged: controller.setMoveFinishedDingEnabled,
-            value: settings.moveFinishedDingCustomSound,
-            library: library,
-            onChanged: controller.setMoveFinishedDingCustomSound,
-            volume: settings.audioVolume,
-            onTestDefault: () => unawaited(WorkoutAudio.playMoveFinishedDing(
-              sound: settings.moveFinishedDingSound,
-              volume: settings.audioVolume,
-            )),
-          ),
-          _SoundSetting(
-            title: 'Rest finished',
-            builtInSound: settings.soundFor(WorkoutSoundCue.restFinished),
-            onBuiltInChanged: (SharedWorkoutSound sound) => controller
-                .setSoundSelection(WorkoutSoundCue.restFinished, sound),
-            enabled: settings.restFinishedEnabled,
-            onEnabledChanged: controller.setRestFinishedEnabled,
-            value: settings.restFinishedCustomSound,
-            library: library,
-            onChanged: controller.setRestFinishedCustomSound,
-            volume: settings.audioVolume,
-            onTestDefault: () => unawaited(WorkoutAudio.playRestFinished(
-              volume: settings.audioVolume,
-            )),
           ),
           _SoundSetting(
             title: 'Workout complete',
+            builtInSounds: builtInSounds,
             builtInSound: settings.soundFor(WorkoutSoundCue.workoutComplete),
-            onBuiltInChanged: (SharedWorkoutSound sound) => controller
-                .setSoundSelection(WorkoutSoundCue.workoutComplete, sound),
+            onBuiltInChanged: (String sound) => controller.setSoundSelection(
+                WorkoutSoundCue.workoutComplete, sound),
             enabled: settings.workoutCompleteEnabled,
             onEnabledChanged: controller.setWorkoutCompleteEnabled,
             value: settings.workoutCompleteCustomSound,
             library: library,
             onChanged: controller.setWorkoutCompleteCustomSound,
             volume: settings.audioVolume,
-            onTestDefault: () => unawaited(WorkoutAudio.playWorkoutComplete(
-              volume: settings.audioVolume,
-            )),
           ),
           _SoundSetting(
             title: 'Workout ended early',
+            builtInSounds: builtInSounds,
             builtInSound: settings.soundFor(WorkoutSoundCue.workoutEndedEarly),
-            onBuiltInChanged: (SharedWorkoutSound sound) => controller
-                .setSoundSelection(WorkoutSoundCue.workoutEndedEarly, sound),
+            onBuiltInChanged: (String sound) => controller.setSoundSelection(
+                WorkoutSoundCue.workoutEndedEarly, sound),
             enabled: settings.workoutEndedEarlyEnabled,
             onEnabledChanged: controller.setWorkoutEndedEarlyEnabled,
             value: settings.workoutEndedEarlyCustomSound,
             library: library,
             onChanged: controller.setWorkoutEndedEarlyCustomSound,
             volume: settings.audioVolume,
-            onTestDefault: () => unawaited(WorkoutAudio.playWorkoutEndedEarly(
-              volume: settings.audioVolume,
-            )),
           ),
         ],
       ),
@@ -255,10 +215,8 @@ class SoundsScreen extends ConsumerWidget {
       settings.metronomeClickCustomSound,
       settings.getReadyCountdownCustomSound,
       settings.getReadyDingCustomSound,
-      settings.moveCountdownCustomSound,
       settings.moveHalfwayCustomSound,
       settings.moveFinishedDingCustomSound,
-      settings.restFinishedCustomSound,
       settings.workoutCompleteCustomSound,
       settings.workoutEndedEarlyCustomSound,
     ]) {
@@ -340,6 +298,7 @@ class SoundsScreen extends ConsumerWidget {
 class _SoundSetting extends StatelessWidget {
   const _SoundSetting({
     required this.title,
+    required this.builtInSounds,
     required this.builtInSound,
     required this.onBuiltInChanged,
     required this.enabled,
@@ -348,30 +307,32 @@ class _SoundSetting extends StatelessWidget {
     required this.library,
     required this.onChanged,
     required this.volume,
-    required this.onTestDefault,
   });
 
   final String title;
-  final SharedWorkoutSound builtInSound;
-  final ValueChanged<SharedWorkoutSound> onBuiltInChanged;
+  final List<BuiltInWorkoutSound> builtInSounds;
+  final String builtInSound;
+  final ValueChanged<String> onBuiltInChanged;
   final bool enabled;
   final ValueChanged<bool> onEnabledChanged;
   final CustomWorkoutSound? value;
   final List<CustomWorkoutSound> library;
   final ValueChanged<CustomWorkoutSound?> onChanged;
   final double volume;
-  final VoidCallback onTestDefault;
 
   @override
   Widget build(BuildContext context) {
-    final int builtInCount = SharedWorkoutSound.values.length;
+    final int builtInCount = builtInSounds.length;
+    final int builtInIndex = builtInSounds.indexWhere(
+      (BuiltInWorkoutSound sound) => sound.matches(builtInSound),
+    );
     final int customIndex = value == null
         ? -1
         : library.indexWhere((CustomWorkoutSound item) =>
             item.mimeType == value!.mimeType &&
             item.base64Data == value!.base64Data);
     final int selected =
-        value == null ? builtInSound.index : builtInCount + customIndex;
+        value == null ? builtInIndex : builtInCount + customIndex;
     return Card(
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Column(
@@ -392,20 +353,23 @@ class _SoundSetting extends StatelessWidget {
               children: <Widget>[
                 Expanded(
                   child: DropdownButtonFormField<int>(
-                    initialValue: selected < builtInCount
-                        ? selected
-                        : customIndex < 0
-                            ? builtInSound.index
-                            : selected,
+                    initialValue: selected < 0
+                        ? null
+                        : selected < builtInCount
+                            ? selected
+                            : customIndex < 0
+                                ? (builtInIndex < 0 ? null : builtInIndex)
+                                : selected,
                     decoration: const InputDecoration(
                       labelText: 'Sound',
                       border: OutlineInputBorder(),
                     ),
                     items: <DropdownMenuItem<int>>[
-                      ...SharedWorkoutSound.values.map(
-                        (SharedWorkoutSound sound) => DropdownMenuItem<int>(
-                          value: sound.index,
-                          child: Text(_builtInLabel(sound)),
+                      ...builtInSounds.indexed.map(
+                        ((int, BuiltInWorkoutSound) entry) =>
+                            DropdownMenuItem<int>(
+                          value: entry.$1,
+                          child: Text(entry.$2.label),
                         ),
                       ),
                       ...library.indexed.map(
@@ -421,7 +385,7 @@ class _SoundSetting extends StatelessWidget {
                     onChanged: (int? index) {
                       if (index == null) return;
                       if (index < builtInCount) {
-                        onBuiltInChanged(SharedWorkoutSound.values[index]);
+                        onBuiltInChanged(builtInSounds[index].id);
                         onChanged(null);
                       } else {
                         onChanged(library[index - builtInCount]);
@@ -449,18 +413,6 @@ class _SoundSetting extends StatelessWidget {
       ),
     );
   }
-
-  static String _builtInLabel(SharedWorkoutSound sound) => switch (sound) {
-        SharedWorkoutSound.classic => 'Classic',
-        SharedWorkoutSound.sharp => 'Sharp',
-        SharedWorkoutSound.low => 'Low',
-        SharedWorkoutSound.bell => 'Bell',
-        SharedWorkoutSound.bright => 'Bright',
-        SharedWorkoutSound.soft => 'Soft',
-        SharedWorkoutSound.click => 'Click',
-        SharedWorkoutSound.pulse => 'Pulse',
-        SharedWorkoutSound.wood => 'Wood',
-      };
 }
 
 class _VolumeSetting extends StatelessWidget {

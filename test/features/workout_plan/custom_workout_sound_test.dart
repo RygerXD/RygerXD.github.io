@@ -11,8 +11,8 @@ void main() {
       bytes: Uint8List.fromList(<int>[1, 2, 3]),
     );
     final CustomWorkoutSound workoutEarly = CustomWorkoutSound.fromBytes(
-      fileName: 'workout-early.wav',
-      mimeType: 'audio/wav',
+      fileName: 'workout-early.ogg',
+      mimeType: 'audio/ogg',
       bytes: Uint8List.fromList(<int>[4, 5, 6]),
     );
     final WorkoutPlan plan = WorkoutPlan(
@@ -37,11 +37,22 @@ void main() {
     expect(restored.workoutCompleteSound?.bytes, <int>[1, 2, 3]);
     expect(
       restored.workouts.single.workoutEndedEarlySound?.fileName,
-      'workout-early.wav',
+      'workout-early.ogg',
     );
     expect(
       restored.workouts.single.workoutEndedEarlySound?.bytes,
       <int>[4, 5, 6],
+    );
+  });
+
+  test('keeps legacy custom WAV data readable', () {
+    expect(
+      CustomWorkoutSound.fromBytes(
+        fileName: 'legacy.wav',
+        mimeType: 'audio/wav',
+        bytes: Uint8List.fromList(<int>[1]),
+      ).mimeType,
+      'audio/wav',
     );
   });
 

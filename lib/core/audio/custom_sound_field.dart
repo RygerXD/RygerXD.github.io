@@ -31,7 +31,7 @@ class CustomSoundField extends StatelessWidget {
     final FilePickerResult? result = await FilePicker.platform.pickFiles(
       dialogTitle: 'Choose $title',
       type: FileType.custom,
-      allowedExtensions: const <String>['mp3', 'wav'],
+      allowedExtensions: const <String>['mp3', 'ogg', 'wav'],
       withData: true,
     );
     if (result == null || result.files.isEmpty || !context.mounted) {
@@ -51,11 +51,12 @@ class CustomSoundField extends StatelessWidget {
 
     final String? mimeType = switch ((file.extension ?? '').toLowerCase()) {
       'mp3' => 'audio/mpeg',
+      'ogg' => 'audio/ogg',
       'wav' => 'audio/wav',
       _ => null,
     };
     if (mimeType == null) {
-      _showError(context, 'Choose an MP3 or WAV file.');
+      _showError(context, 'Choose an MP3, OGG, or WAV file.');
       return;
     }
 
@@ -124,7 +125,7 @@ Future<CustomWorkoutSound?> pickCustomWorkoutSound(
   final FilePickerResult? result = await FilePicker.platform.pickFiles(
     dialogTitle: 'Choose $title',
     type: FileType.custom,
-    allowedExtensions: const <String>['mp3', 'wav'],
+    allowedExtensions: const <String>['mp3', 'ogg', 'wav'],
     withData: true,
   );
   if (result == null || result.files.isEmpty || !context.mounted) return null;
@@ -144,12 +145,13 @@ Future<CustomWorkoutSound?> pickCustomWorkoutSound(
   }
   final String? mimeType = switch ((file.extension ?? '').toLowerCase()) {
     'mp3' => 'audio/mpeg',
+    'ogg' => 'audio/ogg',
     'wav' => 'audio/wav',
     _ => null,
   };
   if (mimeType == null) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Choose an MP3 or WAV file.')),
+      const SnackBar(content: Text('Choose an MP3, OGG, or WAV file.')),
     );
     return null;
   }

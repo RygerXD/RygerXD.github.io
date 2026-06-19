@@ -32,7 +32,6 @@ void main() {
       expect(settings.audioVolume, 0.8);
       expect(settings.getReadyCountdownSound, CountdownSound.click);
       expect(settings.getReadyDingSound, GetReadyDingSound.classic);
-      expect(settings.moveCountdownSound, CountdownSound.pulse);
       expect(settings.moveFinishedDingSound, MoveFinishedDingSound.classic);
       expect(settings.customSoundLibrary, isEmpty);
       expect(settings.moveHalfwayCustomSound, isNull);
@@ -41,10 +40,8 @@ void main() {
       expect(settings.metronomeClickEnabled, isTrue);
       expect(settings.getReadyCountdownEnabled, isTrue);
       expect(settings.getReadyDingEnabled, isTrue);
-      expect(settings.moveCountdownEnabled, isTrue);
       expect(settings.moveFinishedDingEnabled, isTrue);
       expect(settings.moveHalfwayEnabled, isTrue);
-      expect(settings.restFinishedEnabled, isTrue);
       expect(settings.workoutCompleteEnabled, isTrue);
       expect(settings.workoutEndedEarlyEnabled, isTrue);
       expect(container.read(appThemeModeProvider), ThemeMode.system);
@@ -70,10 +67,9 @@ void main() {
       await controller.setAudioVolume(0.35);
       await controller.setGetReadyCountdownSound(CountdownSound.wood);
       await controller.setGetReadyDingSound(GetReadyDingSound.bright);
-      await controller.setMoveCountdownSound(CountdownSound.low);
       await controller.setMoveFinishedDingSound(MoveFinishedDingSound.bell);
       await controller.setSoundSelection(
-          WorkoutSoundCue.moveHalfway, SharedWorkoutSound.wood);
+          WorkoutSoundCue.moveHalfway, 'wood.ogg');
       final CustomWorkoutSound customSound = CustomWorkoutSound.fromBytes(
         fileName: 'custom.mp3',
         mimeType: 'audio/mpeg',
@@ -84,7 +80,6 @@ void main() {
       await controller.setMoveHalfwayCustomSound(customSound);
       await controller.setWorkoutCompleteCustomSound(customSound);
       await controller.setMetronomeClickEnabled(false);
-      await controller.setRestFinishedEnabled(false);
       await controller.setMoveHalfwayEnabled(false);
       await controller.setWorkoutEndedEarlyEnabled(false);
 
@@ -105,7 +100,6 @@ void main() {
       expect(reloadedSettings.audioVolume, 0.35);
       expect(reloadedSettings.getReadyCountdownSound, CountdownSound.wood);
       expect(reloadedSettings.getReadyDingSound, GetReadyDingSound.bright);
-      expect(reloadedSettings.moveCountdownSound, CountdownSound.low);
       expect(
           reloadedSettings.moveFinishedDingSound, MoveFinishedDingSound.bell);
       expect(
@@ -114,10 +108,9 @@ void main() {
           reloadedSettings.workoutCompleteCustomSound?.bytes, <int>[1, 2, 3]);
       expect(reloadedSettings.customSoundLibrary.single.fileName, 'custom.mp3');
       expect(reloadedSettings.moveHalfwayCustomSound?.fileName, 'custom.mp3');
-      expect(reloadedSettings.soundFor(WorkoutSoundCue.moveHalfway),
-          SharedWorkoutSound.wood);
+      expect(
+          reloadedSettings.soundFor(WorkoutSoundCue.moveHalfway), 'wood.ogg');
       expect(reloadedSettings.metronomeClickEnabled, isFalse);
-      expect(reloadedSettings.restFinishedEnabled, isFalse);
       expect(reloadedSettings.moveHalfwayEnabled, isFalse);
       expect(reloadedSettings.workoutEndedEarlyEnabled, isFalse);
       expect(reloadedContainer.read(appThemeModeProvider), ThemeMode.dark);

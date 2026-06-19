@@ -47,9 +47,32 @@ const Map<String, _SoundProfile> _sounds = <String, _SoundProfile>{
 void main() {
   final Directory output = Directory('assets/audio')
     ..createSync(recursive: true);
-  for (final MapEntry<String, _SoundProfile> entry in _sounds.entries) {
-    File('${output.path}/${entry.key}.wav')
-        .writeAsBytesSync(_buildWave(entry.value));
+  final Directory temporary = Directory.systemTemp.createTempSync(
+    'workout-sounds-',
+  );
+  final String ffmpeg = Platform.environment['FFMPEG'] ?? 'ffmpeg';
+  try {
+    for (final MapEntry<String, _SoundProfile> entry in _sounds.entries) {
+      final File wave = File('${temporary.path}/${entry.key}.wav')
+        ..writeAsBytesSync(_buildWave(entry.value));
+      final ProcessResult result = Process.runSync(ffmpeg, <String>[
+        '-y',
+        '-loglevel',
+        'error',
+        '-i',
+        wave.path,
+        '-c:a',
+        'libvorbis',
+        '-q:a',
+        '5',
+        '${output.path}/${entry.key}.ogg',
+      ]);
+      if (result.exitCode != 0) {
+        throw StateError('Could not encode ${entry.key}.ogg: ${result.stderr}');
+      }
+    }
+  } finally {
+    temporary.deleteSync(recursive: true);
   }
 }
 

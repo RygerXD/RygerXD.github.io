@@ -41,7 +41,8 @@ class CustomWorkoutSound {
     required Uint8List bytes,
   }) {
     if (fileName.trim().isEmpty ||
-        !const <String>{'audio/mpeg', 'audio/wav'}.contains(mimeType) ||
+        !const <String>{'audio/mpeg', 'audio/ogg', 'audio/wav'}
+            .contains(mimeType) ||
         bytes.isEmpty ||
         bytes.length > maxCustomWorkoutSoundBytes) {
       throw ArgumentError.value(bytes.length, 'bytes', 'Invalid sound size.');
@@ -60,7 +61,8 @@ class CustomWorkoutSound {
       base64Data: json['base64Data'] as String,
     );
     if (sound.fileName.trim().isEmpty ||
-        !const <String>{'audio/mpeg', 'audio/wav'}.contains(sound.mimeType) ||
+        !const <String>{'audio/mpeg', 'audio/ogg', 'audio/wav'}
+            .contains(sound.mimeType) ||
         sound.bytes.isEmpty ||
         sound.bytes.length > maxCustomWorkoutSoundBytes) {
       throw ArgumentError('Invalid custom workout sound.');

@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:workout_app_rewrite/core/audio/built_in_sound_catalog.dart';
 import 'package:workout_app_rewrite/features/history/application/history_providers.dart';
 import 'package:workout_app_rewrite/features/history/data/history_db.dart';
+import 'package:workout_app_rewrite/features/settings/presentation/sounds_screen.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
 import 'package:workout_app_rewrite/features/workout_plan/data/in_memory_workout_repository.dart';
 import 'package:workout_app_rewrite/features/workout_plan/data/workout_repository.dart';
@@ -29,12 +31,18 @@ void main() {
                 <WorkoutSessionEntity>[]),
           ),
           sharedPreferencesProvider.overrideWithValue(sharedPreferences),
+          builtInSoundsProvider.overrideWith(
+            (ref) async => BuiltInSoundCatalog.fromAssetPaths(<String>[
+              'assets/audio/classic.ogg',
+              'assets/audio/new-sound.mp3',
+            ]),
+          ),
           workoutRepositoryProvider.overrideWithValue(workoutRepository),
         ],
         child: const WorkoutApp(),
       ),
     );
-    await tester.pump();
+    await tester.pumpAndSettle();
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('Import Plan JSON'), findsOneWidget);
@@ -67,29 +75,42 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Audio cues'), findsOneWidget);
-    expect(find.text('Metronome click'), findsOneWidget);
-    await tester.tap(
-      find.widgetWithText(SwitchListTile, 'Metronome click'),
+    await tester.tap(find.byType(DropdownButtonFormField<int>).first);
+    await tester.pumpAndSettle();
+    expect(find.text('New sound'), findsOneWidget);
+    await tester.tap(find.text('New sound'));
+    await tester.pumpAndSettle();
+    expect(
+      sharedPreferences.getString('settings.sound_selections.v1'),
+      contains('new-sound.mp3'),
     );
-    await tester.pump();
+    await tester.scrollUntilVisible(
+      find.text('Move start'),
+      500,
+      scrollable: find.byType(Scrollable),
+    );
+    expect(find.text('Move start'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('Move finished'),
+      500,
+      scrollable: find.byType(Scrollable),
+    );
+    expect(find.text('Move finished'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('Metronome'),
+      500,
+      scrollable: find.byType(Scrollable),
+    );
+    await tester.tap(
+      find.widgetWithText(SwitchListTile, 'Metronome'),
+    );
+    await tester.pumpAndSettle();
     expect(
       sharedPreferences.getBool('settings.metronome_click_enabled.v1'),
       isFalse,
     );
-
-    await tester.scrollUntilVisible(
-      find.text('Get ready ding'),
-      500,
-      scrollable: find.byType(Scrollable),
-    );
-    expect(find.text('Get ready ding'), findsOneWidget);
-
-    await tester.scrollUntilVisible(
-      find.text('Move finished ding'),
-      500,
-      scrollable: find.byType(Scrollable),
-    );
-    expect(find.text('Move finished ding'), findsOneWidget);
 
     await tester.scrollUntilVisible(
       find.text('Workout ended early'),
@@ -97,7 +118,8 @@ void main() {
       scrollable: find.byType(Scrollable),
     );
     expect(find.text('Workout complete'), findsOneWidget);
-    expect(find.text('Rest finished'), findsOneWidget);
+    expect(find.text('Rest finished'), findsNothing);
+    expect(find.text('Move countdown'), findsNothing);
     expect(find.text('Workout ended early'), findsOneWidget);
   });
 

@@ -427,12 +427,10 @@ Defaults:
 - Streak goal: `3` workouts per week
 - Audio cues enabled: `true`
 - Shared audio volume: `0.8`
-- Metronome click sound: `classic`
 - Get ready countdown sound: `click`
-- Get ready ding sound: `classic`
-- Move countdown sound: `pulse`
+- Move start sound: `classic`
 - Move finished ding sound: `classic`
-- Rest finished sound: built-in
+- Metronome sound: `classic`
 - Workout complete sound: built-in
 - Workout ended early sound: built-in
 - Every cue enabled: `true`
@@ -1003,31 +1001,27 @@ Audio settings:
 
 Events:
 
-- Metronome click:
+- Get ready countdown:
+  - Plays in prep phase at remaining seconds 3, 2, 1.
+- Move start:
+  - Plays when prep reaches 0 and move starts.
+- Move finished ding:
+  - Plays when duration move reaches 0.
+- Metronome:
   - Plays during duration move only.
   - Requires `metronomeSpeed`.
   - Stops while paused.
   - Stops outside move phase.
   - Interval is `60000 / bpm` ms.
-- Get ready countdown:
-  - Plays in prep phase at remaining seconds 3, 2, 1.
-- Get ready ding:
-  - Plays when prep reaches 0 and move starts.
-- Move countdown:
-  - Plays during duration move at remaining seconds 3, 2, 1.
-- Move finished ding:
-  - Plays when duration move reaches 0.
-- Rest/cooldown complete:
-  - Current Flutter fallback is platform alert; web app should use an app-owned cue profile or reuse move finished ding at lower priority.
 
 Sound profiles should preserve the current named options:
 
-- Metronome click:
+- Metronome:
   - `classic`
   - `sharp`
   - `low`
   - `bell`
-- Get ready ding:
+- Move start:
   - `classic`
   - `bright`
   - `soft`
@@ -1210,7 +1204,7 @@ Controls:
 Route: `/settings/sounds`
 
 - Master Audio cues switch and one shared volume slider.
-- Separate enabled switch for metronome click, get-ready countdown, get-ready ding, move countdown, move-finished ding, rest finished, workout complete, and workout ended early.
+- Separate enabled switch for get-ready countdown, move start, move halfway, move finished, metronome, workout complete, and workout ended early.
 - Existing built-in dropdowns remain available where multiple built-ins exist.
 - Every cue accepts an MP3/WAV custom override, supports preview and removal, and retains its built-in choice as fallback.
 - Custom clips are limited to 512 KB and must be included in settings backup/restore.
@@ -1224,12 +1218,12 @@ Labels:
 - Units:
   - `Metric (kg)`
   - `Imperial (lb)`
-- Metronome click:
+- Metronome:
   - `Classic`
   - `Sharp`
   - `Low`
   - `Bell`
-- Get ready ding:
+- Move start:
   - `Classic ding`
   - `Bright chime`
   - `Soft ding`
