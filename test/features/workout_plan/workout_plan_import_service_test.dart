@@ -47,7 +47,7 @@ void main() {
       final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
       final WorkoutPlanImportService service = buildService(repository);
       final String validPayload = jsonEncode(<String, dynamic>{
-        'schemaVersion': 4,
+        'schemaVersion': 1,
         'planId': 'plan-1',
         'name': 'Plan 1',
         'moves': <Map<String, dynamic>>[

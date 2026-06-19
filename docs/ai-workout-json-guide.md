@@ -18,7 +18,7 @@ Convert the workout below into an importable Workout App JSON file.
 
 Output rules:
 - Return only valid JSON. Do not wrap it in Markdown.
-- Use schemaVersion 4.
+- Use schemaVersion 1.
 - Create one root object with planId, name, description, author, tags,
   moves, and workouts.
 - Use stable lowercase kebab-case IDs for planId, workoutId, setId,
@@ -56,7 +56,7 @@ Plan metadata:
 
 ```json
 {
-  "schemaVersion": 4,
+  "schemaVersion": 1,
   "planId": "plan-id",
   "name": "Plan name",
   "description": "Short description",
@@ -136,7 +136,7 @@ executions.
 Before importing, check that:
 
 - The file is valid JSON with one root object.
-- `schemaVersion` is `4`.
+- `schemaVersion` is `1`.
 - `planId`, `name`, `workouts`, and `moves` are present.
 - `workouts` has at least one workout.
 - `moves` has at least one move.
@@ -168,7 +168,7 @@ The importable JSON can be:
 
 ```json
 {
-  "schemaVersion": 4,
+  "schemaVersion": 1,
   "planId": "beginner-full-body",
   "name": "Beginner Full Body",
   "description": "Three-round beginner full body workout.",

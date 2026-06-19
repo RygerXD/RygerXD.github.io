@@ -10,6 +10,7 @@ import 'package:workout_app_rewrite/features/history/application/history_provide
 import 'package:workout_app_rewrite/features/history/data/history_db.dart';
 import 'package:workout_app_rewrite/features/settings/application/app_settings_controller.dart';
 import 'package:workout_app_rewrite/features/settings/application/data_backup_service.dart';
+import 'package:workout_app_rewrite/features/settings/application/sound_settings_transfer.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
 import 'package:workout_app_rewrite/features/workout_plan/data/workout_repository.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
@@ -41,6 +42,17 @@ void main() {
       await container
           .read(appSettingsProvider.notifier)
           .setThemePreference(AppThemePreference.dark);
+      const CustomWorkoutSound sharedSound = CustomWorkoutSound(
+        fileName: 'shared.mp3',
+        mimeType: 'audio/mpeg',
+        base64Data: 'AQIDBA==',
+      );
+      await container
+          .read(appSettingsProvider.notifier)
+          .setMetronomeClickCustomSound(sharedSound);
+      await container
+          .read(appSettingsProvider.notifier)
+          .setMoveHalfwayCustomSound(sharedSound);
       await container.read(workoutRepositoryProvider).savePlan(_samplePlan);
       await _seedHistory(database);
 
@@ -66,6 +78,12 @@ void main() {
           (json['history'] as Map<String, dynamic>)['sessions'], hasLength(1));
       expect((json['history'] as Map<String, dynamic>)['movePerformances'],
           hasLength(1));
+      expect(jsonEncode(json).split(sharedSound.base64Data), hasLength(2));
+      expect(
+        ((json['soundSettings'] as Map<String, dynamic>)['sounds']
+            as List<dynamic>),
+        hasLength(1),
+      );
     });
 
     test('restores backup data and replaces existing local data', () async {
@@ -151,7 +169,7 @@ void main() {
 }
 
 const WorkoutPlan _samplePlan = WorkoutPlan(
-  schemaVersion: 4,
+  schemaVersion: 1,
   planId: 'plan-1',
   name: 'Plan 1',
   workouts: <Workout>[
@@ -184,7 +202,7 @@ const WorkoutPlan _samplePlan = WorkoutPlan(
 );
 
 const WorkoutPlan _stalePlan = WorkoutPlan(
-  schemaVersion: 4,
+  schemaVersion: 1,
   planId: 'stale-plan',
   name: 'Stale Plan',
   workouts: <Workout>[
@@ -228,28 +246,33 @@ Future<void> _seedHistory(HistoryDatabase database) async {
 }
 
 Map<String, dynamic> _backupJson() {
+  const AppSettings settings = AppSettings(
+    themePreference: AppThemePreference.dark,
+    unitSystem: AppUnitSystem.imperial,
+    streakWorkoutsPerWeek: 4,
+    audioCuesEnabled: false,
+    metronomeClickSound: MetronomeClickSound.bell,
+    audioVolume: 0.35,
+    getReadyCountdownSound: CountdownSound.wood,
+    getReadyDingSound: GetReadyDingSound.bright,
+    moveCountdownSound: CountdownSound.low,
+    moveFinishedDingSound: MoveFinishedDingSound.bell,
+    moveCountdownCustomSound: CustomWorkoutSound(
+      fileName: 'move-countdown.mp3',
+      mimeType: 'audio/mpeg',
+      base64Data: 'AQID',
+    ),
+    moveCountdownEnabled: false,
+  );
+  final Map<String, dynamic> settingsJson = settings.toJson()
+    ..remove('customSoundLibrary')
+    ..remove('moveCountdownCustomSound');
   return <String, dynamic>{
     'format': 'workout_app_rewrite.backup',
     'formatVersion': 1,
     'createdAt': '2026-06-10T12:00:00.000Z',
-    'settings': const AppSettings(
-      themePreference: AppThemePreference.dark,
-      unitSystem: AppUnitSystem.imperial,
-      streakWorkoutsPerWeek: 4,
-      audioCuesEnabled: false,
-      metronomeClickSound: MetronomeClickSound.bell,
-      audioVolume: 0.35,
-      getReadyCountdownSound: CountdownSound.wood,
-      getReadyDingSound: GetReadyDingSound.bright,
-      moveCountdownSound: CountdownSound.low,
-      moveFinishedDingSound: MoveFinishedDingSound.bell,
-      moveCountdownCustomSound: CustomWorkoutSound(
-        fileName: 'move-countdown.mp3',
-        mimeType: 'audio/mpeg',
-        base64Data: 'AQID',
-      ),
-      moveCountdownEnabled: false,
-    ).toJson(),
+    'settings': settingsJson,
+    'soundSettings': encodeSoundSettings(settings),
     'workoutPlans': <Map<String, dynamic>>[_samplePlan.toJson()],
     'history': <String, dynamic>{
       'sessions': <Map<String, dynamic>>[

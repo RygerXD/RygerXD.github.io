@@ -552,8 +552,6 @@ class AppSettingsController extends Notifier<AppSettings> {
   static const String _metronomeClickSoundKey =
       'settings.metronome_click_sound.v1';
   static const String _audioVolumeKey = 'settings.audio_volume.v1';
-  static const String _legacyMetronomeVolumeKey =
-      'settings.metronome_volume.v1';
   static const String _getReadyCountdownSoundKey =
       'settings.get_ready_countdown_sound.v1';
   static const String _getReadyDingSoundKey =
@@ -1066,8 +1064,7 @@ class AppSettingsController extends Notifier<AppSettings> {
   }
 
   double _readAudioVolume(SharedPreferences prefs) {
-    final double? raw = prefs.getDouble(_audioVolumeKey) ??
-        prefs.getDouble(_legacyMetronomeVolumeKey);
+    final double? raw = prefs.getDouble(_audioVolumeKey);
     return (raw ?? 0.8).clamp(0, 1).toDouble();
   }
 

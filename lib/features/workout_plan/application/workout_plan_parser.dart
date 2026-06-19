@@ -36,11 +36,7 @@ class WorkoutPlanParseException implements Exception {
 }
 
 class WorkoutPlanParser {
-  const WorkoutPlanParser({
-    this.supportedSchemaVersions = const <int>{workoutPlanSchemaVersion},
-  });
-
-  final Set<int> supportedSchemaVersions;
+  const WorkoutPlanParser();
 
   WorkoutPlan parseFromString(String jsonString) {
     final Object? decoded;
@@ -66,25 +62,24 @@ class WorkoutPlanParser {
   }
 
   WorkoutPlan parseFromJson(Map<String, dynamic> json) {
-    final Map<String, dynamic> normalizedJson = normalizeWorkoutPlanJson(json);
     final List<PlanValidationIssue> issues = <PlanValidationIssue>[];
-    final int? schemaVersion = normalizedJson['schemaVersion'] as int?;
+    final int? schemaVersion = json['schemaVersion'] as int?;
     if (schemaVersion == null) {
       issues.add(const PlanValidationIssue(
         path: r'$.schemaVersion',
         message: 'schemaVersion is required.',
       ));
-    } else if (!supportedSchemaVersions.contains(schemaVersion)) {
+    } else if (schemaVersion != workoutPlanSchemaVersion) {
       issues.add(PlanValidationIssue(
         path: r'$.schemaVersion',
         message: 'Unsupported schemaVersion: $schemaVersion',
       ));
     }
 
-    _validateRequiredString(normalizedJson, 'planId', issues);
-    _validateRequiredString(normalizedJson, 'name', issues);
-    _validateList(normalizedJson, 'workouts', issues);
-    _validateList(normalizedJson, 'moves', issues);
+    _validateRequiredString(json, 'planId', issues);
+    _validateRequiredString(json, 'name', issues);
+    _validateList(json, 'workouts', issues);
+    _validateList(json, 'moves', issues);
 
     if (issues.isNotEmpty) {
       throw WorkoutPlanParseException(
@@ -95,7 +90,7 @@ class WorkoutPlanParser {
 
     final WorkoutPlan plan;
     try {
-      plan = WorkoutPlan.fromJson(normalizedJson);
+      plan = WorkoutPlan.fromJson(json);
     } on ArgumentError catch (error) {
       throw WorkoutPlanParseException(
         message: 'Plan JSON has invalid data types.',

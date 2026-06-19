@@ -128,7 +128,7 @@ class _CreatePlanScreenState extends ConsumerState<CreatePlanScreen> {
             workoutEndedEarlySound: _workoutEndedEarlySound,
           ) ??
           WorkoutPlan(
-            schemaVersion: 4,
+            schemaVersion: workoutPlanSchemaVersion,
             planId: const Uuid().v4(),
             name: name,
             imageUrl: imageUrl,

@@ -17,8 +17,7 @@ enum MoveSide {
   right,
 }
 
-const int workoutPlanSchemaVersion = 4;
-const int _previousWorkoutPlanSchemaVersion = 3;
+const int workoutPlanSchemaVersion = 1;
 
 const Object _copyWithUnset = Object();
 const int maxCustomWorkoutSoundBytes = 512 * 1024;
@@ -76,99 +75,10 @@ class CustomWorkoutSound {
       };
 }
 
-final String _previousMovesKey =
-    String.fromCharCodes(<int>[101, 120, 101, 114, 99, 105, 115, 101, 115]);
-final String _previousMoveIdKey = String.fromCharCodes(
-  <int>[101, 120, 101, 114, 99, 105, 115, 101, 73, 100],
-);
-
 void _putIfNotNull(Map<String, dynamic> json, String key, Object? value) {
   if (value != null) {
     json[key] = value;
   }
-}
-
-Map<String, dynamic> normalizeWorkoutPlanJson(Map<String, dynamic> json) {
-  final bool usesPreviousSchema =
-      json['schemaVersion'] == _previousWorkoutPlanSchemaVersion ||
-          json.containsKey(_previousMovesKey);
-  if (!usesPreviousSchema) {
-    return json;
-  }
-
-  final Map<String, dynamic> migrated = Map<String, dynamic>.from(json);
-  migrated['schemaVersion'] = workoutPlanSchemaVersion;
-  migrated['moves'] = _migratedMoveList(
-    migrated['moves'] ?? migrated[_previousMovesKey],
-  );
-  migrated['workouts'] = _migratedWorkoutList(migrated['workouts']);
-  return migrated;
-}
-
-List<dynamic> _migratedMoveList(Object? value) {
-  if (value is! List<dynamic>) {
-    return <dynamic>[];
-  }
-  return value.map((dynamic item) {
-    if (item is! Map<String, dynamic>) {
-      return item;
-    }
-    final Map<String, dynamic> move = Map<String, dynamic>.from(item);
-    if (!move.containsKey('moveId') && move.containsKey(_previousMoveIdKey)) {
-      move['moveId'] = move[_previousMoveIdKey];
-    }
-    move.remove(_previousMoveIdKey);
-    return move;
-  }).toList(growable: false);
-}
-
-List<dynamic> _migratedWorkoutList(Object? value) {
-  if (value is! List<dynamic>) {
-    return <dynamic>[];
-  }
-  return value.map((dynamic item) {
-    if (item is! Map<String, dynamic>) {
-      return item;
-    }
-    final Map<String, dynamic> workout = Map<String, dynamic>.from(item);
-    workout['sets'] = _migratedSetList(workout['sets']);
-    return workout;
-  }).toList(growable: false);
-}
-
-List<dynamic> _migratedSetList(Object? value) {
-  if (value is! List<dynamic>) {
-    return <dynamic>[];
-  }
-  return value.map((dynamic item) {
-    if (item is! Map<String, dynamic>) {
-      return item;
-    }
-    final Map<String, dynamic> set = Map<String, dynamic>.from(item);
-    set['moves'] = _migratedWorkoutMoveList(set['moves']);
-    return set;
-  }).toList(growable: false);
-}
-
-List<dynamic> _migratedWorkoutMoveList(Object? value) {
-  if (value is! List<dynamic>) {
-    return <dynamic>[];
-  }
-  return value.map((dynamic item) {
-    if (item is! Map<String, dynamic>) {
-      return item;
-    }
-    final Map<String, dynamic> workoutMove = Map<String, dynamic>.from(item);
-    final Object? previousWorkoutMoveId = workoutMove['moveId'];
-    if (!workoutMove.containsKey('workoutMoveId')) {
-      workoutMove['workoutMoveId'] = previousWorkoutMoveId;
-    }
-    if (workoutMove.containsKey(_previousMoveIdKey)) {
-      workoutMove['moveId'] = workoutMove[_previousMoveIdKey];
-    }
-    workoutMove.remove(_previousMoveIdKey);
-    return workoutMove;
-  }).toList(growable: false);
 }
 
 class Move {
@@ -569,32 +479,31 @@ class WorkoutPlan {
   }
 
   factory WorkoutPlan.fromJson(Map<String, dynamic> json) {
-    final Map<String, dynamic> normalizedJson = normalizeWorkoutPlanJson(json);
     return WorkoutPlan(
-      schemaVersion: normalizedJson['schemaVersion'] as int,
-      planId: normalizedJson['planId'] as String,
-      name: normalizedJson['name'] as String,
-      description: normalizedJson['description'] as String?,
-      author: normalizedJson['author'] as String?,
-      imageUrl: normalizedJson['imageUrl'] as String?,
-      workoutCompleteSound: normalizedJson['workoutCompleteSound'] == null
+      schemaVersion: json['schemaVersion'] as int,
+      planId: json['planId'] as String,
+      name: json['name'] as String,
+      description: json['description'] as String?,
+      author: json['author'] as String?,
+      imageUrl: json['imageUrl'] as String?,
+      workoutCompleteSound: json['workoutCompleteSound'] == null
           ? null
           : CustomWorkoutSound.fromJson(
-              normalizedJson['workoutCompleteSound'] as Map<String, dynamic>,
+              json['workoutCompleteSound'] as Map<String, dynamic>,
             ),
-      workoutEndedEarlySound: normalizedJson['workoutEndedEarlySound'] == null
+      workoutEndedEarlySound: json['workoutEndedEarlySound'] == null
           ? null
           : CustomWorkoutSound.fromJson(
-              normalizedJson['workoutEndedEarlySound'] as Map<String, dynamic>,
+              json['workoutEndedEarlySound'] as Map<String, dynamic>,
             ),
-      tags: ((normalizedJson['tags'] as List<dynamic>?) ?? <dynamic>[])
+      tags: ((json['tags'] as List<dynamic>?) ?? <dynamic>[])
           .cast<String>()
           .toList(growable: false),
-      workouts: (normalizedJson['workouts'] as List<dynamic>)
+      workouts: (json['workouts'] as List<dynamic>)
           .cast<Map<String, dynamic>>()
           .map(Workout.fromJson)
           .toList(growable: false),
-      moves: (normalizedJson['moves'] as List<dynamic>)
+      moves: (json['moves'] as List<dynamic>)
           .cast<Map<String, dynamic>>()
           .map(Move.fromJson)
           .toList(growable: false),

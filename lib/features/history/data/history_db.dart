@@ -19,15 +19,6 @@ class WorkoutSessions extends Table {
   Set<Column<Object>> get primaryKey => <Column<Object>>{sessionId};
 }
 
-@DataClassName('WorkoutPlanEntity')
-class WorkoutPlansTable extends Table {
-  TextColumn get planId => text()();
-  TextColumn get jsonPayload => text()();
-
-  @override
-  Set<Column<Object>> get primaryKey => <Column<Object>>{planId};
-}
-
 @DataClassName('WorkoutMovePerformanceEntity')
 class WorkoutMovePerformances extends Table {
   TextColumn get performanceId => text()();
@@ -47,50 +38,12 @@ class WorkoutMovePerformances extends Table {
   Set<Column<Object>> get primaryKey => <Column<Object>>{performanceId};
 }
 
-@DriftDatabase(
-    tables: <Type>[WorkoutSessions, WorkoutPlansTable, WorkoutMovePerformances])
+@DriftDatabase(tables: <Type>[WorkoutSessions, WorkoutMovePerformances])
 class HistoryDatabase extends _$HistoryDatabase {
   HistoryDatabase(super.e);
 
   @override
-  int get schemaVersion => 7;
-
-  @override
-  MigrationStrategy get migration {
-    return MigrationStrategy(
-      onCreate: (Migrator m) async {
-        await m.createAll();
-      },
-      onUpgrade: (Migrator m, int from, int to) async {
-        if (from == 1) {
-          await m.createTable(workoutPlansTable);
-        }
-        if (from < 3) {
-          await m.createTable(workoutMovePerformances);
-        }
-        if (from == 3) {
-          await m.addColumn(
-              workoutMovePerformances, workoutMovePerformances.actualWeight);
-          await m.addColumn(workoutMovePerformances,
-              workoutMovePerformances.actualWeightUnit);
-        }
-        if (from < 5) {
-          await m.addColumn(workoutSessions, workoutSessions.planName);
-          await m.addColumn(workoutSessions, workoutSessions.workoutName);
-          await m.addColumn(
-              workoutSessions, workoutSessions.workoutSnapshotJson);
-        }
-        if (from < 6) {
-          await m.deleteTable('workout_move_performances');
-          await m.createTable(workoutMovePerformances);
-        }
-        if (from < 7) {
-          await m.deleteTable('workout_move_performances');
-          await m.createTable(workoutMovePerformances);
-        }
-      },
-    );
-  }
+  int get schemaVersion => 1;
 
   Future<List<WorkoutSessionEntity>> getAllSessions() =>
       select(workoutSessions).get();
@@ -145,13 +98,4 @@ class HistoryDatabase extends _$HistoryDatabase {
       }
     });
   }
-
-  Future<List<WorkoutPlanEntity>> getAllWorkoutPlans() =>
-      select(workoutPlansTable).get();
-
-  Future<void> insertWorkoutPlan(WorkoutPlanEntity plan) =>
-      into(workoutPlansTable).insert(plan, mode: InsertMode.insertOrReplace);
-
-  Future<void> deleteWorkoutPlan(String planId) =>
-      (delete(workoutPlansTable)..where((t) => t.planId.equals(planId))).go();
 }

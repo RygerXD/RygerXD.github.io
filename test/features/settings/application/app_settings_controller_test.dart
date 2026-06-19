@@ -161,20 +161,5 @@ void main() {
       await controller.setStreakWorkoutsPerWeek(-2);
       expect(container.read(appSettingsProvider).streakWorkoutsPerWeek, 1);
     });
-
-    test('loads legacy metronome volume as shared audio volume', () async {
-      SharedPreferences.setMockInitialValues(<String, Object>{
-        'settings.metronome_volume.v1': 0.45,
-      });
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      final ProviderContainer container = ProviderContainer(
-        overrides: <Override>[
-          sharedPreferencesProvider.overrideWithValue(prefs),
-        ],
-      );
-      addTearDown(container.dispose);
-
-      expect(container.read(appSettingsProvider).audioVolume, 0.45);
-    });
   });
 }

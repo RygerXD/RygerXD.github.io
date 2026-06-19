@@ -30,7 +30,7 @@ void main() {
       repCount: 10,
     );
     const WorkoutPlan oldPlan = WorkoutPlan(
-      schemaVersion: 4,
+      schemaVersion: 1,
       planId: 'plan-1',
       name: 'Plan',
       workouts: <Workout>[
@@ -53,7 +53,7 @@ void main() {
       ],
     );
     const WorkoutPlan currentPlan = WorkoutPlan(
-      schemaVersion: 4,
+      schemaVersion: 1,
       planId: 'plan-1',
       name: 'Plan',
       workouts: <Workout>[

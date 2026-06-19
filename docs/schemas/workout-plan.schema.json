@@ -14,7 +14,7 @@
   "properties": {
     "schemaVersion": {
       "type": "integer",
-      "const": 4
+      "const": 1
     },
     "planId": {
       "type": "string",

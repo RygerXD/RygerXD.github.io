@@ -22,53 +22,6 @@ void main() {
       expect(parsed.workouts.single.sets.single.moves.single.setCount, 2);
     });
 
-    test('migrates schema 3 plan JSON', () {
-      final String previousMovesKey = _legacyKey(
-        <int>[101, 120, 101, 114, 99, 105, 115, 101, 115],
-      );
-      final String previousMoveIdKey = _legacyKey(
-        <int>[101, 120, 101, 114, 99, 105, 115, 101, 73, 100],
-      );
-
-      final WorkoutPlan parsed = parser.parseFromJson(<String, dynamic>{
-        'schemaVersion': 3,
-        'planId': 'plan-1',
-        'name': 'Plan',
-        previousMovesKey: <Map<String, dynamic>>[
-          <String, dynamic>{
-            previousMoveIdKey: 'squat',
-            'name': 'Squat',
-          },
-        ],
-        'workouts': <Map<String, dynamic>>[
-          <String, dynamic>{
-            'workoutId': 'workout-1',
-            'title': 'Workout',
-            'sets': <Map<String, dynamic>>[
-              <String, dynamic>{
-                'setId': 'set-1',
-                'moves': <Map<String, dynamic>>[
-                  <String, dynamic>{
-                    'moveId': 'workout-move-1',
-                    previousMoveIdKey: 'squat',
-                    'type': 'reps',
-                    'repCount': 10,
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      });
-
-      final WorkoutMove parsedMove =
-          parsed.workouts.single.sets.single.moves.single;
-      expect(parsed.schemaVersion, 4);
-      expect(parsed.moves.single.moveId, 'squat');
-      expect(parsedMove.workoutMoveId, 'workout-move-1');
-      expect(parsedMove.moveId, 'squat');
-    });
-
     test('throws on unsupported schemaVersion', () {
       expect(
         () => parser.parseFromJson(_planJson(schemaVersion: 5)),
@@ -237,12 +190,8 @@ void main() {
   });
 }
 
-String _legacyKey(List<int> charCodes) {
-  return String.fromCharCodes(charCodes);
-}
-
 Map<String, dynamic> _planJson({
-  int schemaVersion = 4,
+  int schemaVersion = 1,
   String moveId = 'ex-1',
   String moveName = 'Squat',
   Map<String, dynamic> move = const <String, dynamic>{},

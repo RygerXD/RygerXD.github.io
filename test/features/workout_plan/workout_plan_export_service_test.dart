@@ -34,7 +34,7 @@ void main() {
       final Map<String, dynamic> json = jsonDecode(
         utf8.decode(fakeFilePicker.savedBytes!),
       ) as Map<String, dynamic>;
-      expect(json['schemaVersion'], 4);
+      expect(json['schemaVersion'], 1);
       expect(json['planId'], 'plan-1');
       expect(json['name'], 'Plan 1: Upper/Lower');
       expect(json['workouts'], hasLength(1));
@@ -73,7 +73,7 @@ void main() {
 
       final List<WorkoutPlan> plans = await repository.getAllPlans();
       expect(plans, hasLength(1));
-      expect(plans.single.schemaVersion, 4);
+      expect(plans.single.schemaVersion, 1);
       expect(plans.single.planId, 'plan-1');
       expect(plans.single.workouts, hasLength(1));
       expect(plans.single.workouts.single.workoutId, 'workout-1');
@@ -89,7 +89,7 @@ void main() {
 }
 
 const WorkoutPlan _samplePlan = WorkoutPlan(
-  schemaVersion: 2,
+  schemaVersion: workoutPlanSchemaVersion,
   planId: 'plan-1',
   name: 'Plan 1: Upper/Lower',
   workouts: <Workout>[

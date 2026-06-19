@@ -1,11 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:workout_app_rewrite/features/history/application/history_providers.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_export_service.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_import_service.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_parser.dart';
-import 'package:workout_app_rewrite/features/workout_plan/data/drift_workout_repository.dart';
-import 'package:workout_app_rewrite/features/workout_plan/data/mirrored_workout_repository.dart';
 import 'package:workout_app_rewrite/features/workout_plan/data/shared_prefs_workout_repository.dart';
 import 'package:workout_app_rewrite/features/workout_plan/data/workout_repository.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
@@ -23,11 +20,7 @@ final Provider<SharedPreferences> sharedPreferencesProvider =
 
 final Provider<WorkoutRepository> workoutRepositoryProvider =
     Provider<WorkoutRepository>((Ref<WorkoutRepository> ref) {
-  final WorkoutRepository primary =
-      SharedPrefsWorkoutRepository(ref.watch(sharedPreferencesProvider));
-  final WorkoutRepository secondary =
-      DriftWorkoutRepository(ref.watch(historyDatabaseProvider));
-  return MirroredWorkoutRepository(primary: primary, secondary: secondary);
+  return SharedPrefsWorkoutRepository(ref.watch(sharedPreferencesProvider));
 });
 
 final Provider<WorkoutPlanImportService> workoutPlanImportServiceProvider =

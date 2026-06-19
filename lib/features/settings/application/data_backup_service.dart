@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workout_app_rewrite/features/history/application/history_providers.dart';
 import 'package:workout_app_rewrite/features/history/data/history_db.dart';
 import 'package:workout_app_rewrite/features/settings/application/app_settings_controller.dart';
+import 'package:workout_app_rewrite/features/settings/application/sound_settings_transfer.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_parser.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
 import 'package:workout_app_rewrite/features/workout_plan/data/workout_repository.dart';
@@ -73,7 +74,8 @@ class DataBackupService {
       'format': _format,
       'formatVersion': _formatVersion,
       'createdAt': DateTime.now().toUtc().toIso8601String(),
-      'settings': settings.toJson(),
+      'settings': _settingsWithoutSoundData(settings),
+      'soundSettings': encodeSoundSettings(settings),
       'workoutPlans': plans
           .map((WorkoutPlan plan) => plan.toJson())
           .toList(growable: false),
@@ -129,6 +131,9 @@ class DataBackupService {
     await _ref
         .read(appSettingsProvider.notifier)
         .applySettings(backup.settings);
+    await _ref
+        .read(appSettingsProvider.notifier)
+        .applyAudioSettings(backup.soundSettings);
     await _ref.read(historyDatabaseProvider).replaceHistory(
           sessions: backup.sessions,
           movePerformances: backup.movePerformances,
@@ -191,6 +196,7 @@ class DataBackupService {
 
       return _BackupData(
         settings: AppSettings.fromJson(settingsJson),
+        soundSettings: decodeSoundSettings(decoded['soundSettings']),
         plans: plans,
         sessions: sessionsJson
             .cast<Map<String, dynamic>>()
@@ -288,6 +294,25 @@ class DataBackupService {
     return 'workout-app-backup-$date-$time.json';
   }
 
+  static Map<String, dynamic> _settingsWithoutSoundData(AppSettings settings) {
+    final Map<String, dynamic> json = settings.toJson();
+    for (final String key in <String>[
+      'customSoundLibrary',
+      'metronomeClickCustomSound',
+      'getReadyCountdownCustomSound',
+      'getReadyDingCustomSound',
+      'moveCountdownCustomSound',
+      'moveFinishedDingCustomSound',
+      'moveHalfwayCustomSound',
+      'restFinishedCustomSound',
+      'workoutCompleteCustomSound',
+      'workoutEndedEarlyCustomSound',
+    ]) {
+      json.remove(key);
+    }
+    return json;
+  }
+
   static String _two(int value) => value.toString().padLeft(2, '0');
 
   static String _string(Map<String, dynamic> json, String key) {
@@ -340,12 +365,14 @@ class DataBackupService {
 class _BackupData {
   const _BackupData({
     required this.settings,
+    required this.soundSettings,
     required this.plans,
     required this.sessions,
     required this.movePerformances,
   });
 
   final AppSettings settings;
+  final AppSettings soundSettings;
   final List<WorkoutPlan> plans;
   final List<WorkoutSessionEntity> sessions;
   final List<WorkoutMovePerformanceEntity> movePerformances;

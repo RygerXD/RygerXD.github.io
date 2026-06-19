@@ -143,7 +143,7 @@ Privacy note:
    - Workout plan parsing, validation, estimates, state-machine transitions, streak calculations, and history aggregation should live outside React components.
    - These modules should be portable enough to translate back into Dart later.
 
-2. Preserve the schemaVersion 4 workout plan JSON contract.
+2. Preserve the schemaVersion 1 workout plan JSON contract.
    - Do not casually rename plan/workout/set/move/move fields.
    - Imported files produced for the Flutter app should import into the web app.
    - Web-exported plan files should import into the Flutter app.
@@ -253,7 +253,7 @@ interface Workout {
 }
 
 interface WorkoutPlan {
-  schemaVersion: 4;
+  schemaVersion: 1;
   planId: string;
   name: string;
   description?: string;
@@ -270,7 +270,7 @@ interface WorkoutPlan {
 The web parser must reject invalid imports with user-visible validation messages:
 
 - Root JSON must be an object.
-- `schemaVersion` is required and must be `4`.
+- `schemaVersion` is required and must be `1`.
 - `planId` and `name` are required non-empty strings.
 - `workouts` is required and must be a non-empty array.
 - `moves` is required and must be a non-empty array.
@@ -565,7 +565,7 @@ Import behavior:
 - Use browser file picker restricted to `.json`.
 - Read UTF-8 text.
 - Reject files over `5 * 1024 * 1024` bytes.
-- Parse and validate using schemaVersion 4 rules.
+- Parse and validate using schemaVersion 1 rules.
 - Save valid plan by `planId`, replacing any existing plan with same id.
 - Show success toast: `Successfully imported {plan.name}`.
 - Show error toast with validation/import error.
@@ -594,7 +594,7 @@ Fields:
 Create behavior:
 
 - Generate UUID `planId`.
-- Set `schemaVersion: 4`.
+- Set `schemaVersion: 1`.
 - Save plan with empty `workouts` and empty `moves`.
 - Navigate to `/library/detail/$planId`.
 
@@ -1312,7 +1312,7 @@ Even though current analysis export is not implemented, plan export is useful fo
 
 If implemented in the web rebuild:
 
-- Export one selected plan as schemaVersion 4 JSON.
+- Export one selected plan as schemaVersion 1 JSON.
 - Emit sparse canonical JSON: omit unknown optional fields, nulls, and default values.
 - Do not include IndexedDB-only session/history data.
 - Warn if local `app-media://` references exist.
@@ -1325,7 +1325,7 @@ Backup shape:
 
 ```ts
 interface WorkoutAppBackupV1 {
-  schemaVersion: 4;
+  schemaVersion: 1;
   exportedAt: string;
   plans: WorkoutPlan[];
   sessions: WorkoutSession[];
@@ -1371,7 +1371,7 @@ For early testing:
 - Server-side persistence.
 - Cross-device sync.
 - Analytics or telemetry.
-- Replacing schemaVersion 4.
+- Replacing schemaVersion 1.
 
 ## 12. Known Current Gaps to Preserve or Decide
 
@@ -1391,7 +1391,7 @@ These are present in the Flutter app and should be handled intentionally:
 
 Cover:
 
-- Plan parser accepts valid schemaVersion 4 JSON.
+- Plan parser accepts valid schemaVersion 1 JSON.
 - Parser rejects invalid root, missing schemaVersion, unsupported schemaVersion, empty required strings, bad move references, invalid move type data, invalid metronome speed, and invalid stopwatch duration.
 - Workout estimate calculations:
   - prep + duration + cooldown.
@@ -1553,7 +1553,7 @@ src/
 
 To make the eventual Flutter return practical:
 
-- Keep the schemaVersion 4 workout plan JSON as the canonical interchange format.
+- Keep the schemaVersion 1 workout plan JSON as the canonical interchange format.
 - Keep names and behavior of move types, settings enums, session statuses, and history keys aligned with Flutter.
 - Keep workout state-machine tests written in behavior terms so they can be ported back.
 - Avoid storing important data only in web-only shapes unless a migration/export path exists.

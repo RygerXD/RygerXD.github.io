@@ -9,12 +9,11 @@ import 'package:workout_app_rewrite/core/audio/custom_sound_field.dart';
 import 'package:workout_app_rewrite/core/theme/tokens.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/metronome_audio.dart';
 import 'package:workout_app_rewrite/features/settings/application/app_settings_controller.dart';
+import 'package:workout_app_rewrite/features/settings/application/sound_settings_transfer.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
 
 class SoundsScreen extends ConsumerWidget {
   const SoundsScreen({super.key});
-
-  static const String _format = 'workout_app_rewrite.sounds';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -288,14 +287,8 @@ class SoundsScreen extends ConsumerWidget {
     AppSettings settings,
   ) async {
     try {
-      final Uint8List bytes = Uint8List.fromList(utf8.encode(
-        const JsonEncoder.withIndent('  ').convert(<String, dynamic>{
-          'format': _format,
-          'formatVersion': 1,
-          'createdAt': DateTime.now().toUtc().toIso8601String(),
-          'settings': settings.toJson(),
-        }),
-      ));
+      final Uint8List bytes =
+          Uint8List.fromList(utf8.encode(encodeSoundSettingsJson(settings)));
       final String? path = await FilePicker.platform.saveFile(
         dialogTitle: 'Export sounds',
         fileName: 'workout-sounds.json',
@@ -328,14 +321,7 @@ class SoundsScreen extends ConsumerWidget {
       final Uint8List? bytes = result.files.single.bytes;
       if (bytes == null) throw const FormatException('Could not read file.');
       final Object? decoded = jsonDecode(utf8.decode(bytes));
-      if (decoded is! Map<String, dynamic> ||
-          decoded['format'] != _format ||
-          decoded['formatVersion'] != 1 ||
-          decoded['settings'] is! Map<String, dynamic>) {
-        throw const FormatException('Not a valid sounds export.');
-      }
-      final AppSettings imported =
-          AppSettings.fromJson(decoded['settings'] as Map<String, dynamic>);
+      final AppSettings imported = decodeSoundSettings(decoded);
       await ref.read(appSettingsProvider.notifier).applyAudioSettings(imported);
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

@@ -216,7 +216,7 @@ void main() {
 
 WorkoutPlan _planWithMove(WorkoutMove move) {
   return WorkoutPlan(
-    schemaVersion: 4,
+    schemaVersion: 1,
     planId: 'plan-1',
     name: 'Plan 1',
     workouts: <Workout>[
