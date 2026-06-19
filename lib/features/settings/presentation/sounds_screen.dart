@@ -1,5 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workout_app_rewrite/core/audio/custom_sound_field.dart';
@@ -11,14 +14,44 @@ import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_mo
 class SoundsScreen extends ConsumerWidget {
   const SoundsScreen({super.key});
 
+  static const String _format = 'workout_app_rewrite.sounds';
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final AppSettings settings = ref.watch(appSettingsProvider);
     final AppSettingsController controller =
         ref.read(appSettingsProvider.notifier);
+    final List<CustomWorkoutSound> library = _soundPool(settings);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Sounds')),
+      appBar: AppBar(
+        title: const Text('Sounds'),
+        actions: <Widget>[
+          PopupMenuButton<String>(
+            tooltip: 'Import or export sounds',
+            onSelected: (String value) => unawaited(value == 'import'
+                ? _importSounds(context, ref)
+                : _exportSounds(context, settings)),
+            itemBuilder: (BuildContext context) =>
+                const <PopupMenuEntry<String>>[
+              PopupMenuItem<String>(
+                value: 'import',
+                child: ListTile(
+                  leading: Icon(Icons.file_download_outlined),
+                  title: Text('Import sounds'),
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'export',
+                child: ListTile(
+                  leading: Icon(Icons.file_upload_outlined),
+                  title: Text('Export sounds'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         children: <Widget>[
@@ -32,120 +65,179 @@ class SoundsScreen extends ConsumerWidget {
             value: settings.audioVolume,
             onChanged: controller.setAudioVolume,
           ),
-          const SizedBox(height: AppSpacing.md),
-          _BuiltInSoundSetting<MetronomeClickSound>(
+          ListTile(
+            title: const Text('Custom sound pool'),
+            subtitle: Text(library.isEmpty
+                ? 'Imported sounds will be available for every cue.'
+                : '${library.length} sound${library.length == 1 ? '' : 's'} available for every cue.'),
+            trailing: FilledButton.icon(
+              onPressed: () => unawaited(_addSound(context, controller)),
+              icon: const Icon(Icons.add),
+              label: const Text('Add sound'),
+            ),
+          ),
+          if (library.isNotEmpty)
+            Card(
+              margin: const EdgeInsets.only(bottom: AppSpacing.md),
+              child: Column(
+                children: library
+                    .map((CustomWorkoutSound sound) => ListTile(
+                          leading: IconButton(
+                            tooltip: 'Test ${sound.fileName}',
+                            icon: const Icon(Icons.play_arrow),
+                            onPressed: () =>
+                                unawaited(WorkoutAudio.playCustomSound(
+                              sound: sound,
+                              volume: settings.audioVolume,
+                            )),
+                          ),
+                          title: Text(sound.fileName),
+                          trailing: IconButton(
+                            tooltip: 'Remove ${sound.fileName}',
+                            icon: const Icon(Icons.delete_outline),
+                            onPressed: () =>
+                                unawaited(controller.removeCustomSound(sound)),
+                          ),
+                        ))
+                    .toList(growable: false),
+              ),
+            ),
+          const SizedBox(height: AppSpacing.sm),
+          _SoundSetting(
             title: 'Metronome click',
+            builtInSound: settings.soundFor(WorkoutSoundCue.metronome),
+            onBuiltInChanged: (SharedWorkoutSound sound) =>
+                controller.setSoundSelection(WorkoutSoundCue.metronome, sound),
             enabled: settings.metronomeClickEnabled,
             onEnabledChanged: controller.setMetronomeClickEnabled,
-            dropdownLabel: 'Built-in click',
-            value: settings.metronomeClickSound,
-            values: MetronomeClickSound.values,
-            labelFor: _metronomeClickLabel,
-            onChanged: controller.setMetronomeClickSound,
-            customSound: settings.metronomeClickCustomSound,
-            onCustomSoundChanged: controller.setMetronomeClickCustomSound,
+            value: settings.metronomeClickCustomSound,
+            library: library,
+            onChanged: controller.setMetronomeClickCustomSound,
             volume: settings.audioVolume,
             onTestDefault: () => unawaited(WorkoutAudio.playMetronomeClick(
               sound: settings.metronomeClickSound,
               volume: settings.audioVolume,
             )),
           ),
-          _BuiltInSoundSetting<CountdownSound>(
+          _SoundSetting(
             title: 'Get ready countdown',
+            builtInSound: settings.soundFor(WorkoutSoundCue.getReadyCountdown),
+            onBuiltInChanged: (SharedWorkoutSound sound) => controller
+                .setSoundSelection(WorkoutSoundCue.getReadyCountdown, sound),
             enabled: settings.getReadyCountdownEnabled,
             onEnabledChanged: controller.setGetReadyCountdownEnabled,
-            dropdownLabel: 'Built-in countdown',
-            value: settings.getReadyCountdownSound,
-            values: CountdownSound.values,
-            labelFor: _countdownLabel,
-            onChanged: controller.setGetReadyCountdownSound,
-            customSound: settings.getReadyCountdownCustomSound,
-            onCustomSoundChanged: controller.setGetReadyCountdownCustomSound,
+            value: settings.getReadyCountdownCustomSound,
+            library: library,
+            onChanged: controller.setGetReadyCountdownCustomSound,
             volume: settings.audioVolume,
             onTestDefault: () => unawaited(WorkoutAudio.playGetReadyCountdown(
               sound: settings.getReadyCountdownSound,
               volume: settings.audioVolume,
             )),
           ),
-          _BuiltInSoundSetting<GetReadyDingSound>(
+          _SoundSetting(
             title: 'Get ready ding',
+            builtInSound: settings.soundFor(WorkoutSoundCue.getReadyDing),
+            onBuiltInChanged: (SharedWorkoutSound sound) => controller
+                .setSoundSelection(WorkoutSoundCue.getReadyDing, sound),
             enabled: settings.getReadyDingEnabled,
             onEnabledChanged: controller.setGetReadyDingEnabled,
-            dropdownLabel: 'Built-in ding',
-            value: settings.getReadyDingSound,
-            values: GetReadyDingSound.values,
-            labelFor: _getReadyDingLabel,
-            onChanged: controller.setGetReadyDingSound,
-            customSound: settings.getReadyDingCustomSound,
-            onCustomSoundChanged: controller.setGetReadyDingCustomSound,
+            value: settings.getReadyDingCustomSound,
+            library: library,
+            onChanged: controller.setGetReadyDingCustomSound,
             volume: settings.audioVolume,
             onTestDefault: () => unawaited(WorkoutAudio.playGetReadyDing(
               sound: settings.getReadyDingSound,
               volume: settings.audioVolume,
             )),
           ),
-          _BuiltInSoundSetting<CountdownSound>(
+          _SoundSetting(
             title: 'Move countdown',
+            builtInSound: settings.soundFor(WorkoutSoundCue.moveCountdown),
+            onBuiltInChanged: (SharedWorkoutSound sound) => controller
+                .setSoundSelection(WorkoutSoundCue.moveCountdown, sound),
             enabled: settings.moveCountdownEnabled,
             onEnabledChanged: controller.setMoveCountdownEnabled,
-            dropdownLabel: 'Built-in countdown',
-            value: settings.moveCountdownSound,
-            values: CountdownSound.values,
-            labelFor: _countdownLabel,
-            onChanged: controller.setMoveCountdownSound,
-            customSound: settings.moveCountdownCustomSound,
-            onCustomSoundChanged: controller.setMoveCountdownCustomSound,
+            value: settings.moveCountdownCustomSound,
+            library: library,
+            onChanged: controller.setMoveCountdownCustomSound,
             volume: settings.audioVolume,
             onTestDefault: () => unawaited(WorkoutAudio.playMoveCountdown(
               sound: settings.moveCountdownSound,
               volume: settings.audioVolume,
             )),
           ),
-          _BuiltInSoundSetting<MoveFinishedDingSound>(
+          _SoundSetting(
+            title: 'Move halfway done',
+            builtInSound: settings.soundFor(WorkoutSoundCue.moveHalfway),
+            onBuiltInChanged: (SharedWorkoutSound sound) => controller
+                .setSoundSelection(WorkoutSoundCue.moveHalfway, sound),
+            enabled: settings.moveHalfwayEnabled,
+            onEnabledChanged: controller.setMoveHalfwayEnabled,
+            value: settings.moveHalfwayCustomSound,
+            library: library,
+            onChanged: controller.setMoveHalfwayCustomSound,
+            volume: settings.audioVolume,
+            onTestDefault: () => unawaited(WorkoutAudio.playMoveHalfway(
+              volume: settings.audioVolume,
+            )),
+          ),
+          _SoundSetting(
             title: 'Move finished ding',
+            builtInSound: settings.soundFor(WorkoutSoundCue.moveFinished),
+            onBuiltInChanged: (SharedWorkoutSound sound) => controller
+                .setSoundSelection(WorkoutSoundCue.moveFinished, sound),
             enabled: settings.moveFinishedDingEnabled,
             onEnabledChanged: controller.setMoveFinishedDingEnabled,
-            dropdownLabel: 'Built-in finish',
-            value: settings.moveFinishedDingSound,
-            values: MoveFinishedDingSound.values,
-            labelFor: _moveFinishedDingLabel,
-            onChanged: controller.setMoveFinishedDingSound,
-            customSound: settings.moveFinishedDingCustomSound,
-            onCustomSoundChanged: controller.setMoveFinishedDingCustomSound,
+            value: settings.moveFinishedDingCustomSound,
+            library: library,
+            onChanged: controller.setMoveFinishedDingCustomSound,
             volume: settings.audioVolume,
             onTestDefault: () => unawaited(WorkoutAudio.playMoveFinishedDing(
               sound: settings.moveFinishedDingSound,
               volume: settings.audioVolume,
             )),
           ),
-          _TerminalSoundSetting(
+          _SoundSetting(
             title: 'Rest finished',
+            builtInSound: settings.soundFor(WorkoutSoundCue.restFinished),
+            onBuiltInChanged: (SharedWorkoutSound sound) => controller
+                .setSoundSelection(WorkoutSoundCue.restFinished, sound),
             enabled: settings.restFinishedEnabled,
             onEnabledChanged: controller.setRestFinishedEnabled,
-            customSound: settings.restFinishedCustomSound,
-            onCustomSoundChanged: controller.setRestFinishedCustomSound,
+            value: settings.restFinishedCustomSound,
+            library: library,
+            onChanged: controller.setRestFinishedCustomSound,
             volume: settings.audioVolume,
             onTestDefault: () => unawaited(WorkoutAudio.playRestFinished(
               volume: settings.audioVolume,
             )),
           ),
-          _TerminalSoundSetting(
+          _SoundSetting(
             title: 'Workout complete',
+            builtInSound: settings.soundFor(WorkoutSoundCue.workoutComplete),
+            onBuiltInChanged: (SharedWorkoutSound sound) => controller
+                .setSoundSelection(WorkoutSoundCue.workoutComplete, sound),
             enabled: settings.workoutCompleteEnabled,
             onEnabledChanged: controller.setWorkoutCompleteEnabled,
-            customSound: settings.workoutCompleteCustomSound,
-            onCustomSoundChanged: controller.setWorkoutCompleteCustomSound,
+            value: settings.workoutCompleteCustomSound,
+            library: library,
+            onChanged: controller.setWorkoutCompleteCustomSound,
             volume: settings.audioVolume,
             onTestDefault: () => unawaited(WorkoutAudio.playWorkoutComplete(
               volume: settings.audioVolume,
             )),
           ),
-          _TerminalSoundSetting(
+          _SoundSetting(
             title: 'Workout ended early',
+            builtInSound: settings.soundFor(WorkoutSoundCue.workoutEndedEarly),
+            onBuiltInChanged: (SharedWorkoutSound sound) => controller
+                .setSoundSelection(WorkoutSoundCue.workoutEndedEarly, sound),
             enabled: settings.workoutEndedEarlyEnabled,
             onEnabledChanged: controller.setWorkoutEndedEarlyEnabled,
-            customSound: settings.workoutEndedEarlyCustomSound,
-            onCustomSoundChanged: controller.setWorkoutEndedEarlyCustomSound,
+            value: settings.workoutEndedEarlyCustomSound,
+            library: library,
+            onChanged: controller.setWorkoutEndedEarlyCustomSound,
             volume: settings.audioVolume,
             onTestDefault: () => unawaited(WorkoutAudio.playWorkoutEndedEarly(
               volume: settings.audioVolume,
@@ -156,68 +248,144 @@ class SoundsScreen extends ConsumerWidget {
     );
   }
 
-  static String _metronomeClickLabel(MetronomeClickSound sound) =>
-      switch (sound) {
-        MetronomeClickSound.classic => 'Classic',
-        MetronomeClickSound.sharp => 'Sharp',
-        MetronomeClickSound.low => 'Low',
-        MetronomeClickSound.bell => 'Bell',
-      };
+  static List<CustomWorkoutSound> _soundPool(AppSettings settings) {
+    final List<CustomWorkoutSound> result = <CustomWorkoutSound>[
+      ...settings.customSoundLibrary,
+    ];
+    for (final CustomWorkoutSound? sound in <CustomWorkoutSound?>[
+      settings.metronomeClickCustomSound,
+      settings.getReadyCountdownCustomSound,
+      settings.getReadyDingCustomSound,
+      settings.moveCountdownCustomSound,
+      settings.moveHalfwayCustomSound,
+      settings.moveFinishedDingCustomSound,
+      settings.restFinishedCustomSound,
+      settings.workoutCompleteCustomSound,
+      settings.workoutEndedEarlyCustomSound,
+    ]) {
+      if (sound != null && !_containsSound(result, sound)) result.add(sound);
+    }
+    return result;
+  }
 
-  static String _getReadyDingLabel(GetReadyDingSound sound) => switch (sound) {
-        GetReadyDingSound.classic => 'Classic ding',
-        GetReadyDingSound.bright => 'Bright chime',
-        GetReadyDingSound.soft => 'Soft ding',
-        GetReadyDingSound.bell => 'Bell',
-      };
+  static bool _containsSound(
+          List<CustomWorkoutSound> sounds, CustomWorkoutSound sound) =>
+      sounds.any((CustomWorkoutSound item) =>
+          item.mimeType == sound.mimeType &&
+          item.base64Data == sound.base64Data);
 
-  static String _countdownLabel(CountdownSound sound) => switch (sound) {
-        CountdownSound.click => 'Click',
-        CountdownSound.pulse => 'Pulse',
-        CountdownSound.wood => 'Wood',
-        CountdownSound.low => 'Low',
-      };
+  static Future<void> _addSound(
+    BuildContext context,
+    AppSettingsController controller,
+  ) async {
+    final CustomWorkoutSound? sound =
+        await pickCustomWorkoutSound(context, title: 'custom sound');
+    if (sound != null) await controller.addCustomSound(sound);
+  }
 
-  static String _moveFinishedDingLabel(MoveFinishedDingSound sound) =>
-      switch (sound) {
-        MoveFinishedDingSound.classic => 'Classic finish',
-        MoveFinishedDingSound.bright => 'Bright finish',
-        MoveFinishedDingSound.soft => 'Soft finish',
-        MoveFinishedDingSound.bell => 'Bell',
-      };
+  static Future<void> _exportSounds(
+    BuildContext context,
+    AppSettings settings,
+  ) async {
+    try {
+      final Uint8List bytes = Uint8List.fromList(utf8.encode(
+        const JsonEncoder.withIndent('  ').convert(<String, dynamic>{
+          'format': _format,
+          'formatVersion': 1,
+          'createdAt': DateTime.now().toUtc().toIso8601String(),
+          'settings': settings.toJson(),
+        }),
+      ));
+      final String? path = await FilePicker.platform.saveFile(
+        dialogTitle: 'Export sounds',
+        fileName: 'workout-sounds.json',
+        type: FileType.custom,
+        allowedExtensions: const <String>['json'],
+        bytes: bytes,
+      );
+      if (!context.mounted || (!kIsWeb && path == null)) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sounds exported.')),
+      );
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not export sounds: $error')),
+        );
+      }
+    }
+  }
+
+  static Future<void> _importSounds(BuildContext context, WidgetRef ref) async {
+    try {
+      final FilePickerResult? result = await FilePicker.platform.pickFiles(
+        dialogTitle: 'Import sounds',
+        type: FileType.custom,
+        allowedExtensions: const <String>['json'],
+        withData: true,
+      );
+      if (result == null || result.files.isEmpty) return;
+      final Uint8List? bytes = result.files.single.bytes;
+      if (bytes == null) throw const FormatException('Could not read file.');
+      final Object? decoded = jsonDecode(utf8.decode(bytes));
+      if (decoded is! Map<String, dynamic> ||
+          decoded['format'] != _format ||
+          decoded['formatVersion'] != 1 ||
+          decoded['settings'] is! Map<String, dynamic>) {
+        throw const FormatException('Not a valid sounds export.');
+      }
+      final AppSettings imported =
+          AppSettings.fromJson(decoded['settings'] as Map<String, dynamic>);
+      await ref.read(appSettingsProvider.notifier).applyAudioSettings(imported);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sounds imported.')),
+      );
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not import sounds: $error')),
+        );
+      }
+    }
+  }
 }
 
-class _BuiltInSoundSetting<T> extends StatelessWidget {
-  const _BuiltInSoundSetting({
+class _SoundSetting extends StatelessWidget {
+  const _SoundSetting({
     required this.title,
+    required this.builtInSound,
+    required this.onBuiltInChanged,
     required this.enabled,
     required this.onEnabledChanged,
-    required this.dropdownLabel,
     required this.value,
-    required this.values,
-    required this.labelFor,
+    required this.library,
     required this.onChanged,
-    required this.customSound,
-    required this.onCustomSoundChanged,
     required this.volume,
     required this.onTestDefault,
   });
 
   final String title;
+  final SharedWorkoutSound builtInSound;
+  final ValueChanged<SharedWorkoutSound> onBuiltInChanged;
   final bool enabled;
   final ValueChanged<bool> onEnabledChanged;
-  final String dropdownLabel;
-  final T value;
-  final List<T> values;
-  final String Function(T value) labelFor;
-  final ValueChanged<T> onChanged;
-  final CustomWorkoutSound? customSound;
-  final ValueChanged<CustomWorkoutSound?> onCustomSoundChanged;
+  final CustomWorkoutSound? value;
+  final List<CustomWorkoutSound> library;
+  final ValueChanged<CustomWorkoutSound?> onChanged;
   final double volume;
   final VoidCallback onTestDefault;
 
   @override
   Widget build(BuildContext context) {
+    final int builtInCount = SharedWorkoutSound.values.length;
+    final int customIndex = value == null
+        ? -1
+        : library.indexWhere((CustomWorkoutSound item) =>
+            item.mimeType == value!.mimeType &&
+            item.base64Data == value!.base64Data);
+    final int selected =
+        value == null ? builtInSound.index : builtInCount + customIndex;
     return Card(
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Column(
@@ -228,80 +396,85 @@ class _BuiltInSoundSetting<T> extends StatelessWidget {
             onChanged: onEnabledChanged,
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-            child: DropdownButtonFormField<T>(
-              initialValue: value,
-              decoration: InputDecoration(
-                labelText: dropdownLabel,
-                border: const OutlineInputBorder(),
-              ),
-              items: values
-                  .map((T item) => DropdownMenuItem<T>(
-                        value: item,
-                        child: Text(labelFor(item)),
-                      ))
-                  .toList(growable: false),
-              onChanged: (T? next) {
-                if (next != null) onChanged(next);
-              },
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              0,
+              AppSpacing.sm,
+              AppSpacing.md,
+            ),
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  child: DropdownButtonFormField<int>(
+                    initialValue: selected < builtInCount
+                        ? selected
+                        : customIndex < 0
+                            ? builtInSound.index
+                            : selected,
+                    decoration: const InputDecoration(
+                      labelText: 'Sound',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: <DropdownMenuItem<int>>[
+                      ...SharedWorkoutSound.values.map(
+                        (SharedWorkoutSound sound) => DropdownMenuItem<int>(
+                          value: sound.index,
+                          child: Text(_builtInLabel(sound)),
+                        ),
+                      ),
+                      ...library.indexed.map(
+                          ((int, CustomWorkoutSound) entry) =>
+                              DropdownMenuItem<int>(
+                                value: builtInCount + entry.$1,
+                                child: Text(
+                                  entry.$2.fileName,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              )),
+                    ],
+                    onChanged: (int? index) {
+                      if (index == null) return;
+                      if (index < builtInCount) {
+                        onBuiltInChanged(SharedWorkoutSound.values[index]);
+                        onChanged(null);
+                      } else {
+                        onChanged(library[index - builtInCount]);
+                      }
+                    },
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Test sound',
+                  onPressed: value == null
+                      ? () => unawaited(WorkoutAudio.playSharedSound(
+                            sound: builtInSound,
+                            volume: volume,
+                          ))
+                      : () => unawaited(WorkoutAudio.playCustomSound(
+                            sound: value!,
+                            volume: volume,
+                          )),
+                  icon: const Icon(Icons.play_arrow),
+                ),
+              ],
             ),
           ),
-          CustomSoundField(
-            title: 'Custom override',
-            value: customSound,
-            volume: volume,
-            onChanged: onCustomSoundChanged,
-            onTestDefault: onTestDefault,
-            card: false,
-          ),
         ],
       ),
     );
   }
-}
 
-class _TerminalSoundSetting extends StatelessWidget {
-  const _TerminalSoundSetting({
-    required this.title,
-    required this.enabled,
-    required this.onEnabledChanged,
-    required this.customSound,
-    required this.onCustomSoundChanged,
-    required this.volume,
-    required this.onTestDefault,
-  });
-
-  final String title;
-  final bool enabled;
-  final ValueChanged<bool> onEnabledChanged;
-  final CustomWorkoutSound? customSound;
-  final ValueChanged<CustomWorkoutSound?> onCustomSoundChanged;
-  final double volume;
-  final VoidCallback onTestDefault;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: AppSpacing.md),
-      child: Column(
-        children: <Widget>[
-          SwitchListTile(
-            title: Text(title),
-            value: enabled,
-            onChanged: onEnabledChanged,
-          ),
-          CustomSoundField(
-            title: 'Sound',
-            value: customSound,
-            volume: volume,
-            onChanged: onCustomSoundChanged,
-            onTestDefault: onTestDefault,
-            card: false,
-          ),
-        ],
-      ),
-    );
-  }
+  static String _builtInLabel(SharedWorkoutSound sound) => switch (sound) {
+        SharedWorkoutSound.classic => 'Classic',
+        SharedWorkoutSound.sharp => 'Sharp',
+        SharedWorkoutSound.low => 'Low',
+        SharedWorkoutSound.bell => 'Bell',
+        SharedWorkoutSound.bright => 'Bright',
+        SharedWorkoutSound.soft => 'Soft',
+        SharedWorkoutSound.click => 'Click',
+        SharedWorkoutSound.pulse => 'Pulse',
+        SharedWorkoutSound.wood => 'Wood',
+      };
 }
 
 class _VolumeSetting extends StatelessWidget {

@@ -47,6 +47,42 @@ enum MoveFinishedDingSound {
   bell,
 }
 
+enum SharedWorkoutSound {
+  classic,
+  sharp,
+  low,
+  bell,
+  bright,
+  soft,
+  click,
+  pulse,
+  wood
+}
+
+abstract final class WorkoutSoundCue {
+  static const String metronome = 'metronome';
+  static const String getReadyCountdown = 'getReadyCountdown';
+  static const String getReadyDing = 'getReadyDing';
+  static const String moveCountdown = 'moveCountdown';
+  static const String moveHalfway = 'moveHalfway';
+  static const String moveFinished = 'moveFinished';
+  static const String restFinished = 'restFinished';
+  static const String workoutComplete = 'workoutComplete';
+  static const String workoutEndedEarly = 'workoutEndedEarly';
+}
+
+const Map<String, String> defaultSoundSelections = <String, String>{
+  WorkoutSoundCue.metronome: 'classic',
+  WorkoutSoundCue.getReadyCountdown: 'click',
+  WorkoutSoundCue.getReadyDing: 'classic',
+  WorkoutSoundCue.moveCountdown: 'pulse',
+  WorkoutSoundCue.moveHalfway: 'soft',
+  WorkoutSoundCue.moveFinished: 'classic',
+  WorkoutSoundCue.restFinished: 'bell',
+  WorkoutSoundCue.workoutComplete: 'bright',
+  WorkoutSoundCue.workoutEndedEarly: 'low',
+};
+
 class AppSettings {
   const AppSettings({
     required this.themePreference,
@@ -59,11 +95,14 @@ class AppSettings {
     required this.getReadyDingSound,
     required this.moveCountdownSound,
     required this.moveFinishedDingSound,
+    this.soundSelections = defaultSoundSelections,
+    this.customSoundLibrary = const <CustomWorkoutSound>[],
     this.metronomeClickCustomSound,
     this.getReadyCountdownCustomSound,
     this.getReadyDingCustomSound,
     this.moveCountdownCustomSound,
     this.moveFinishedDingCustomSound,
+    this.moveHalfwayCustomSound,
     this.restFinishedCustomSound,
     this.workoutCompleteCustomSound,
     this.workoutEndedEarlyCustomSound,
@@ -72,6 +111,7 @@ class AppSettings {
     this.getReadyDingEnabled = true,
     this.moveCountdownEnabled = true,
     this.moveFinishedDingEnabled = true,
+    this.moveHalfwayEnabled = true,
     this.restFinishedEnabled = true,
     this.workoutCompleteEnabled = true,
     this.workoutEndedEarlyEnabled = true,
@@ -87,11 +127,14 @@ class AppSettings {
   final GetReadyDingSound getReadyDingSound;
   final CountdownSound moveCountdownSound;
   final MoveFinishedDingSound moveFinishedDingSound;
+  final Map<String, String> soundSelections;
+  final List<CustomWorkoutSound> customSoundLibrary;
   final CustomWorkoutSound? metronomeClickCustomSound;
   final CustomWorkoutSound? getReadyCountdownCustomSound;
   final CustomWorkoutSound? getReadyDingCustomSound;
   final CustomWorkoutSound? moveCountdownCustomSound;
   final CustomWorkoutSound? moveFinishedDingCustomSound;
+  final CustomWorkoutSound? moveHalfwayCustomSound;
   final CustomWorkoutSound? restFinishedCustomSound;
   final CustomWorkoutSound? workoutCompleteCustomSound;
   final CustomWorkoutSound? workoutEndedEarlyCustomSound;
@@ -100,6 +143,7 @@ class AppSettings {
   final bool getReadyDingEnabled;
   final bool moveCountdownEnabled;
   final bool moveFinishedDingEnabled;
+  final bool moveHalfwayEnabled;
   final bool restFinishedEnabled;
   final bool workoutCompleteEnabled;
   final bool workoutEndedEarlyEnabled;
@@ -115,11 +159,14 @@ class AppSettings {
     GetReadyDingSound? getReadyDingSound,
     CountdownSound? moveCountdownSound,
     MoveFinishedDingSound? moveFinishedDingSound,
+    Map<String, String>? soundSelections,
+    List<CustomWorkoutSound>? customSoundLibrary,
     Object? metronomeClickCustomSound = _settingsUnset,
     Object? getReadyCountdownCustomSound = _settingsUnset,
     Object? getReadyDingCustomSound = _settingsUnset,
     Object? moveCountdownCustomSound = _settingsUnset,
     Object? moveFinishedDingCustomSound = _settingsUnset,
+    Object? moveHalfwayCustomSound = _settingsUnset,
     Object? restFinishedCustomSound = _settingsUnset,
     Object? workoutCompleteCustomSound = _settingsUnset,
     Object? workoutEndedEarlyCustomSound = _settingsUnset,
@@ -128,6 +175,7 @@ class AppSettings {
     bool? getReadyDingEnabled,
     bool? moveCountdownEnabled,
     bool? moveFinishedDingEnabled,
+    bool? moveHalfwayEnabled,
     bool? restFinishedEnabled,
     bool? workoutCompleteEnabled,
     bool? workoutEndedEarlyEnabled,
@@ -146,6 +194,8 @@ class AppSettings {
       moveCountdownSound: moveCountdownSound ?? this.moveCountdownSound,
       moveFinishedDingSound:
           moveFinishedDingSound ?? this.moveFinishedDingSound,
+      soundSelections: soundSelections ?? this.soundSelections,
+      customSoundLibrary: customSoundLibrary ?? this.customSoundLibrary,
       metronomeClickCustomSound:
           identical(metronomeClickCustomSound, _settingsUnset)
               ? this.metronomeClickCustomSound
@@ -166,6 +216,9 @@ class AppSettings {
           identical(moveFinishedDingCustomSound, _settingsUnset)
               ? this.moveFinishedDingCustomSound
               : moveFinishedDingCustomSound as CustomWorkoutSound?,
+      moveHalfwayCustomSound: identical(moveHalfwayCustomSound, _settingsUnset)
+          ? this.moveHalfwayCustomSound
+          : moveHalfwayCustomSound as CustomWorkoutSound?,
       restFinishedCustomSound:
           identical(restFinishedCustomSound, _settingsUnset)
               ? this.restFinishedCustomSound
@@ -186,6 +239,7 @@ class AppSettings {
       moveCountdownEnabled: moveCountdownEnabled ?? this.moveCountdownEnabled,
       moveFinishedDingEnabled:
           moveFinishedDingEnabled ?? this.moveFinishedDingEnabled,
+      moveHalfwayEnabled: moveHalfwayEnabled ?? this.moveHalfwayEnabled,
       restFinishedEnabled: restFinishedEnabled ?? this.restFinishedEnabled,
       workoutCompleteEnabled:
           workoutCompleteEnabled ?? this.workoutCompleteEnabled,
@@ -248,6 +302,8 @@ class AppSettings {
         values: MoveFinishedDingSound.values,
         fallback: MoveFinishedDingSound.classic,
       ),
+      soundSelections: _readSoundSelections(json['soundSelections']),
+      customSoundLibrary: _readCustomSoundList(json, 'customSoundLibrary'),
       metronomeClickCustomSound:
           _readCustomSound(json, 'metronomeClickCustomSound'),
       getReadyCountdownCustomSound:
@@ -258,6 +314,7 @@ class AppSettings {
           _readCustomSound(json, 'moveCountdownCustomSound'),
       moveFinishedDingCustomSound:
           _readCustomSound(json, 'moveFinishedDingCustomSound'),
+      moveHalfwayCustomSound: _readCustomSound(json, 'moveHalfwayCustomSound'),
       restFinishedCustomSound:
           _readCustomSound(json, 'restFinishedCustomSound'),
       workoutCompleteCustomSound:
@@ -274,6 +331,8 @@ class AppSettings {
           _readBool(json, key: 'moveCountdownEnabled', fallback: true),
       moveFinishedDingEnabled:
           _readBool(json, key: 'moveFinishedDingEnabled', fallback: true),
+      moveHalfwayEnabled:
+          _readBool(json, key: 'moveHalfwayEnabled', fallback: true),
       restFinishedEnabled:
           _readBool(json, key: 'restFinishedEnabled', fallback: true),
       workoutCompleteEnabled:
@@ -295,11 +354,16 @@ class AppSettings {
       'getReadyDingSound': getReadyDingSound.name,
       'moveCountdownSound': moveCountdownSound.name,
       'moveFinishedDingSound': moveFinishedDingSound.name,
+      'soundSelections': soundSelections,
+      'customSoundLibrary': customSoundLibrary
+          .map((CustomWorkoutSound sound) => sound.toJson())
+          .toList(growable: false),
       'metronomeClickEnabled': metronomeClickEnabled,
       'getReadyCountdownEnabled': getReadyCountdownEnabled,
       'getReadyDingEnabled': getReadyDingEnabled,
       'moveCountdownEnabled': moveCountdownEnabled,
       'moveFinishedDingEnabled': moveFinishedDingEnabled,
+      'moveHalfwayEnabled': moveHalfwayEnabled,
       'restFinishedEnabled': restFinishedEnabled,
       'workoutCompleteEnabled': workoutCompleteEnabled,
       'workoutEndedEarlyEnabled': workoutEndedEarlyEnabled,
@@ -312,6 +376,7 @@ class AppSettings {
     _putCustomSound(json, 'moveCountdownCustomSound', moveCountdownCustomSound);
     _putCustomSound(
         json, 'moveFinishedDingCustomSound', moveFinishedDingCustomSound);
+    _putCustomSound(json, 'moveHalfwayCustomSound', moveHalfwayCustomSound);
     _putCustomSound(json, 'restFinishedCustomSound', restFinishedCustomSound);
     _putCustomSound(
         json, 'workoutCompleteCustomSound', workoutCompleteCustomSound);
@@ -328,6 +393,42 @@ class AppSettings {
     return value is Map<String, dynamic>
         ? CustomWorkoutSound.fromJson(value)
         : null;
+  }
+
+  static List<CustomWorkoutSound> _readCustomSoundList(
+    Map<String, dynamic> json,
+    String key,
+  ) {
+    final Object? value = json[key];
+    if (value is! List<dynamic>) return const <CustomWorkoutSound>[];
+    return value
+        .whereType<Map<String, dynamic>>()
+        .map(CustomWorkoutSound.fromJson)
+        .toList(growable: false);
+  }
+
+  static Map<String, String> _readSoundSelections(Object? value) {
+    final Map<String, String> result = <String, String>{
+      ...defaultSoundSelections
+    };
+    if (value is Map<String, dynamic>) {
+      for (final MapEntry<String, dynamic> entry in value.entries) {
+        if (entry.value is String &&
+            SharedWorkoutSound.values
+                .any((SharedWorkoutSound sound) => sound.name == entry.value)) {
+          result[entry.key] = entry.value as String;
+        }
+      }
+    }
+    return Map<String, String>.unmodifiable(result);
+  }
+
+  SharedWorkoutSound soundFor(String cue) {
+    final String name = soundSelections[cue] ?? defaultSoundSelections[cue]!;
+    return SharedWorkoutSound.values.firstWhere(
+      (SharedWorkoutSound sound) => sound.name == name,
+      orElse: () => SharedWorkoutSound.classic,
+    );
   }
 
   static void _putCustomSound(
@@ -471,6 +572,11 @@ class AppSettingsController extends Notifier<AppSettings> {
       'settings.move_countdown_custom_sound.v1';
   static const String _moveFinishedDingCustomSoundKey =
       'settings.move_finished_ding_custom_sound.v1';
+  static const String _moveHalfwayCustomSoundKey =
+      'settings.move_halfway_custom_sound.v1';
+  static const String _customSoundLibraryKey =
+      'settings.custom_sound_library.v1';
+  static const String _soundSelectionsKey = 'settings.sound_selections.v1';
   static const String _restFinishedCustomSoundKey =
       'settings.rest_finished_custom_sound.v1';
   static const String _workoutCompleteCustomSoundKey =
@@ -487,6 +593,8 @@ class AppSettingsController extends Notifier<AppSettings> {
       'settings.move_countdown_enabled.v1';
   static const String _moveFinishedDingEnabledKey =
       'settings.move_finished_ding_enabled.v1';
+  static const String _moveHalfwayEnabledKey =
+      'settings.move_halfway_enabled.v1';
   static const String _restFinishedEnabledKey =
       'settings.rest_finished_enabled.v1';
   static const String _workoutCompleteEnabledKey =
@@ -543,6 +651,8 @@ class AppSettingsController extends Notifier<AppSettings> {
         values: MoveFinishedDingSound.values,
         fallback: MoveFinishedDingSound.classic,
       ),
+      soundSelections: _readSoundSelectionsPreference(prefs),
+      customSoundLibrary: _readCustomSoundLibrary(prefs),
       metronomeClickCustomSound:
           _readCustomSoundPreference(prefs, _metronomeClickCustomSoundKey),
       getReadyCountdownCustomSound:
@@ -553,6 +663,8 @@ class AppSettingsController extends Notifier<AppSettings> {
           _readCustomSoundPreference(prefs, _moveCountdownCustomSoundKey),
       moveFinishedDingCustomSound:
           _readCustomSoundPreference(prefs, _moveFinishedDingCustomSoundKey),
+      moveHalfwayCustomSound:
+          _readCustomSoundPreference(prefs, _moveHalfwayCustomSoundKey),
       restFinishedCustomSound:
           _readCustomSoundPreference(prefs, _restFinishedCustomSoundKey),
       workoutCompleteCustomSound:
@@ -566,6 +678,7 @@ class AppSettingsController extends Notifier<AppSettings> {
       moveCountdownEnabled: prefs.getBool(_moveCountdownEnabledKey) ?? true,
       moveFinishedDingEnabled:
           prefs.getBool(_moveFinishedDingEnabledKey) ?? true,
+      moveHalfwayEnabled: prefs.getBool(_moveHalfwayEnabledKey) ?? true,
       restFinishedEnabled: prefs.getBool(_restFinishedEnabledKey) ?? true,
       workoutCompleteEnabled: prefs.getBool(_workoutCompleteEnabledKey) ?? true,
       workoutEndedEarlyEnabled:
@@ -670,6 +783,17 @@ class AppSettingsController extends Notifier<AppSettings> {
     );
   }
 
+  Future<void> setSoundSelection(String cue, SharedWorkoutSound sound) async {
+    final Map<String, String> selections = <String, String>{
+      ...state.soundSelections,
+      cue: sound.name,
+    };
+    state = state.copyWith(
+      soundSelections: Map<String, String>.unmodifiable(selections),
+    );
+    await _prefs.setString(_soundSelectionsKey, jsonEncode(selections));
+  }
+
   Future<void> setMetronomeClickCustomSound(CustomWorkoutSound? value) =>
       _setCustomSound(
         value: value,
@@ -709,6 +833,62 @@ class AppSettingsController extends Notifier<AppSettings> {
         update: (CustomWorkoutSound? sound) =>
             state.copyWith(moveFinishedDingCustomSound: sound),
       );
+
+  Future<void> setMoveHalfwayCustomSound(CustomWorkoutSound? value) =>
+      _setCustomSound(
+        value: value,
+        key: _moveHalfwayCustomSoundKey,
+        update: (CustomWorkoutSound? sound) =>
+            state.copyWith(moveHalfwayCustomSound: sound),
+      );
+
+  Future<void> addCustomSound(CustomWorkoutSound sound) async {
+    if (state.customSoundLibrary.any((CustomWorkoutSound existing) =>
+        existing.mimeType == sound.mimeType &&
+        existing.base64Data == sound.base64Data)) {
+      return;
+    }
+    await _setCustomSoundLibrary(<CustomWorkoutSound>[
+      ...state.customSoundLibrary,
+      sound,
+    ]);
+  }
+
+  Future<void> removeCustomSound(CustomWorkoutSound sound) async {
+    bool matches(CustomWorkoutSound? value) =>
+        value?.mimeType == sound.mimeType &&
+        value?.base64Data == sound.base64Data;
+    if (matches(state.metronomeClickCustomSound)) {
+      await setMetronomeClickCustomSound(null);
+    }
+    if (matches(state.getReadyCountdownCustomSound)) {
+      await setGetReadyCountdownCustomSound(null);
+    }
+    if (matches(state.getReadyDingCustomSound)) {
+      await setGetReadyDingCustomSound(null);
+    }
+    if (matches(state.moveCountdownCustomSound)) {
+      await setMoveCountdownCustomSound(null);
+    }
+    if (matches(state.moveFinishedDingCustomSound)) {
+      await setMoveFinishedDingCustomSound(null);
+    }
+    if (matches(state.moveHalfwayCustomSound)) {
+      await setMoveHalfwayCustomSound(null);
+    }
+    if (matches(state.restFinishedCustomSound)) {
+      await setRestFinishedCustomSound(null);
+    }
+    if (matches(state.workoutCompleteCustomSound)) {
+      await setWorkoutCompleteCustomSound(null);
+    }
+    if (matches(state.workoutEndedEarlyCustomSound)) {
+      await setWorkoutEndedEarlyCustomSound(null);
+    }
+    await _setCustomSoundLibrary(state.customSoundLibrary
+        .where((CustomWorkoutSound existing) => !matches(existing))
+        .toList(growable: false));
+  }
 
   Future<void> setRestFinishedCustomSound(CustomWorkoutSound? value) =>
       _setCustomSound(
@@ -769,6 +949,13 @@ class AppSettingsController extends Notifier<AppSettings> {
         update: (bool value) => state.copyWith(moveFinishedDingEnabled: value),
       );
 
+  Future<void> setMoveHalfwayEnabled(bool value) => _setBool(
+        currentValue: state.moveHalfwayEnabled,
+        value: value,
+        key: _moveHalfwayEnabledKey,
+        update: (bool value) => state.copyWith(moveHalfwayEnabled: value),
+      );
+
   Future<void> setRestFinishedEnabled(bool value) => _setBool(
         currentValue: state.restFinishedEnabled,
         value: value,
@@ -801,12 +988,22 @@ class AppSettingsController extends Notifier<AppSettings> {
     await setGetReadyDingSound(settings.getReadyDingSound);
     await setMoveCountdownSound(settings.moveCountdownSound);
     await setMoveFinishedDingSound(settings.moveFinishedDingSound);
+    for (final MapEntry<String, String> entry
+        in settings.soundSelections.entries) {
+      await setSoundSelection(
+        entry.key,
+        SharedWorkoutSound.values.firstWhere(
+          (SharedWorkoutSound sound) => sound.name == entry.value,
+        ),
+      );
+    }
     await setMetronomeClickCustomSound(settings.metronomeClickCustomSound);
     await setGetReadyCountdownCustomSound(
         settings.getReadyCountdownCustomSound);
     await setGetReadyDingCustomSound(settings.getReadyDingCustomSound);
     await setMoveCountdownCustomSound(settings.moveCountdownCustomSound);
     await setMoveFinishedDingCustomSound(settings.moveFinishedDingCustomSound);
+    await setMoveHalfwayCustomSound(settings.moveHalfwayCustomSound);
     await setRestFinishedCustomSound(settings.restFinishedCustomSound);
     await setWorkoutCompleteCustomSound(settings.workoutCompleteCustomSound);
     await setWorkoutEndedEarlyCustomSound(
@@ -816,9 +1013,51 @@ class AppSettingsController extends Notifier<AppSettings> {
     await setGetReadyDingEnabled(settings.getReadyDingEnabled);
     await setMoveCountdownEnabled(settings.moveCountdownEnabled);
     await setMoveFinishedDingEnabled(settings.moveFinishedDingEnabled);
+    await setMoveHalfwayEnabled(settings.moveHalfwayEnabled);
     await setRestFinishedEnabled(settings.restFinishedEnabled);
     await setWorkoutCompleteEnabled(settings.workoutCompleteEnabled);
     await setWorkoutEndedEarlyEnabled(settings.workoutEndedEarlyEnabled);
+    await _setCustomSoundLibrary(settings.customSoundLibrary);
+  }
+
+  Future<void> applyAudioSettings(AppSettings settings) async {
+    await setAudioCuesEnabled(settings.audioCuesEnabled);
+    await setAudioVolume(settings.audioVolume);
+    await setMetronomeClickSound(settings.metronomeClickSound);
+    await setGetReadyCountdownSound(settings.getReadyCountdownSound);
+    await setGetReadyDingSound(settings.getReadyDingSound);
+    await setMoveCountdownSound(settings.moveCountdownSound);
+    await setMoveFinishedDingSound(settings.moveFinishedDingSound);
+    for (final MapEntry<String, String> entry
+        in settings.soundSelections.entries) {
+      await setSoundSelection(
+        entry.key,
+        SharedWorkoutSound.values.firstWhere(
+          (SharedWorkoutSound sound) => sound.name == entry.value,
+        ),
+      );
+    }
+    await setMetronomeClickCustomSound(settings.metronomeClickCustomSound);
+    await setGetReadyCountdownCustomSound(
+        settings.getReadyCountdownCustomSound);
+    await setGetReadyDingCustomSound(settings.getReadyDingCustomSound);
+    await setMoveCountdownCustomSound(settings.moveCountdownCustomSound);
+    await setMoveFinishedDingCustomSound(settings.moveFinishedDingCustomSound);
+    await setMoveHalfwayCustomSound(settings.moveHalfwayCustomSound);
+    await setRestFinishedCustomSound(settings.restFinishedCustomSound);
+    await setWorkoutCompleteCustomSound(settings.workoutCompleteCustomSound);
+    await setWorkoutEndedEarlyCustomSound(
+        settings.workoutEndedEarlyCustomSound);
+    await setMetronomeClickEnabled(settings.metronomeClickEnabled);
+    await setGetReadyCountdownEnabled(settings.getReadyCountdownEnabled);
+    await setGetReadyDingEnabled(settings.getReadyDingEnabled);
+    await setMoveCountdownEnabled(settings.moveCountdownEnabled);
+    await setMoveFinishedDingEnabled(settings.moveFinishedDingEnabled);
+    await setMoveHalfwayEnabled(settings.moveHalfwayEnabled);
+    await setRestFinishedEnabled(settings.restFinishedEnabled);
+    await setWorkoutCompleteEnabled(settings.workoutCompleteEnabled);
+    await setWorkoutEndedEarlyEnabled(settings.workoutEndedEarlyEnabled);
+    await _setCustomSoundLibrary(settings.customSoundLibrary);
   }
 
   int _readStreakWorkoutsPerWeek(SharedPreferences prefs) {
@@ -865,6 +1104,53 @@ class AppSettingsController extends Notifier<AppSettings> {
           : null;
     } catch (_) {
       return null;
+    }
+  }
+
+  List<CustomWorkoutSound> _readCustomSoundLibrary(SharedPreferences prefs) {
+    final List<CustomWorkoutSound> sounds = <CustomWorkoutSound>[];
+    final String? raw = prefs.getString(_customSoundLibraryKey);
+    if (raw != null) {
+      try {
+        final Object? decoded = jsonDecode(raw);
+        if (decoded is List<dynamic>) {
+          sounds.addAll(decoded
+              .whereType<Map<String, dynamic>>()
+              .map(CustomWorkoutSound.fromJson));
+        }
+      } catch (_) {
+        // Ignore a malformed library while preserving the rest of settings.
+      }
+    }
+    for (final String key in <String>[
+      _metronomeClickCustomSoundKey,
+      _getReadyCountdownCustomSoundKey,
+      _getReadyDingCustomSoundKey,
+      _moveCountdownCustomSoundKey,
+      _moveFinishedDingCustomSoundKey,
+      _moveHalfwayCustomSoundKey,
+      _restFinishedCustomSoundKey,
+      _workoutCompleteCustomSoundKey,
+      _workoutEndedEarlyCustomSoundKey,
+    ]) {
+      final CustomWorkoutSound? sound = _readCustomSoundPreference(prefs, key);
+      if (sound != null &&
+          !sounds.any((CustomWorkoutSound existing) =>
+              existing.mimeType == sound.mimeType &&
+              existing.base64Data == sound.base64Data)) {
+        sounds.add(sound);
+      }
+    }
+    return List<CustomWorkoutSound>.unmodifiable(sounds);
+  }
+
+  Map<String, String> _readSoundSelectionsPreference(SharedPreferences prefs) {
+    final String? raw = prefs.getString(_soundSelectionsKey);
+    if (raw == null) return defaultSoundSelections;
+    try {
+      return AppSettings._readSoundSelections(jsonDecode(raw));
+    } catch (_) {
+      return defaultSoundSelections;
     }
   }
 
@@ -935,6 +1221,44 @@ class AppSettingsController extends Notifier<AppSettings> {
       await _prefs.remove(key);
       return;
     }
+    if (!state.customSoundLibrary.any((CustomWorkoutSound existing) =>
+        existing.mimeType == value.mimeType &&
+        existing.base64Data == value.base64Data)) {
+      await _setCustomSoundLibrary(<CustomWorkoutSound>[
+        ...state.customSoundLibrary,
+        value,
+      ]);
+    }
     await _prefs.setString(key, jsonEncode(value.toJson()));
+  }
+
+  Future<void> _setCustomSoundLibrary(List<CustomWorkoutSound> sounds) async {
+    final List<CustomWorkoutSound> merged = <CustomWorkoutSound>[...sounds];
+    for (final CustomWorkoutSound? selected in <CustomWorkoutSound?>[
+      state.metronomeClickCustomSound,
+      state.getReadyCountdownCustomSound,
+      state.getReadyDingCustomSound,
+      state.moveCountdownCustomSound,
+      state.moveFinishedDingCustomSound,
+      state.moveHalfwayCustomSound,
+      state.restFinishedCustomSound,
+      state.workoutCompleteCustomSound,
+      state.workoutEndedEarlyCustomSound,
+    ]) {
+      if (selected != null &&
+          !merged.any((CustomWorkoutSound existing) =>
+              existing.mimeType == selected.mimeType &&
+              existing.base64Data == selected.base64Data)) {
+        merged.add(selected);
+      }
+    }
+    final List<CustomWorkoutSound> value =
+        List<CustomWorkoutSound>.unmodifiable(merged);
+    state = state.copyWith(customSoundLibrary: value);
+    await _prefs.setString(
+      _customSoundLibraryKey,
+      jsonEncode(
+          value.map((CustomWorkoutSound sound) => sound.toJson()).toList()),
+    );
   }
 }

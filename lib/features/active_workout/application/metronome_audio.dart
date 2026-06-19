@@ -10,6 +10,39 @@ import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_mo
 class WorkoutAudio {
   static final Set<AudioPlayer> _customSoundPlayers = <AudioPlayer>{};
 
+  static Future<void> playSharedSound({
+    required SharedWorkoutSound sound,
+    CustomWorkoutSound? customSound,
+    required double volume,
+  }) =>
+      _play(
+        volume,
+        (double volume) => _playCustomOrFallback(
+          customSound,
+          volume,
+          () => switch (sound) {
+            SharedWorkoutSound.classic => platform.playMoveFinishedDing(
+                sound: MoveFinishedDingSound.classic, volume: volume),
+            SharedWorkoutSound.sharp => platform.playMetronomeClick(
+                sound: MetronomeClickSound.sharp, volume: volume),
+            SharedWorkoutSound.low => platform.playMoveCountdown(
+                sound: CountdownSound.low, volume: volume),
+            SharedWorkoutSound.bell => platform.playMoveFinishedDing(
+                sound: MoveFinishedDingSound.bell, volume: volume),
+            SharedWorkoutSound.bright => platform.playMoveFinishedDing(
+                sound: MoveFinishedDingSound.bright, volume: volume),
+            SharedWorkoutSound.soft => platform.playMoveFinishedDing(
+                sound: MoveFinishedDingSound.soft, volume: volume),
+            SharedWorkoutSound.click => platform.playMoveCountdown(
+                sound: CountdownSound.click, volume: volume),
+            SharedWorkoutSound.pulse => platform.playMoveCountdown(
+                sound: CountdownSound.pulse, volume: volume),
+            SharedWorkoutSound.wood => platform.playMoveCountdown(
+                sound: CountdownSound.wood, volume: volume),
+          },
+        ),
+      );
+
   static Future<void> playMetronomeClick({
     required MetronomeClickSound sound,
     CustomWorkoutSound? customSound,
@@ -77,6 +110,22 @@ class WorkoutAudio {
           customSound,
           volume,
           () => platform.playMoveFinishedDing(sound: sound, volume: volume),
+        ),
+      );
+
+  static Future<void> playMoveHalfway({
+    CustomWorkoutSound? customSound,
+    required double volume,
+  }) =>
+      _play(
+        volume,
+        (double volume) => _playCustomOrFallback(
+          customSound,
+          volume,
+          () => platform.playMoveFinishedDing(
+            sound: MoveFinishedDingSound.soft,
+            volume: volume,
+          ),
         ),
       );
 

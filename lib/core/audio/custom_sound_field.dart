@@ -116,3 +116,46 @@ class CustomSoundField extends StatelessWidget {
     return card ? Card(child: tile) : tile;
   }
 }
+
+Future<CustomWorkoutSound?> pickCustomWorkoutSound(
+  BuildContext context, {
+  String title = 'sound',
+}) async {
+  final FilePickerResult? result = await FilePicker.platform.pickFiles(
+    dialogTitle: 'Choose $title',
+    type: FileType.custom,
+    allowedExtensions: const <String>['mp3', 'wav'],
+    withData: true,
+  );
+  if (result == null || result.files.isEmpty || !context.mounted) return null;
+  final PlatformFile file = result.files.single;
+  final bytes = file.bytes;
+  if (bytes == null || bytes.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Could not read the selected sound.')),
+    );
+    return null;
+  }
+  if (bytes.length > maxCustomWorkoutSoundBytes) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Sound files must be 512 KB or smaller.')),
+    );
+    return null;
+  }
+  final String? mimeType = switch ((file.extension ?? '').toLowerCase()) {
+    'mp3' => 'audio/mpeg',
+    'wav' => 'audio/wav',
+    _ => null,
+  };
+  if (mimeType == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Choose an MP3 or WAV file.')),
+    );
+    return null;
+  }
+  return CustomWorkoutSound.fromBytes(
+    fileName: file.name,
+    mimeType: mimeType,
+    bytes: bytes,
+  );
+}

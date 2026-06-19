@@ -34,6 +34,8 @@ void main() {
       expect(settings.getReadyDingSound, GetReadyDingSound.classic);
       expect(settings.moveCountdownSound, CountdownSound.pulse);
       expect(settings.moveFinishedDingSound, MoveFinishedDingSound.classic);
+      expect(settings.customSoundLibrary, isEmpty);
+      expect(settings.moveHalfwayCustomSound, isNull);
       expect(settings.metronomeClickCustomSound, isNull);
       expect(settings.workoutCompleteCustomSound, isNull);
       expect(settings.metronomeClickEnabled, isTrue);
@@ -41,6 +43,7 @@ void main() {
       expect(settings.getReadyDingEnabled, isTrue);
       expect(settings.moveCountdownEnabled, isTrue);
       expect(settings.moveFinishedDingEnabled, isTrue);
+      expect(settings.moveHalfwayEnabled, isTrue);
       expect(settings.restFinishedEnabled, isTrue);
       expect(settings.workoutCompleteEnabled, isTrue);
       expect(settings.workoutEndedEarlyEnabled, isTrue);
@@ -69,15 +72,20 @@ void main() {
       await controller.setGetReadyDingSound(GetReadyDingSound.bright);
       await controller.setMoveCountdownSound(CountdownSound.low);
       await controller.setMoveFinishedDingSound(MoveFinishedDingSound.bell);
+      await controller.setSoundSelection(
+          WorkoutSoundCue.moveHalfway, SharedWorkoutSound.wood);
       final CustomWorkoutSound customSound = CustomWorkoutSound.fromBytes(
         fileName: 'custom.mp3',
         mimeType: 'audio/mpeg',
         bytes: Uint8List.fromList(<int>[1, 2, 3]),
       );
       await controller.setMetronomeClickCustomSound(customSound);
+      await controller.addCustomSound(customSound);
+      await controller.setMoveHalfwayCustomSound(customSound);
       await controller.setWorkoutCompleteCustomSound(customSound);
       await controller.setMetronomeClickEnabled(false);
       await controller.setRestFinishedEnabled(false);
+      await controller.setMoveHalfwayEnabled(false);
       await controller.setWorkoutEndedEarlyEnabled(false);
 
       final ProviderContainer reloadedContainer = ProviderContainer(
@@ -104,8 +112,13 @@ void main() {
           reloadedSettings.metronomeClickCustomSound?.fileName, 'custom.mp3');
       expect(
           reloadedSettings.workoutCompleteCustomSound?.bytes, <int>[1, 2, 3]);
+      expect(reloadedSettings.customSoundLibrary.single.fileName, 'custom.mp3');
+      expect(reloadedSettings.moveHalfwayCustomSound?.fileName, 'custom.mp3');
+      expect(reloadedSettings.soundFor(WorkoutSoundCue.moveHalfway),
+          SharedWorkoutSound.wood);
       expect(reloadedSettings.metronomeClickEnabled, isFalse);
       expect(reloadedSettings.restFinishedEnabled, isFalse);
+      expect(reloadedSettings.moveHalfwayEnabled, isFalse);
       expect(reloadedSettings.workoutEndedEarlyEnabled, isFalse);
       expect(reloadedContainer.read(appThemeModeProvider), ThemeMode.dark);
     });

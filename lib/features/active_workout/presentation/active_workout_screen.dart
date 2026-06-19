@@ -40,6 +40,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   String? _activeMetronomeKey;
   String? _lastGetReadyCountdownKey;
   String? _lastMoveCountdownKey;
+  String? _lastMoveHalfwayKey;
   int? _lastRepsForCurrentMove;
   double? _lastWeightForCurrentMove;
   int? _lastDurationForCurrentMove;
@@ -445,6 +446,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
           currentMove: currentMove,
           seconds: _timerSeconds,
         );
+        _playMoveHalfwayCueIfNeeded(state, currentMove, _timerSeconds);
       }
 
       if (_timerSeconds == 0) {
@@ -489,7 +491,8 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       if (!settings.restFinishedEnabled) {
         return Future<void>.value();
       }
-      return WorkoutAudio.playRestFinished(
+      return WorkoutAudio.playSharedSound(
+        sound: settings.soundFor(WorkoutSoundCue.restFinished),
         customSound: settings.restFinishedCustomSound,
         volume: settings.audioVolume,
       );
@@ -511,8 +514,8 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
         if (!settings.getReadyDingEnabled) {
           return Future<void>.value();
         }
-        return WorkoutAudio.playGetReadyDing(
-          sound: settings.getReadyDingSound,
+        return WorkoutAudio.playSharedSound(
+          sound: settings.soundFor(WorkoutSoundCue.getReadyDing),
           customSound: settings.getReadyDingCustomSound,
           volume: settings.audioVolume,
         );
@@ -523,8 +526,8 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
         if (!settings.getReadyCountdownEnabled) {
           return Future<void>.value();
         }
-        return WorkoutAudio.playGetReadyCountdown(
-          sound: settings.getReadyCountdownSound,
+        return WorkoutAudio.playSharedSound(
+          sound: settings.soundFor(WorkoutSoundCue.getReadyCountdown),
           customSound: settings.getReadyCountdownCustomSound,
           volume: settings.audioVolume,
         );
@@ -535,8 +538,8 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
         if (!settings.moveCountdownEnabled) {
           return Future<void>.value();
         }
-        return WorkoutAudio.playMoveCountdown(
-          sound: settings.moveCountdownSound,
+        return WorkoutAudio.playSharedSound(
+          sound: settings.soundFor(WorkoutSoundCue.moveCountdown),
           customSound: settings.moveCountdownCustomSound,
           volume: settings.audioVolume,
         );
@@ -547,9 +550,19 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
         if (!settings.moveFinishedDingEnabled) {
           return Future<void>.value();
         }
-        return WorkoutAudio.playMoveFinishedDing(
-          sound: settings.moveFinishedDingSound,
+        return WorkoutAudio.playSharedSound(
+          sound: settings.soundFor(WorkoutSoundCue.moveFinished),
           customSound: settings.moveFinishedDingCustomSound,
+          volume: settings.audioVolume,
+        );
+      });
+
+  Future<void> _playMoveHalfway() =>
+      _playConfiguredWorkoutAudio((AppSettings settings) {
+        if (!settings.moveHalfwayEnabled) return Future<void>.value();
+        return WorkoutAudio.playSharedSound(
+          sound: settings.soundFor(WorkoutSoundCue.moveHalfway),
+          customSound: settings.moveHalfwayCustomSound,
           volume: settings.audioVolume,
         );
       });
@@ -559,8 +572,8 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
         if (!settings.metronomeClickEnabled) {
           return Future<void>.value();
         }
-        return WorkoutAudio.playMetronomeClick(
-          sound: settings.metronomeClickSound,
+        return WorkoutAudio.playSharedSound(
+          sound: settings.soundFor(WorkoutSoundCue.metronome),
           customSound: settings.metronomeClickCustomSound,
           volume: settings.audioVolume,
         );
@@ -709,6 +722,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
         _lastMoveKey = moveKey;
         _lastGetReadyCountdownKey = null;
         _lastMoveCountdownKey = null;
+        _lastMoveHalfwayKey = null;
         _currentReps = move.repCount ?? 0;
         _currentWeight = move.targetWeight ?? 0;
         _lastRepsForCurrentMove = null;
@@ -786,17 +800,16 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       if (!enabled) {
         return Future<void>.value();
       }
-      return phase == WorkoutPhase.completed
-          ? WorkoutAudio.playWorkoutComplete(
-              customSound:
-                  planOrWorkoutSound ?? settings.workoutCompleteCustomSound,
-              volume: settings.audioVolume,
-            )
-          : WorkoutAudio.playWorkoutEndedEarly(
-              customSound:
-                  planOrWorkoutSound ?? settings.workoutEndedEarlyCustomSound,
-              volume: settings.audioVolume,
-            );
+      return WorkoutAudio.playSharedSound(
+        sound: settings.soundFor(phase == WorkoutPhase.completed
+            ? WorkoutSoundCue.workoutComplete
+            : WorkoutSoundCue.workoutEndedEarly),
+        customSound: planOrWorkoutSound ??
+            (phase == WorkoutPhase.completed
+                ? settings.workoutCompleteCustomSound
+                : settings.workoutEndedEarlyCustomSound),
+        volume: settings.audioVolume,
+      );
     }));
   }
 
@@ -1026,6 +1039,26 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       rememberKey: (String key) => _lastMoveCountdownKey = key,
       playCue: _playMoveCountdownCue,
     );
+  }
+
+  void _playMoveHalfwayCueIfNeeded(
+    WorkoutState state,
+    WorkoutMove? move,
+    int seconds,
+  ) {
+    if (displayWorkoutPhase(state) != WorkoutPhase.move ||
+        move?.type != MoveType.duration) {
+      return;
+    }
+    final int duration = effectiveMoveDurationSeconds(move!);
+    if (duration < 2 || seconds != duration ~/ 2) {
+      return;
+    }
+    final String key =
+        '${state.setIndex}:${state.lapIndex}:${state.moveIndex}:${move.moveId}';
+    if (_lastMoveHalfwayKey == key) return;
+    _lastMoveHalfwayKey = key;
+    unawaited(_playMoveHalfway());
   }
 
   void _playCountdownCueIfNeeded(
