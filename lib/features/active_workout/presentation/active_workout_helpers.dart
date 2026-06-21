@@ -58,7 +58,7 @@ WorkoutMove? nextMoveDuringRestPhase({
       moveIndex: state.moveIndex,
     );
   }
-  if (phase != WorkoutPhase.rest) {
+  if (phase != WorkoutPhase.rest && phase != WorkoutPhase.move) {
     return null;
   }
 
@@ -81,15 +81,36 @@ WorkoutMove? nextMoveDuringRestPhase({
   );
 }
 
-Color activeWorkoutPhaseColor(WorkoutPhase phase) {
+Color activeWorkoutPhaseColor(WorkoutPhase phase, ColorScheme colors) {
   if (phase == WorkoutPhase.prep) {
-    return Colors.orange;
+    return colors.secondary;
   }
   if (phase == WorkoutPhase.restBetweenLaps || phase == WorkoutPhase.rest) {
-    return Colors.green;
+    return colors.tertiary;
   }
-  return Colors.blue;
+  return colors.primary;
 }
+
+int workoutMovePosition(Workout workout, WorkoutState state) {
+  int position = 0;
+  for (int setIndex = 0; setIndex < workout.sets.length; setIndex += 1) {
+    final WorkoutSet set = workout.sets[setIndex];
+    if (setIndex < state.setIndex) {
+      position += set.moves.length * set.lapCount;
+      continue;
+    }
+    if (setIndex == state.setIndex) {
+      position += state.lapIndex * set.moves.length + state.moveIndex + 1;
+    }
+    break;
+  }
+  return position;
+}
+
+int workoutMoveTotal(Workout workout) => workout.sets.fold<int>(
+      0,
+      (int total, WorkoutSet set) => total + set.moves.length * set.lapCount,
+    );
 
 String activeWorkoutPhaseLabel(WorkoutPhase phase) {
   if (phase == WorkoutPhase.prep) {

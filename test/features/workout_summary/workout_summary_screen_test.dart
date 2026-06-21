@@ -79,7 +79,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Workout A'), findsOneWidget);
-    expect(find.text('Duration'), findsOneWidget);
+    expect(find.text('Est. duration'), findsOneWidget);
+    expect(find.text('Calories'), findsNothing);
     expect(find.text('00:01:25'), findsOneWidget);
     expect(find.text('Moves'), findsWidgets);
     expect(find.text('4'), findsOneWidget);

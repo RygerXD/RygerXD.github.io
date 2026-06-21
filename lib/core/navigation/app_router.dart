@@ -7,7 +7,7 @@ import 'package:workout_app_rewrite/features/edit_workout/presentation/create_pl
 import 'package:workout_app_rewrite/features/edit_workout/presentation/edit_workout_screen.dart';
 import 'package:workout_app_rewrite/features/history/presentation/analysis_screen.dart';
 import 'package:workout_app_rewrite/features/history/presentation/workout_progress_screen.dart';
-import 'package:workout_app_rewrite/features/moves/presentation/moves_screen.dart';
+import 'package:workout_app_rewrite/features/library/presentation/library_screen.dart';
 import 'package:workout_app_rewrite/features/settings/presentation/settings_screen.dart';
 import 'package:workout_app_rewrite/features/settings/presentation/sounds_screen.dart';
 import 'package:workout_app_rewrite/features/workout_detail/presentation/workout_detail_screen.dart';
@@ -40,9 +40,9 @@ final Provider<GoRouter> appRouterProvider =
           StatefulShellBranch(
             routes: <RouteBase>[
               GoRoute(
-                path: '/moves',
+                path: '/library',
                 builder: (BuildContext context, GoRouterState state) {
-                  return const MovesScreen();
+                  return const LibraryScreen();
                 },
               ),
               GoRoute(
@@ -160,7 +160,7 @@ class AppScaffold extends StatelessWidget {
         destinations: const <Widget>[
           NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Home'),
           NavigationDestination(
-              icon: Icon(Icons.fitness_center), label: 'Moves'),
+              icon: Icon(Icons.library_books_outlined), label: 'Library'),
           NavigationDestination(
               icon: Icon(Icons.insights_outlined), label: 'Analysis'),
           NavigationDestination(
@@ -168,7 +168,7 @@ class AppScaffold extends StatelessWidget {
         ],
         onDestinationSelected: (int index) {
           if (index == 1) {
-            context.go('/moves');
+            context.go('/library');
             return;
           }
           navigationShell.goBranch(index);

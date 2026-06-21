@@ -59,28 +59,39 @@ class SessionCard extends StatelessWidget {
                   children: <Widget>[
                     Text(
                       item.workoutName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.titleMedium
                           ?.copyWith(fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       item.planName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: colors.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.xs),
-                    Row(
+                    Wrap(
+                      spacing: AppSpacing.sm,
+                      runSpacing: AppSpacing.xs,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: <Widget>[
-                        Icon(Icons.access_time,
-                            size: 14, color: colors.onSurfaceVariant),
-                        const SizedBox(width: AppSpacing.xs),
-                        Text(
-                          formatTime(item.startedAt),
-                          style: theme.textTheme.bodySmall
-                              ?.copyWith(color: colors.onSurfaceVariant),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            Icon(Icons.access_time,
+                                size: 14, color: colors.onSurfaceVariant),
+                            const SizedBox(width: AppSpacing.xs),
+                            Text(
+                              formatTime(item.startedAt),
+                              style: theme.textTheme.bodySmall
+                                  ?.copyWith(color: colors.onSurfaceVariant),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: AppSpacing.sm),
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: AppSpacing.sm, vertical: 2),

@@ -16,6 +16,33 @@ class MovesScreen extends ConsumerStatefulWidget {
 }
 
 class _MovesScreenState extends ConsumerState<MovesScreen> {
+  @override
+  Widget build(BuildContext context) {
+    final AsyncValue<List<WorkoutPlan>> plansState =
+        ref.watch(loadedWorkoutPlansNotifierProvider);
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Moves')),
+      body: plansState.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (Object error, StackTrace stack) =>
+            Center(child: Text('Error loading moves: $error')),
+        data: (List<WorkoutPlan> plans) => MovesLibraryView(plans: plans),
+      ),
+    );
+  }
+}
+
+class MovesLibraryView extends ConsumerStatefulWidget {
+  const MovesLibraryView({required this.plans, super.key});
+
+  final List<WorkoutPlan> plans;
+
+  @override
+  ConsumerState<MovesLibraryView> createState() => _MovesLibraryViewState();
+}
+
+class _MovesLibraryViewState extends ConsumerState<MovesLibraryView> {
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
 
@@ -27,55 +54,41 @@ class _MovesScreenState extends ConsumerState<MovesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final AsyncValue<List<WorkoutPlan>> plansState =
-        ref.watch(loadedWorkoutPlansNotifierProvider);
+    final List<ReferencedMoveEntry> moves =
+        collectReferencedMoves(widget.plans);
+    final List<ReferencedMoveEntry> filteredMoves = _filteredMoves(moves);
+    if (moves.isEmpty) {
+      return const _EmptyState(
+        message: 'No moves yet. Import or create a plan to add some.',
+      );
+    }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Moves'),
-      ),
-      body: plansState.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (Object error, StackTrace stack) =>
-            Center(child: Text('Error loading moves: $error')),
-        data: (List<WorkoutPlan> plans) {
-          final List<ReferencedMoveEntry> moves = collectReferencedMoves(plans);
-          final List<ReferencedMoveEntry> filteredMoves = _filteredMoves(moves);
-          if (moves.isEmpty) {
-            return const _EmptyState(
-              message: 'No moves yet. Import or create a plan to add some.',
-            );
-          }
-
-          return ListView(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            children: <Widget>[
-              TextField(
-                controller: _searchController,
-                decoration: const InputDecoration(
-                  labelText: 'Search moves',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.search),
-                ),
-                onChanged: (String value) {
-                  setState(() {
-                    _query = value;
-                  });
-                },
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              if (filteredMoves.isEmpty)
-                const _EmptyState(message: 'No matching moves.')
-              else
-                for (final ReferencedMoveEntry entry in filteredMoves)
-                  _MoveCard(
-                    entry: entry,
-                    onTap: () => _editMove(context, ref, plans, entry),
-                  ),
-            ],
-          );
-        },
-      ),
+    return ListView(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      children: <Widget>[
+        TextField(
+          controller: _searchController,
+          decoration: const InputDecoration(
+            labelText: 'Search moves',
+            border: OutlineInputBorder(),
+            prefixIcon: Icon(Icons.search),
+          ),
+          onChanged: (String value) {
+            setState(() {
+              _query = value;
+            });
+          },
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        if (filteredMoves.isEmpty)
+          const _EmptyState(message: 'No matching moves.')
+        else
+          for (final ReferencedMoveEntry entry in filteredMoves)
+            _MoveCard(
+              entry: entry,
+              onTap: () => _editMove(context, ref, widget.plans, entry),
+            ),
+      ],
     );
   }
 

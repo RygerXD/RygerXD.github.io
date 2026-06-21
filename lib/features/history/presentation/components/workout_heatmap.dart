@@ -7,11 +7,15 @@ class WorkoutHeatmap extends StatefulWidget {
     super.key,
     required this.workoutDates,
     this.daysToShow = 180, // Show roughly 6 months by default
+    this.selectedDate,
+    this.onDateSelected,
     @visibleForTesting this.initialPivotDate,
   });
 
   final List<DateTime> workoutDates;
   final int daysToShow;
+  final DateTime? selectedDate;
+  final ValueChanged<DateTime>? onDateSelected;
   final DateTime? initialPivotDate;
 
   @override
@@ -96,12 +100,16 @@ class _WorkoutHeatmapState extends State<WorkoutHeatmap> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
-              Text(
-                'Workout Frequency',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.outline,
-                    ),
+              Expanded(
+                child: Text(
+                  'Workout Frequency',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.outline,
+                      ),
+                ),
               ),
               Row(
                 children: <Widget>[
@@ -165,8 +173,14 @@ class _WorkoutHeatmapState extends State<WorkoutHeatmap> {
                         return Column(
                           children: week.days.map((_HeatmapDay day) {
                             return _HeatmapSquare(
+                              date: day.date,
                               hasWorkout: workoutDays.contains(day.date),
                               isEmpty: !day.isInRange,
+                              isSelected: _isSameDay(
+                                day.date,
+                                widget.selectedDate ?? DateTime(0),
+                              ),
+                              onTap: widget.onDateSelected,
                             );
                           }).toList(),
                         );
@@ -293,14 +307,20 @@ class _MonthLabel extends StatelessWidget {
 
 class _HeatmapSquare extends StatelessWidget {
   const _HeatmapSquare({
+    required this.date,
     this.hasWorkout = false,
     this.isEmpty = false,
+    this.isSelected = false,
+    this.onTap,
   });
 
   static const double _size = 12;
 
+  final DateTime date;
   final bool hasWorkout;
   final bool isEmpty;
+  final bool isSelected;
+  final ValueChanged<DateTime>? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -310,15 +330,25 @@ class _HeatmapSquare extends StatelessWidget {
       return const SizedBox(width: _size + 2, height: _size + 2);
     }
 
-    return Container(
-      width: _size,
-      height: _size,
-      margin: const EdgeInsets.all(1),
-      decoration: BoxDecoration(
-        color: hasWorkout
-            ? colorScheme.primary
-            : colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+    return Tooltip(
+      message: '${date.month}/${date.day}/${date.year}',
+      child: InkWell(
+        onTap: onTap == null ? null : () => onTap!(date),
         borderRadius: BorderRadius.circular(2),
+        child: Container(
+          width: _size,
+          height: _size,
+          margin: const EdgeInsets.all(1),
+          decoration: BoxDecoration(
+            color: hasWorkout
+                ? colorScheme.primary
+                : colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(2),
+            border: isSelected
+                ? Border.all(color: colorScheme.onSurface, width: 1.5)
+                : null,
+          ),
+        ),
       ),
     );
   }

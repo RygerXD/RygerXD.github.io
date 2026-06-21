@@ -121,6 +121,7 @@ class ActiveAdjustableRepDisplay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isPerSide = move.repeatEachSide || move.side != null;
+    final Color color = Theme.of(context).colorScheme.primary;
 
     return Column(
       children: <Widget>[
@@ -131,10 +132,10 @@ class ActiveAdjustableRepDisplay extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           currentReps.toString(),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 84,
             fontWeight: FontWeight.bold,
-            color: Colors.blue,
+            color: color,
           ),
         ),
         Text(
@@ -152,7 +153,7 @@ class ActiveAdjustableRepDisplay extends StatelessWidget {
           ),
         const SizedBox(height: 16),
         _AdjustmentButtons(
-          color: Colors.blue,
+          color: color,
           adjustments: <_MetricAdjustment>[
             _MetricAdjustment(
               label: '-10',
@@ -201,6 +202,7 @@ class ActiveAdjustableWeightDisplay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String unit = move.targetWeightUnit?.name ?? '';
+    final Color color = Theme.of(context).colorScheme.tertiary;
 
     return Column(
       children: <Widget>[
@@ -208,10 +210,10 @@ class ActiveAdjustableWeightDisplay extends StatelessWidget {
         const SizedBox(height: 6),
         Text(
           '${formatWeight(currentWeight)} $unit',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 42,
             fontWeight: FontWeight.bold,
-            color: Colors.teal,
+            color: color,
           ),
         ),
         Text(
@@ -227,7 +229,7 @@ class ActiveAdjustableWeightDisplay extends StatelessWidget {
           ),
         const SizedBox(height: 12),
         _AdjustmentButtons(
-          color: Colors.teal,
+          color: color,
           adjustments: <_MetricAdjustment>[
             _MetricAdjustment(
               label: '-5',

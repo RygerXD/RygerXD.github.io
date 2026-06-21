@@ -202,7 +202,8 @@ void main() {
     await tester.pump();
 
     expect(find.text('Left Pushups'), findsOneWidget);
-    expect(find.text('1 / 2 - Lap 1/1'), findsOneWidget);
+    expect(find.text('Move 1 of 2'), findsOneWidget);
+    expect(find.text('Set 1 - Lap 1 of 1'), findsOneWidget);
     expect(find.text('ACTUAL REPS / SIDE'), findsOneWidget);
     expect(find.text('ACTUAL WEIGHT'), findsOneWidget);
 
@@ -210,7 +211,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('Next: Right Pushups'), findsOneWidget);
-    expect(find.text('2 / 2 - Lap 1/1'), findsOneWidget);
+    expect(find.text('Move 2 of 2'), findsOneWidget);
   });
 }
 

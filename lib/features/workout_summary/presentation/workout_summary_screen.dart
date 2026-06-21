@@ -291,15 +291,9 @@ class _StatsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: <Widget>[
-        const Expanded(
-          child: _SummaryStat(
-            label: 'Calories',
-            value: '0',
-          ),
-        ),
         Expanded(
           child: _SummaryStat(
-            label: 'Duration',
+            label: 'Est. duration',
             value: duration,
           ),
         ),

@@ -116,7 +116,8 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
           );
     final String? nextMoveMediaUrlDuringRest =
         optionalText(nextMoveDuringRest?.imageUrl);
-    final Color statusColor = activeWorkoutPhaseColor(displayPhase);
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    final Color statusColor = activeWorkoutPhaseColor(displayPhase, colors);
     final String statusLabel = activeWorkoutPhaseLabel(displayPhase);
     final bool isPaused = state.phase == WorkoutPhase.paused;
     final bool isPrep = displayPhase == WorkoutPhase.prep;
@@ -125,6 +126,8 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     final bool isMove = displayPhase == WorkoutPhase.move;
     final bool hasTrackedWeight = currentWorkoutMove.targetWeight != null &&
         currentWorkoutMove.targetWeightUnit != null;
+    final int movePosition = workoutMovePosition(workout, state);
+    final int moveTotal = workoutMoveTotal(workout);
 
     return PopScope<Object?>(
       canPop: false,
@@ -144,26 +147,31 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
                     IconButton(
+                      tooltip: 'End workout',
                       icon: const Icon(Icons.close),
                       onPressed: _confirmAndExit,
                     ),
-                    Column(
+                    Expanded(
+                        child: Column(
                       children: <Widget>[
                         Text(
                           workout.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                         Text(
-                          setLabel,
+                          '$setLabel - Lap ${state.lapIndex + 1} of ${currentSet.lapCount}',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                         Text(
-                          '${state.moveIndex + 1} / ${currentSet.moves.length} - Lap ${state.lapIndex + 1}/${currentSet.lapCount}',
+                          'Move $movePosition of $moveTotal',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],
-                    ),
+                    )),
                     IconButton(
+                      tooltip: isPaused ? 'Resume workout' : 'Pause workout',
                       icon: Icon(isPaused ? Icons.play_arrow : Icons.pause),
                       onPressed: _isProcessing
                           ? null
@@ -176,6 +184,17 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                             },
                     ),
                   ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Semantics(
+                  label: 'Workout progress, move $movePosition of $moveTotal',
+                  child: LinearProgressIndicator(
+                    value: moveTotal == 0 ? 0 : movePosition / moveTotal,
+                    minHeight: 6,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
                 ),
               ),
               Expanded(
@@ -305,6 +324,19 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                                       ],
                                     ],
                                   ),
+                                if (nextMoveLabelDuringRest !=
+                                    null) ...<Widget>[
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'Next: $nextMoveLabelDuringRest',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyLarge
+                                        ?.copyWith(
+                                          color: colors.onSurfaceVariant,
+                                        ),
+                                  ),
+                                ],
                               ],
                             ],
                           ),
@@ -334,7 +366,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                       Expanded(
                         child: _primaryActionButton(
                           label: 'COMPLETE',
-                          color: Colors.blue,
+                          color: colors.primary,
                           onPressed: _completeCurrentMove,
                         ),
                       ),
@@ -344,7 +376,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                           label: displayPhase == WorkoutPhase.rest
                               ? 'SKIP COOLDOWN'
                               : 'SKIP REST',
-                          color: Colors.green,
+                          color: colors.tertiary,
                           onPressed: () => _runGuarded(() {
                             if (displayPhase == WorkoutPhase.restBetweenLaps) {
                               controller.completeRestBetweenLaps();
@@ -358,7 +390,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                       Expanded(
                         child: _primaryActionButton(
                           label: 'START NOW',
-                          color: Colors.orange,
+                          color: colors.secondary,
                           onPressed: () =>
                               _runGuarded(() => controller.startPrepNow()),
                         ),

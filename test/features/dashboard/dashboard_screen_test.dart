@@ -101,6 +101,11 @@ void main() {
               ],
             ),
           ),
+          allMovePerformancesProvider.overrideWith(
+            (ref) => Stream<List<WorkoutMovePerformanceEntity>>.value(
+              const <WorkoutMovePerformanceEntity>[],
+            ),
+          ),
         ],
         child: const MaterialApp(home: DashboardScreen()),
       ),
@@ -108,17 +113,19 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
-    expect(find.text('My Workouts'), findsOneWidget);
+    expect(find.text('Up next'), findsOneWidget);
     expect(find.text('Recent Workout'), findsOneWidget);
+    expect(find.textContaining('1mins 10sec'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Older Workout'),
+      300,
+      scrollable: find.byType(Scrollable),
+    );
     expect(find.text('Older Workout'), findsOneWidget);
-    expect(find.text('1mins 10sec'), findsOneWidget);
-
-    final double recentTop = tester.getTopLeft(find.text('Recent Workout')).dy;
-    final double olderTop = tester.getTopLeft(find.text('Older Workout')).dy;
-    expect(recentTop, lessThan(olderTop));
   });
 
-  testWidgets('toggles from workouts to plans', (WidgetTester tester) async {
+  testWidgets('keeps plan management in the library',
+      (WidgetTester tester) async {
     final SharedPreferences sharedPreferences =
         await SharedPreferences.getInstance();
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
@@ -164,6 +171,11 @@ void main() {
               <WorkoutSessionEntity>[],
             ),
           ),
+          allMovePerformancesProvider.overrideWith(
+            (ref) => Stream<List<WorkoutMovePerformanceEntity>>.value(
+              const <WorkoutMovePerformanceEntity>[],
+            ),
+          ),
         ],
         child: const MaterialApp(home: DashboardScreen()),
       ),
@@ -173,12 +185,14 @@ void main() {
 
     expect(find.text('Workout A'), findsOneWidget);
 
-    await tester.tap(find.text('My Plans'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Plan 1'), findsOneWidget);
-    expect(find.text('1 workout'), findsOneWidget);
-    expect(find.text('Workout A'), findsNothing);
+    await tester.scrollUntilVisible(
+      find.text('Open library'),
+      300,
+      scrollable: find.byType(Scrollable),
+    );
+    expect(find.text('Open library'), findsOneWidget);
+    expect(find.text('Plans'), findsNothing);
+    expect(find.text('Workout A'), findsOneWidget);
   });
 
   testWidgets('workout tap opens the summary route instead of active workout',
@@ -246,6 +260,11 @@ void main() {
           allSessionsProvider.overrideWith(
             (ref) => Stream<List<WorkoutSessionEntity>>.value(
               <WorkoutSessionEntity>[],
+            ),
+          ),
+          allMovePerformancesProvider.overrideWith(
+            (ref) => Stream<List<WorkoutMovePerformanceEntity>>.value(
+              const <WorkoutMovePerformanceEntity>[],
             ),
           ),
         ],
