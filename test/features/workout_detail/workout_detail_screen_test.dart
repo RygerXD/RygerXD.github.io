@@ -72,7 +72,7 @@ void main() {
     expect(thumbnail.dimension, 60);
     expect(find.text('Leg Day'), findsOneWidget);
     expect(find.text('1mins'), findsOneWidget);
-    expect(find.text('1 Set'), findsOneWidget);
+    expect(find.text('1 Block'), findsOneWidget);
     expect(find.byTooltip('Export plan'), findsOneWidget);
     expect(find.byTooltip('Export workout'), findsNothing);
     expect(find.byTooltip('Edit workout'), findsNothing);

@@ -250,6 +250,18 @@ void main() {
       expect(machine.state.lapIndex, 1);
       expect(machine.state.moveIndex, 0);
     });
+
+    test('final move skips cooldown and completes the workout', () {
+      final WorkoutStateMachine machine = WorkoutStateMachine(
+        workout: _singleSetWorkout(lapCount: 1, finishTimeSeconds: 10),
+      );
+      machine.start();
+      machine.startPrepNow();
+
+      machine.completeMove();
+
+      expect(machine.state.phase, WorkoutPhase.completed);
+    });
   });
 }
 

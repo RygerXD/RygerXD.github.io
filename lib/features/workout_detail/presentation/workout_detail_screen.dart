@@ -163,7 +163,7 @@ class _PlanWorkoutCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final ColorScheme colors = Theme.of(context).colorScheme;
     final String setCount =
-        '${workout.sets.length} ${workout.sets.length == 1 ? 'Set' : 'Sets'}';
+        '${workout.sets.length} ${workout.sets.length == 1 ? 'Block' : 'Blocks'}';
 
     return Card(
       margin: const EdgeInsets.only(bottom: AppSpacing.md),

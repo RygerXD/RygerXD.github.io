@@ -59,17 +59,39 @@ List<ReferencedMoveEntry> collectReferencedMoves(
   return result;
 }
 
-List<Move> collectUniqueReferencedMovesByName(
+class ExistingMoveSelection {
+  const ExistingMoveSelection({required this.move, required this.type});
+
+  final Move move;
+  final MoveType type;
+}
+
+List<ExistingMoveSelection> collectUniqueExistingMoveSelections(
   List<WorkoutPlan> plans,
 ) {
-  final Map<String, Move> movesByName = <String, Move>{};
-  for (final ReferencedMoveEntry entry in collectReferencedMoves(plans)) {
-    final String key = entry.move.name.trim().toLowerCase();
-    movesByName.putIfAbsent(key, () => entry.move);
+  final Map<String, ExistingMoveSelection> selectionsByName =
+      <String, ExistingMoveSelection>{};
+  for (final WorkoutPlan plan in plans) {
+    final Map<String, Move> movesById = <String, Move>{
+      for (final Move move in plan.moves) move.moveId: move,
+    };
+    for (final Workout workout in plan.workouts) {
+      if (workout.isArchived) continue;
+      for (final WorkoutSet set in workout.sets) {
+        for (final WorkoutMove workoutMove in set.moves) {
+          final Move? move = movesById[workoutMove.moveId];
+          if (move == null) continue;
+          selectionsByName.putIfAbsent(
+            move.name.trim().toLowerCase(),
+            () => ExistingMoveSelection(move: move, type: workoutMove.type),
+          );
+        }
+      }
+    }
   }
-
-  return movesByName.values.toList(growable: false)
-    ..sort((Move a, Move b) => a.name.compareTo(b.name));
+  return selectionsByName.values.toList(growable: false)
+    ..sort((ExistingMoveSelection a, ExistingMoveSelection b) =>
+        a.move.name.compareTo(b.move.name));
 }
 
 List<T> filterByFuzzyMoveName<T>({

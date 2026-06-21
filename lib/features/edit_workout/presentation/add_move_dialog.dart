@@ -11,6 +11,7 @@ class AddMoveDialog extends StatefulWidget {
     required this.onAdd,
     this.initialMove,
     this.initialWorkoutMove,
+    this.initialMoveType,
   });
 
   /// Called when a user adds or edits a move. Passes back the scheduled
@@ -18,6 +19,7 @@ class AddMoveDialog extends StatefulWidget {
   final void Function(WorkoutMove workoutMove, Move move) onAdd;
   final Move? initialMove;
   final WorkoutMove? initialWorkoutMove;
+  final MoveType? initialMoveType;
 
   @override
   State<AddMoveDialog> createState() => _AddMoveDialogState();
@@ -53,8 +55,8 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
       _nameController.text = initialMove.name;
       _mediaUrlController.text = initialMove.imageUrl ?? '';
     }
+    _moveType = initialWorkoutMove?.type ?? widget.initialMoveType ?? _moveType;
     if (initialWorkoutMove != null) {
-      _moveType = initialWorkoutMove.type;
       _useMetronome = initialWorkoutMove.metronomeSpeed != null;
       _repeatEachSide = initialWorkoutMove.repeatEachSide;
       _prepController.text = initialWorkoutMove.prepTimeSeconds.toString();
@@ -272,7 +274,7 @@ class _AddMoveDialogState extends State<AddMoveDialog> {
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
                       title: const Text('Metronome'),
-                      subtitle: const Text('Count one rep per beat'),
+                      subtitle: const Text('Count one rep per two beats'),
                       value: _useMetronome,
                       onChanged: (bool value) {
                         setState(() {

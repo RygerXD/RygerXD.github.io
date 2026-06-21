@@ -163,7 +163,10 @@ class WorkoutProgressScreen extends ConsumerWidget {
       final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
       context.go('/analysis');
       messenger.showSnackBar(
-        const SnackBar(content: Text('Workout session deleted.')),
+        const SnackBar(
+          content: Text('Workout session deleted.'),
+          duration: Duration(seconds: 2),
+        ),
       );
     } catch (error) {
       if (!context.mounted) {

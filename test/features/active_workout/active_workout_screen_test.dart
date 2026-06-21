@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/active_workout_controller.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/rep_history_service.dart';
+import 'package:workout_app_rewrite/features/active_workout/domain/workout_phase.dart';
 import 'package:workout_app_rewrite/features/active_workout/presentation/active_workout_screen.dart';
 import 'package:workout_app_rewrite/features/history/application/history_providers.dart';
 import 'package:workout_app_rewrite/features/history/data/history_db.dart';
@@ -48,7 +49,82 @@ void main() {
     expect(sessions.single.workoutName, plan.workouts.single.title);
   });
 
-  testWidgets('exit confirmation explains that workout data will be saved',
+  test('canceling a workout discards its recorded data', () async {
+    final HistoryDatabase database = HistoryDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    final ProviderContainer container = ProviderContainer(
+      overrides: <Override>[
+        historyDatabaseProvider.overrideWithValue(database),
+      ],
+    );
+    addTearDown(container.dispose);
+    final WorkoutPlan plan = _planWithMove(
+      const WorkoutMove(
+        workoutMoveId: 'move-1',
+        moveId: 'move-1',
+        type: MoveType.reps,
+        repCount: 15,
+      ),
+    );
+    final ActiveWorkoutController controller =
+        container.read(activeWorkoutControllerProvider.notifier);
+    controller.startWithWorkout(plan.workouts.single, plan.planId);
+    final String sessionId = controller.sessionId!;
+    await container.read(historyServiceProvider).saveMovePerformance(
+          sessionId: sessionId,
+          workoutId: 'workout-1',
+          setId: 'set-1',
+          lapIndex: 0,
+          workoutMoveId: 'move-1',
+          moveId: 'move-1',
+          repCount: 10,
+          elapsedSeconds: 5,
+          completedAt: DateTime.now(),
+        );
+
+    await controller.cancelWorkout();
+
+    expect(await database.getAllSessions(), isEmpty);
+    expect(await database.getAllMovePerformances(), isEmpty);
+  });
+
+  testWidgets('zero-second prep starts the move automatically',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    final SharedPreferences preferences = await SharedPreferences.getInstance();
+    final WorkoutPlan plan = _planWithMove(
+      const WorkoutMove(
+        workoutMoveId: 'move-1',
+        moveId: 'move-1',
+        type: MoveType.reps,
+        repCount: 15,
+      ),
+    );
+    final ProviderContainer container = ProviderContainer(
+      overrides: <Override>[
+        sharedPreferencesProvider.overrideWithValue(preferences),
+      ],
+    );
+    addTearDown(container.dispose);
+    container
+        .read(activeWorkoutControllerProvider.notifier)
+        .startWithWorkout(plan.workouts.single, plan.planId);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(home: ActiveWorkoutScreen()),
+      ),
+    );
+    await tester.pump();
+
+    expect(
+      container.read(activeWorkoutControllerProvider).phase,
+      WorkoutPhase.move,
+    );
+  });
+
+  testWidgets('exit dialog offers save or discard choices',
       (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
     final SharedPreferences preferences = await SharedPreferences.getInstance();
@@ -81,15 +157,18 @@ void main() {
     await tester.tap(find.byIcon(Icons.close));
     await tester.pumpAndSettle();
 
-    expect(find.text('End Workout?'), findsOneWidget);
+    expect(find.text('Leave Workout?'), findsOneWidget);
     expect(
-      find.text('Your workout data collected so far will be saved.'),
+      find.text(
+        'End workout saves the data collected so far. '
+        'Cancel workout discards all data from this session.',
+      ),
       findsOneWidget,
     );
     expect(find.text('END WORKOUT'), findsOneWidget);
-    expect(find.text('ABANDON'), findsNothing);
+    expect(find.text('CANCEL WORKOUT'), findsOneWidget);
 
-    await tester.tap(find.text('CANCEL'));
+    await tester.tap(find.text('KEEP WORKING'));
     await tester.pumpAndSettle();
   });
 
@@ -203,7 +282,7 @@ void main() {
 
     expect(find.text('Left Pushups'), findsOneWidget);
     expect(find.text('Move 1 of 2'), findsOneWidget);
-    expect(find.text('Set 1 - Lap 1 of 1'), findsOneWidget);
+    expect(find.text('Block 1 - Lap 1 of 1'), findsOneWidget);
     expect(find.text('ACTUAL REPS / SIDE'), findsOneWidget);
     expect(find.text('ACTUAL WEIGHT'), findsOneWidget);
 

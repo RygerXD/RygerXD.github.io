@@ -9,5 +9,5 @@ int? metronomeRepsForElapsedTime({
     return null;
   }
 
-  return (elapsedSeconds * bpm / 60).round();
+  return (elapsedSeconds * bpm / 120).round();
 }

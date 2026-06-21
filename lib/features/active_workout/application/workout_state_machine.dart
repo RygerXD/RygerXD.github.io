@@ -28,6 +28,12 @@ class WorkoutStateMachine {
   Workout get workout => _workout;
   List<WorkoutTransitionEvent> get events =>
       List<WorkoutTransitionEvent>.unmodifiable(_events);
+  bool get isFinalMove {
+    final _Cursor cursor = _cursor();
+    return cursor.setIndex == _workout.sets.length - 1 &&
+        cursor.lapIndex == cursor.set.lapCount - 1 &&
+        cursor.moveIndex == cursor.set.moves.length - 1;
+  }
 
   void start() {
     _assertPhase(<WorkoutPhase>{WorkoutPhase.idle}, 'start');
@@ -53,6 +59,15 @@ class WorkoutStateMachine {
     _assertPhase(<WorkoutPhase>{WorkoutPhase.move}, 'completeMove');
     final _Cursor cursor = _cursor();
     final WorkoutMove move = cursor.set.moves[cursor.moveIndex];
+    if (isFinalMove) {
+      _transitionTo(
+        WorkoutPhase.completed,
+        setIndex: cursor.setIndex,
+        lapIndex: cursor.lapIndex,
+        moveIndex: cursor.moveIndex,
+      );
+      return;
+    }
     if (move.finishTimeSeconds > 0) {
       _transitionTo(
         WorkoutPhase.rest,

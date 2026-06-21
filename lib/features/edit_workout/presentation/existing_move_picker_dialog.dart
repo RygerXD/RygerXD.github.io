@@ -19,7 +19,7 @@ class ExistingMovePickerDialog extends StatefulWidget {
 
 class _ExistingMovePickerDialogState extends State<ExistingMovePickerDialog> {
   final TextEditingController _searchController = TextEditingController();
-  late final List<Move> _moves = _collectMoves();
+  late final List<ExistingMoveSelection> _moves = _collectMoves();
   String _query = '';
 
   @override
@@ -30,7 +30,7 @@ class _ExistingMovePickerDialogState extends State<ExistingMovePickerDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final List<Move> filteredMoves = _filteredMoves();
+    final List<ExistingMoveSelection> filteredMoves = _filteredMoves();
 
     return AlertDialog(
       title: const Text('Select Existing Move'),
@@ -63,13 +63,16 @@ class _ExistingMovePickerDialogState extends State<ExistingMovePickerDialog> {
                           shrinkWrap: true,
                           itemCount: filteredMoves.length,
                           itemBuilder: (BuildContext context, int index) {
-                            final Move move = filteredMoves[index];
+                            final ExistingMoveSelection selection =
+                                filteredMoves[index];
+                            final Move move = selection.move;
                             return ListTile(
                               leading: _MoveThumbnail(
                                 imageUrl: optionalText(move.imageUrl),
                               ),
                               title: Text(move.name),
-                              onTap: () => Navigator.of(context).pop(move),
+                              subtitle: Text(_moveTypeLabel(selection.type)),
+                              onTap: () => Navigator.of(context).pop(selection),
                             );
                           },
                         ),
@@ -86,17 +89,23 @@ class _ExistingMovePickerDialogState extends State<ExistingMovePickerDialog> {
     );
   }
 
-  List<Move> _collectMoves() {
-    return collectUniqueReferencedMovesByName(widget.plans);
+  List<ExistingMoveSelection> _collectMoves() {
+    return collectUniqueExistingMoveSelections(widget.plans);
   }
 
-  List<Move> _filteredMoves() {
-    return filterByFuzzyMoveName<Move>(
+  List<ExistingMoveSelection> _filteredMoves() {
+    return filterByFuzzyMoveName<ExistingMoveSelection>(
       entries: _moves,
       query: _query,
-      moveFor: (Move move) => move,
+      moveFor: (ExistingMoveSelection selection) => selection.move,
     );
   }
+
+  String _moveTypeLabel(MoveType type) => switch (type) {
+        MoveType.reps => 'Reps',
+        MoveType.duration => 'Time',
+        MoveType.stopwatch => 'Max Time',
+      };
 }
 
 class _MoveThumbnail extends StatelessWidget {

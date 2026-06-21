@@ -7,6 +7,7 @@ import 'package:workout_app_rewrite/core/theme/tokens.dart';
 import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
 import 'package:workout_app_rewrite/features/edit_workout/presentation/add_move_dialog.dart';
 import 'package:workout_app_rewrite/features/edit_workout/presentation/existing_move_picker_dialog.dart';
+import 'package:workout_app_rewrite/features/moves/application/move_catalog.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_metrics.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
@@ -28,6 +29,7 @@ class EditWorkoutScreen extends ConsumerStatefulWidget {
 class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _imageUrlController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   final List<WorkoutSet> _sets = <WorkoutSet>[];
   final Map<String, Move> _movesById = <String, Move>{};
 
@@ -80,21 +82,32 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
   void dispose() {
     _titleController.dispose();
     _imageUrlController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
-  void _addSet() {
+  void _addSet({bool reveal = false}) {
     setState(() {
       _sets.add(
         WorkoutSet(
           setId: const Uuid().v4(),
-          name: 'Set ${_sets.length + 1}',
+          name: 'Block ${_sets.length + 1}',
           lapCount: 1,
           restBetweenLapsSeconds: 0,
           moves: <WorkoutMove>[],
         ),
       );
     });
+    if (reveal) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_scrollController.hasClients) return;
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      });
+    }
   }
 
   void _removeSet(int index) {
@@ -142,11 +155,16 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
     });
   }
 
-  void _showAddMoveDialog(int setIndex, {Move? initialMove}) {
+  void _showAddMoveDialog(
+    int setIndex, {
+    Move? initialMove,
+    MoveType? initialMoveType,
+  }) {
     showDialog<void>(
       context: context,
       builder: (BuildContext context) => AddMoveDialog(
         initialMove: initialMove,
+        initialMoveType: initialMoveType,
         onAdd: (WorkoutMove workoutMove, Move newMove) {
           _upsertMoveInPlan(newMove);
           _updateSetMoves(
@@ -185,14 +203,19 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
         ref.read(loadedWorkoutPlansNotifierProvider).value ?? <WorkoutPlan>[];
     final List<WorkoutPlan> pickerPlans = _plansWithDraftWorkout(plans);
 
-    final Move? selectedMove = await showDialog<Move>(
+    final ExistingMoveSelection? selection =
+        await showDialog<ExistingMoveSelection>(
       context: context,
       builder: (BuildContext context) =>
           ExistingMovePickerDialog(plans: pickerPlans),
     );
 
-    if (selectedMove != null && mounted) {
-      _showAddMoveDialog(setIndex, initialMove: selectedMove);
+    if (selection != null && mounted) {
+      _showAddMoveDialog(
+        setIndex,
+        initialMove: selection.move,
+        initialMoveType: selection.type,
+      );
     }
   }
 
@@ -386,6 +409,7 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
         ],
       ),
       body: SingleChildScrollView(
+        controller: _scrollController,
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -409,13 +433,13 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
                 Text(
-                  'Sets',
+                  'Blocks',
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 FilledButton.icon(
-                  onPressed: _addSet,
+                  onPressed: () => _addSet(reveal: true),
                   icon: const Icon(Icons.add),
-                  label: const Text('Add Set'),
+                  label: const Text('Add Block'),
                 ),
               ],
             ),
@@ -424,7 +448,7 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
               const Center(
                 child: Padding(
                   padding: EdgeInsets.all(AppSpacing.xxl),
-                  child: Text('Add at least one set to this workout.'),
+                  child: Text('Add at least one block to this workout.'),
                 ),
               )
             else
@@ -449,8 +473,8 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
                                       ValueKey<String>('set-name-${set.setId}'),
                                   initialValue: set.name ?? '',
                                   decoration: InputDecoration(
-                                    labelText: 'Set Name',
-                                    hintText: 'Set ${setIndex + 1}',
+                                    labelText: 'Block Name',
+                                    hintText: 'Block ${setIndex + 1}',
                                     border: const OutlineInputBorder(),
                                   ),
                                   textCapitalization: TextCapitalization.words,

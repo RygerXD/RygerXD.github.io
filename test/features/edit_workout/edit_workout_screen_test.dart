@@ -790,7 +790,7 @@ void main() {
     expect(updatedPlan.workouts.single.sets.single.moves.single.setCount, 2);
   });
 
-  testWidgets('existing picker searches moves and resets move settings',
+  testWidgets('existing picker remembers move type and resets other settings',
       (WidgetTester tester) async {
     final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
     await repository.savePlan(
@@ -811,8 +811,8 @@ void main() {
                   WorkoutMove(
                     workoutMoveId: 'source-move',
                     moveId: 'burpee',
-                    type: MoveType.reps,
-                    repCount: 99,
+                    type: MoveType.duration,
+                    durationSeconds: 99,
                     prepTimeSeconds: 12,
                   ),
                 ],
@@ -876,8 +876,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Burpee'), findsOneWidget);
-    expect(find.text('10 reps'), findsOneWidget);
-    expect(find.text('99 reps'), findsNothing);
+    expect(find.text('30 seconds'), findsOneWidget);
+    expect(find.text('99 seconds'), findsNothing);
 
     await tester.tap(find.text('SAVE'));
     await tester.pumpAndSettle();
@@ -887,7 +887,8 @@ void main() {
         .singleWhere((Workout workout) => workout.title == 'Workout A');
     final WorkoutMove addedMove = addedWorkout.sets.single.moves.single;
     expect(addedMove.moveId, 'burpee');
-    expect(addedMove.repCount, 10);
+    expect(addedMove.type, MoveType.duration);
+    expect(addedMove.durationSeconds, 30);
     expect(addedMove.prepTimeSeconds, 5);
     expect(addedMove.finishTimeSeconds, 0);
     expect(updatedPlan.moves.single.imageUrl, 'https://example.com/burpee.gif');

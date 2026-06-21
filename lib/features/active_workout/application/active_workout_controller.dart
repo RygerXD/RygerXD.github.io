@@ -24,6 +24,7 @@ class ActiveWorkoutController extends Notifier<WorkoutState> {
   String? get planId => _planId;
   WorkoutPlan? get planSnapshot => _planSnapshot;
   String? get sessionId => _sessionId;
+  bool get isFinalMove => _machine?.isFinalMove ?? false;
 
   WorkoutSet? get currentSet {
     final Workout? activeWorkout = _machine?.workout;
@@ -101,6 +102,16 @@ class ActiveWorkoutController extends Notifier<WorkoutState> {
           startedAt: startedAt,
           status: 'completed');
     }
+  }
+
+  Future<void> cancelWorkout() async {
+    final WorkoutStateMachine? machine = _machine;
+    final String? sessionId = _sessionId;
+    if (machine == null) return;
+    if (sessionId != null) {
+      await ref.read(historyServiceProvider).deleteSession(sessionId);
+    }
+    _run((WorkoutStateMachine m) => m.abandon());
   }
 
   void clearActiveWorkout() {

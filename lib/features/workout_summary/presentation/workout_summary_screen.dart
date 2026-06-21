@@ -135,7 +135,7 @@ class WorkoutSummaryScreen extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
                 child: Text(
                   optionalText(plan.description) ??
-                      'Review the moves, timing, and set laps before you start.',
+                      'Review the blocks, laps, moves, and sets before you start.',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
@@ -143,13 +143,6 @@ class WorkoutSummaryScreen extends ConsumerWidget {
               ),
               const Divider(height: 1),
               const SizedBox(height: AppSpacing.xl),
-              Text(
-                'Moves',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-              ),
-              const SizedBox(height: AppSpacing.md),
               ...workout.sets.map((WorkoutSet set) {
                 return _SetPreview(
                   set: set,
@@ -185,7 +178,10 @@ class WorkoutSummaryScreen extends ConsumerWidget {
       final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
       context.go('/library/detail/$planId');
       messenger.showSnackBar(
-        const SnackBar(content: Text('Workout archived.')),
+        const SnackBar(
+          content: Text('Workout archived.'),
+          duration: Duration(seconds: 2),
+        ),
       );
     } catch (error) {
       if (!context.mounted) {

@@ -157,25 +157,21 @@ class ActiveAdjustableRepDisplay extends StatelessWidget {
           adjustments: <_MetricAdjustment>[
             _MetricAdjustment(
               label: '-10',
-              icon: Icons.keyboard_double_arrow_left,
               onPressed: currentReps >= 10
                   ? () => onRepsChanged(currentReps - 10)
                   : null,
             ),
             _MetricAdjustment(
               label: '-1',
-              icon: Icons.remove,
               onPressed:
                   currentReps > 0 ? () => onRepsChanged(currentReps - 1) : null,
             ),
             _MetricAdjustment(
               label: '+1',
-              icon: Icons.add,
               onPressed: () => onRepsChanged(currentReps + 1),
             ),
             _MetricAdjustment(
               label: '+10',
-              icon: Icons.keyboard_double_arrow_right,
               onPressed: () => onRepsChanged(currentReps + 10),
             ),
           ],
@@ -232,28 +228,24 @@ class ActiveAdjustableWeightDisplay extends StatelessWidget {
           color: color,
           adjustments: <_MetricAdjustment>[
             _MetricAdjustment(
-              label: '-5',
-              icon: Icons.keyboard_double_arrow_left,
-              onPressed: currentWeight >= 5
-                  ? () => onWeightChanged(currentWeight - 5)
+              label: '-10',
+              onPressed: currentWeight >= 10
+                  ? () => onWeightChanged(currentWeight - 10)
                   : null,
             ),
             _MetricAdjustment(
               label: '-1',
-              icon: Icons.remove,
               onPressed: currentWeight >= 1
                   ? () => onWeightChanged(currentWeight - 1)
                   : null,
             ),
             _MetricAdjustment(
               label: '+1',
-              icon: Icons.add,
               onPressed: () => onWeightChanged(currentWeight + 1),
             ),
             _MetricAdjustment(
-              label: '+5',
-              icon: Icons.keyboard_double_arrow_right,
-              onPressed: () => onWeightChanged(currentWeight + 5),
+              label: '+10',
+              onPressed: () => onWeightChanged(currentWeight + 10),
             ),
           ],
         ),
@@ -332,7 +324,6 @@ class _AdjustmentButtons extends StatelessWidget {
         for (final _MetricAdjustment adjustment in adjustments)
           _AdjustmentButton(
             label: adjustment.label,
-            icon: adjustment.icon,
             onPressed: adjustment.onPressed,
             color: color,
           ),
@@ -344,13 +335,11 @@ class _AdjustmentButtons extends StatelessWidget {
 class _AdjustmentButton extends StatelessWidget {
   const _AdjustmentButton({
     required this.label,
-    required this.icon,
     required this.color,
     this.onPressed,
   });
 
   final String label;
-  final IconData icon;
   final Color color;
   final VoidCallback? onPressed;
 
@@ -358,25 +347,18 @@ class _AdjustmentButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: 58,
-      child: Column(
-        children: <Widget>[
-          IconButton.filled(
-            onPressed: onPressed,
-            icon: Icon(icon, size: 28),
-            style: IconButton.styleFrom(
-              backgroundColor: color.withValues(alpha: 0.2),
-              foregroundColor: color,
-              fixedSize: const Size.square(56),
-              padding: EdgeInsets.zero,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(color: color.withValues(alpha: 0.7), fontSize: 12),
-            textAlign: TextAlign.center,
-          ),
-        ],
+      child: FilledButton(
+        onPressed: onPressed,
+        style: FilledButton.styleFrom(
+          backgroundColor: color.withValues(alpha: 0.2),
+          foregroundColor: color,
+          fixedSize: const Size(58, 56),
+          padding: EdgeInsets.zero,
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }
@@ -385,12 +367,10 @@ class _AdjustmentButton extends StatelessWidget {
 class _MetricAdjustment {
   const _MetricAdjustment({
     required this.label,
-    required this.icon,
     this.onPressed,
   });
 
   final String label;
-  final IconData icon;
   final VoidCallback? onPressed;
 }
 

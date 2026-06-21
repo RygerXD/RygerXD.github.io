@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
-import 'package:workout_app_rewrite/core/widgets/confirm_destructive_action.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/active_workout_controller.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/metronome_audio.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/metronome_rep_counter.dart';
@@ -98,7 +97,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       currentWorkoutMove,
     );
     final String setLabel =
-        optionalText(currentSet.name) ?? 'Set ${state.setIndex + 1}';
+        optionalText(currentSet.name) ?? 'Block ${state.setIndex + 1}';
     final String? moveMediaUrl = optionalText(currentMove?.imageUrl);
     final WorkoutMove? nextWorkoutMoveDuringRest = nextMoveDuringRestPhase(
       phase: displayPhase,
@@ -438,9 +437,16 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   }
 
   Future<void> _confirmAndExit() async {
-    if (await _confirmExit() && mounted) {
-      _exitPlayer();
+    final _WorkoutExitAction? action = await _chooseExitAction();
+    if (action == null || !mounted) return;
+    final ActiveWorkoutController controller =
+        ref.read(activeWorkoutControllerProvider.notifier);
+    if (action == _WorkoutExitAction.end) {
+      controller.endWorkout();
+    } else {
+      await controller.cancelWorkout();
     }
+    if (mounted) _exitPlayer();
   }
 
   void _startTicker() {
@@ -499,7 +505,6 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
 
     if (displayPhase == WorkoutPhase.move &&
         controller.currentMove?.type == MoveType.duration) {
-      await _playMoveFinishedDing();
       return _completeCurrentMove();
     }
 
@@ -592,6 +597,9 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       final String? sessionId = controller.sessionId;
       if (currentMove == null) {
         return;
+      }
+      if (!controller.isFinalMove) {
+        await _playMoveFinishedDing();
       }
       final int? metronomeReps = metronomeRepsForElapsedTime(
         move: currentMove,
@@ -737,6 +745,18 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
 
     if (nextTimer != null) {
       _playGetReadyCountdownCueIfNeeded(next, nextTimer);
+      if (next.phase == WorkoutPhase.prep && nextTimer == 0) {
+        final int transitionCount = next.transitionCount;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          final WorkoutState current =
+              ref.read(activeWorkoutControllerProvider);
+          if (current.phase == WorkoutPhase.prep &&
+              current.transitionCount == transitionCount) {
+            ref.read(activeWorkoutControllerProvider.notifier).startPrepNow();
+          }
+        });
+      }
     }
 
     if (moveChanged && move.type == MoveType.reps) {
@@ -1052,20 +1072,32 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     unawaited(playCue());
   }
 
-  Future<bool> _confirmExit() async {
-    final bool shouldEnd = await confirmDestructiveAction(
-      context,
-      title: 'End Workout?',
-      message: 'Your workout data collected so far will be saved.',
-      cancelLabel: 'CANCEL',
-      confirmLabel: 'END WORKOUT',
+  Future<_WorkoutExitAction?> _chooseExitAction() {
+    return showDialog<_WorkoutExitAction>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text('Leave Workout?'),
+        content: const Text(
+          'End workout saves the data collected so far. '
+          'Cancel workout discards all data from this session.',
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('KEEP WORKING'),
+          ),
+          TextButton(
+            onPressed: () =>
+                Navigator.of(context).pop(_WorkoutExitAction.cancelWorkout),
+            child: const Text('CANCEL WORKOUT'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(_WorkoutExitAction.end),
+            child: const Text('END WORKOUT'),
+          ),
+        ],
+      ),
     );
-
-    if (shouldEnd) {
-      ref.read(activeWorkoutControllerProvider.notifier).endWorkout();
-      return true;
-    }
-    return false;
   }
 
   void _exitPlayer() {
@@ -1092,3 +1124,5 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     context.go('/dashboard');
   }
 }
+
+enum _WorkoutExitAction { end, cancelWorkout }
