@@ -75,13 +75,16 @@ class LoadedWorkoutPlansNotifier extends AsyncNotifier<List<WorkoutPlan>> {
     }
 
     final List<Workout> updatedWorkouts = List<Workout>.from(plan.workouts);
-    updatedWorkouts[workoutIndex] = updatedWorkouts[workoutIndex].copyWith(
-      archivedAt: DateTime.now().millisecondsSinceEpoch,
-    );
+    updatedWorkouts.removeAt(workoutIndex);
+    final Set<String> referencedMoveIds =
+        plan.referencedMoveIds(fromWorkouts: updatedWorkouts);
 
     await repository.savePlan(
       plan.copyWith(
         workouts: updatedWorkouts,
+        moves: plan.moves
+            .where((Move move) => referencedMoveIds.contains(move.moveId))
+            .toList(growable: false),
       ),
     );
     ref.invalidateSelf();

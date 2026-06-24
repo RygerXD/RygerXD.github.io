@@ -157,16 +157,16 @@ void main() {
     await tester.tap(find.byIcon(Icons.close));
     await tester.pumpAndSettle();
 
-    expect(find.text('Leave Workout?'), findsOneWidget);
+    expect(find.text('End or Cancel Workout?'), findsOneWidget);
     expect(
       find.text(
-        'End workout saves the data collected so far. '
-        'Cancel workout discards all data from this session.',
+        'End workout saves this session to history. '
+        'Cancel workout does not save workout history or move data.',
       ),
       findsOneWidget,
     );
-    expect(find.text('END WORKOUT'), findsOneWidget);
-    expect(find.text('CANCEL WORKOUT'), findsOneWidget);
+    expect(find.text('END WORKOUT AND SAVE'), findsOneWidget);
+    expect(find.text('CANCEL WITHOUT SAVING'), findsOneWidget);
 
     await tester.tap(find.text('KEEP WORKING'));
     await tester.pumpAndSettle();

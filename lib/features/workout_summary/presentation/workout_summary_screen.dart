@@ -89,8 +89,8 @@ class WorkoutSummaryScreen extends ConsumerWidget {
                 ),
               ),
               IconButton(
-                tooltip: 'Archive workout',
-                icon: const Icon(Icons.archive_outlined),
+                tooltip: 'Delete workout',
+                icon: const Icon(Icons.delete_outline),
                 onPressed: () => _deleteWorkout(context, ref, workout),
               ),
             ],
@@ -179,7 +179,7 @@ class WorkoutSummaryScreen extends ConsumerWidget {
       context.go('/library/detail/$planId');
       messenger.showSnackBar(
         const SnackBar(
-          content: Text('Workout archived.'),
+          content: Text('Workout deleted. Saved history is kept.'),
           duration: Duration(seconds: 2),
         ),
       );
@@ -217,10 +217,10 @@ Future<bool> _confirmDeleteWorkout(
 ) async {
   return confirmDestructiveAction(
     context,
-    title: 'Archive Workout?',
+    title: 'Delete Workout?',
     message:
-        'Archive "$workoutName" and hide it from active workouts? History will stay available.',
-    confirmLabel: 'Archive',
+        'Delete "$workoutName" from this plan? Saved workout history will stay available.',
+    confirmLabel: 'Delete',
   );
 }
 

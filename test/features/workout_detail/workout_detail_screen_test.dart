@@ -113,9 +113,11 @@ void main() {
     await tester.tap(find.byIcon(Icons.delete_outline));
     await tester.pumpAndSettle();
 
-    expect(find.text('Delete Workout?'), findsOneWidget);
+    expect(find.text('Delete Plan?'), findsOneWidget);
     expect(
-      find.text('Are you sure you want to delete "Plan 1"?'),
+      find.text(
+        'Delete "Plan 1" and every workout in it? Saved workout history will stay available.',
+      ),
       findsOneWidget,
     );
 

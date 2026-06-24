@@ -363,6 +363,17 @@ class AppSettings {
   String soundFor(String cue) =>
       soundSelections[cue] ?? defaultSoundSelections[cue]!;
 
+  Map<String, CustomWorkoutSound?> get customSoundsByCue =>
+      <String, CustomWorkoutSound?>{
+        WorkoutSoundCue.metronome: metronomeClickCustomSound,
+        WorkoutSoundCue.getReadyCountdown: getReadyCountdownCustomSound,
+        WorkoutSoundCue.getReadyDing: getReadyDingCustomSound,
+        WorkoutSoundCue.moveHalfway: moveHalfwayCustomSound,
+        WorkoutSoundCue.moveFinished: moveFinishedDingCustomSound,
+        WorkoutSoundCue.workoutComplete: workoutCompleteCustomSound,
+        WorkoutSoundCue.workoutEndedEarly: workoutEndedEarlyCustomSound,
+      };
+
   static void _putCustomSound(
     Map<String, dynamic> json,
     String key,
@@ -517,6 +528,16 @@ class AppSettingsController extends Notifier<AppSettings> {
       'settings.workout_complete_enabled.v1';
   static const String _workoutEndedEarlyEnabledKey =
       'settings.workout_ended_early_enabled.v1';
+
+  static const Map<String, String> _customSoundKeys = <String, String>{
+    WorkoutSoundCue.metronome: _metronomeClickCustomSoundKey,
+    WorkoutSoundCue.getReadyCountdown: _getReadyCountdownCustomSoundKey,
+    WorkoutSoundCue.getReadyDing: _getReadyDingCustomSoundKey,
+    WorkoutSoundCue.moveFinished: _moveFinishedDingCustomSoundKey,
+    WorkoutSoundCue.moveHalfway: _moveHalfwayCustomSoundKey,
+    WorkoutSoundCue.workoutComplete: _workoutCompleteCustomSoundKey,
+    WorkoutSoundCue.workoutEndedEarly: _workoutEndedEarlyCustomSoundKey,
+  };
 
   @override
   AppSettings build() {
@@ -689,49 +710,22 @@ class AppSettingsController extends Notifier<AppSettings> {
   }
 
   Future<void> setMetronomeClickCustomSound(CustomWorkoutSound? value) =>
-      _setCustomSound(
-        value: value,
-        key: _metronomeClickCustomSoundKey,
-        update: (CustomWorkoutSound? sound) =>
-            state.copyWith(metronomeClickCustomSound: sound),
-      );
+      _setCustomSoundForCue(WorkoutSoundCue.metronome, value);
 
   Future<void> setGetReadyCountdownCustomSound(CustomWorkoutSound? value) =>
-      _setCustomSound(
-        value: value,
-        key: _getReadyCountdownCustomSoundKey,
-        update: (CustomWorkoutSound? sound) =>
-            state.copyWith(getReadyCountdownCustomSound: sound),
-      );
+      _setCustomSoundForCue(WorkoutSoundCue.getReadyCountdown, value);
 
   Future<void> setGetReadyDingCustomSound(CustomWorkoutSound? value) =>
-      _setCustomSound(
-        value: value,
-        key: _getReadyDingCustomSoundKey,
-        update: (CustomWorkoutSound? sound) =>
-            state.copyWith(getReadyDingCustomSound: sound),
-      );
+      _setCustomSoundForCue(WorkoutSoundCue.getReadyDing, value);
 
   Future<void> setMoveFinishedDingCustomSound(CustomWorkoutSound? value) =>
-      _setCustomSound(
-        value: value,
-        key: _moveFinishedDingCustomSoundKey,
-        update: (CustomWorkoutSound? sound) =>
-            state.copyWith(moveFinishedDingCustomSound: sound),
-      );
+      _setCustomSoundForCue(WorkoutSoundCue.moveFinished, value);
 
   Future<void> setMoveHalfwayCustomSound(CustomWorkoutSound? value) =>
-      _setCustomSound(
-        value: value,
-        key: _moveHalfwayCustomSoundKey,
-        update: (CustomWorkoutSound? sound) =>
-            state.copyWith(moveHalfwayCustomSound: sound),
-      );
+      _setCustomSoundForCue(WorkoutSoundCue.moveHalfway, value);
 
   Future<void> addCustomSound(CustomWorkoutSound sound) async {
-    if (state.customSoundLibrary.any((CustomWorkoutSound existing) =>
-        existing.mimeType == sound.mimeType &&
-        existing.base64Data == sound.base64Data)) {
+    if (state.customSoundLibrary.any(sound.hasSameAudio)) {
       return;
     }
     await _setCustomSoundLibrary(<CustomWorkoutSound>[
@@ -742,28 +736,12 @@ class AppSettingsController extends Notifier<AppSettings> {
 
   Future<void> removeCustomSound(CustomWorkoutSound sound) async {
     bool matches(CustomWorkoutSound? value) =>
-        value?.mimeType == sound.mimeType &&
-        value?.base64Data == sound.base64Data;
-    if (matches(state.metronomeClickCustomSound)) {
-      await setMetronomeClickCustomSound(null);
-    }
-    if (matches(state.getReadyCountdownCustomSound)) {
-      await setGetReadyCountdownCustomSound(null);
-    }
-    if (matches(state.getReadyDingCustomSound)) {
-      await setGetReadyDingCustomSound(null);
-    }
-    if (matches(state.moveFinishedDingCustomSound)) {
-      await setMoveFinishedDingCustomSound(null);
-    }
-    if (matches(state.moveHalfwayCustomSound)) {
-      await setMoveHalfwayCustomSound(null);
-    }
-    if (matches(state.workoutCompleteCustomSound)) {
-      await setWorkoutCompleteCustomSound(null);
-    }
-    if (matches(state.workoutEndedEarlyCustomSound)) {
-      await setWorkoutEndedEarlyCustomSound(null);
+        value != null && sound.hasSameAudio(value);
+    for (final MapEntry<String, CustomWorkoutSound?> entry
+        in state.customSoundsByCue.entries) {
+      if (matches(entry.value)) {
+        await _setCustomSoundForCue(entry.key, null);
+      }
     }
     await _setCustomSoundLibrary(state.customSoundLibrary
         .where((CustomWorkoutSound existing) => !matches(existing))
@@ -771,20 +749,10 @@ class AppSettingsController extends Notifier<AppSettings> {
   }
 
   Future<void> setWorkoutCompleteCustomSound(CustomWorkoutSound? value) =>
-      _setCustomSound(
-        value: value,
-        key: _workoutCompleteCustomSoundKey,
-        update: (CustomWorkoutSound? sound) =>
-            state.copyWith(workoutCompleteCustomSound: sound),
-      );
+      _setCustomSoundForCue(WorkoutSoundCue.workoutComplete, value);
 
   Future<void> setWorkoutEndedEarlyCustomSound(CustomWorkoutSound? value) =>
-      _setCustomSound(
-        value: value,
-        key: _workoutEndedEarlyCustomSoundKey,
-        update: (CustomWorkoutSound? sound) =>
-            state.copyWith(workoutEndedEarlyCustomSound: sound),
-      );
+      _setCustomSoundForCue(WorkoutSoundCue.workoutEndedEarly, value);
 
   Future<void> setMetronomeClickEnabled(bool value) => _setBool(
         currentValue: state.metronomeClickEnabled,
@@ -842,39 +810,17 @@ class AppSettingsController extends Notifier<AppSettings> {
     await setAudioCuesEnabled(settings.audioCuesEnabled);
     await setMetronomeClickSound(settings.metronomeClickSound);
     await setAudioVolume(settings.audioVolume);
-    await setGetReadyCountdownSound(settings.getReadyCountdownSound);
-    await setGetReadyDingSound(settings.getReadyDingSound);
-    await setMoveFinishedDingSound(settings.moveFinishedDingSound);
-    for (final MapEntry<String, String> entry
-        in settings.soundSelections.entries) {
-      await setSoundSelection(
-        entry.key,
-        entry.value,
-      );
-    }
-    await setMetronomeClickCustomSound(settings.metronomeClickCustomSound);
-    await setGetReadyCountdownCustomSound(
-        settings.getReadyCountdownCustomSound);
-    await setGetReadyDingCustomSound(settings.getReadyDingCustomSound);
-    await setMoveFinishedDingCustomSound(settings.moveFinishedDingCustomSound);
-    await setMoveHalfwayCustomSound(settings.moveHalfwayCustomSound);
-    await setWorkoutCompleteCustomSound(settings.workoutCompleteCustomSound);
-    await setWorkoutEndedEarlyCustomSound(
-        settings.workoutEndedEarlyCustomSound);
-    await setMetronomeClickEnabled(settings.metronomeClickEnabled);
-    await setGetReadyCountdownEnabled(settings.getReadyCountdownEnabled);
-    await setGetReadyDingEnabled(settings.getReadyDingEnabled);
-    await setMoveFinishedDingEnabled(settings.moveFinishedDingEnabled);
-    await setMoveHalfwayEnabled(settings.moveHalfwayEnabled);
-    await setWorkoutCompleteEnabled(settings.workoutCompleteEnabled);
-    await setWorkoutEndedEarlyEnabled(settings.workoutEndedEarlyEnabled);
-    await _setCustomSoundLibrary(settings.customSoundLibrary);
+    await _applyAudioCueSettings(settings);
   }
 
   Future<void> applyAudioSettings(AppSettings settings) async {
     await setAudioCuesEnabled(settings.audioCuesEnabled);
     await setAudioVolume(settings.audioVolume);
     await setMetronomeClickSound(settings.metronomeClickSound);
+    await _applyAudioCueSettings(settings);
+  }
+
+  Future<void> _applyAudioCueSettings(AppSettings settings) async {
     await setGetReadyCountdownSound(settings.getReadyCountdownSound);
     await setGetReadyDingSound(settings.getReadyDingSound);
     await setMoveFinishedDingSound(settings.moveFinishedDingSound);
@@ -885,15 +831,10 @@ class AppSettingsController extends Notifier<AppSettings> {
         entry.value,
       );
     }
-    await setMetronomeClickCustomSound(settings.metronomeClickCustomSound);
-    await setGetReadyCountdownCustomSound(
-        settings.getReadyCountdownCustomSound);
-    await setGetReadyDingCustomSound(settings.getReadyDingCustomSound);
-    await setMoveFinishedDingCustomSound(settings.moveFinishedDingCustomSound);
-    await setMoveHalfwayCustomSound(settings.moveHalfwayCustomSound);
-    await setWorkoutCompleteCustomSound(settings.workoutCompleteCustomSound);
-    await setWorkoutEndedEarlyCustomSound(
-        settings.workoutEndedEarlyCustomSound);
+    for (final MapEntry<String, CustomWorkoutSound?> entry
+        in settings.customSoundsByCue.entries) {
+      await _setCustomSoundForCue(entry.key, entry.value);
+    }
     await setMetronomeClickEnabled(settings.metronomeClickEnabled);
     await setGetReadyCountdownEnabled(settings.getReadyCountdownEnabled);
     await setGetReadyDingEnabled(settings.getReadyDingEnabled);
@@ -975,10 +916,7 @@ class AppSettingsController extends Notifier<AppSettings> {
       _workoutEndedEarlyCustomSoundKey,
     ]) {
       final CustomWorkoutSound? sound = _readCustomSoundPreference(prefs, key);
-      if (sound != null &&
-          !sounds.any((CustomWorkoutSound existing) =>
-              existing.mimeType == sound.mimeType &&
-              existing.base64Data == sound.base64Data)) {
+      if (sound != null && !sounds.any(sound.hasSameAudio)) {
         sounds.add(sound);
       }
     }
@@ -1062,9 +1000,8 @@ class AppSettingsController extends Notifier<AppSettings> {
       await _prefs.remove(key);
       return;
     }
-    if (!state.customSoundLibrary.any((CustomWorkoutSound existing) =>
-        existing.mimeType == value.mimeType &&
-        existing.base64Data == value.base64Data)) {
+    if (!state.customSoundLibrary
+        .any((CustomWorkoutSound existing) => existing.hasSameAudio(value))) {
       await _setCustomSoundLibrary(<CustomWorkoutSound>[
         ...state.customSoundLibrary,
         value,
@@ -1073,21 +1010,37 @@ class AppSettingsController extends Notifier<AppSettings> {
     await _prefs.setString(key, jsonEncode(value.toJson()));
   }
 
+  Future<void> _setCustomSoundForCue(
+    String cue,
+    CustomWorkoutSound? value,
+  ) {
+    return _setCustomSound(
+      value: value,
+      key: _customSoundKeys[cue]!,
+      update: (CustomWorkoutSound? sound) => switch (cue) {
+        WorkoutSoundCue.metronome =>
+          state.copyWith(metronomeClickCustomSound: sound),
+        WorkoutSoundCue.getReadyCountdown =>
+          state.copyWith(getReadyCountdownCustomSound: sound),
+        WorkoutSoundCue.getReadyDing =>
+          state.copyWith(getReadyDingCustomSound: sound),
+        WorkoutSoundCue.moveHalfway =>
+          state.copyWith(moveHalfwayCustomSound: sound),
+        WorkoutSoundCue.moveFinished =>
+          state.copyWith(moveFinishedDingCustomSound: sound),
+        WorkoutSoundCue.workoutComplete =>
+          state.copyWith(workoutCompleteCustomSound: sound),
+        WorkoutSoundCue.workoutEndedEarly =>
+          state.copyWith(workoutEndedEarlyCustomSound: sound),
+        _ => state,
+      },
+    );
+  }
+
   Future<void> _setCustomSoundLibrary(List<CustomWorkoutSound> sounds) async {
     final List<CustomWorkoutSound> merged = <CustomWorkoutSound>[...sounds];
-    for (final CustomWorkoutSound? selected in <CustomWorkoutSound?>[
-      state.metronomeClickCustomSound,
-      state.getReadyCountdownCustomSound,
-      state.getReadyDingCustomSound,
-      state.moveFinishedDingCustomSound,
-      state.moveHalfwayCustomSound,
-      state.workoutCompleteCustomSound,
-      state.workoutEndedEarlyCustomSound,
-    ]) {
-      if (selected != null &&
-          !merged.any((CustomWorkoutSound existing) =>
-              existing.mimeType == selected.mimeType &&
-              existing.base64Data == selected.base64Data)) {
+    for (final CustomWorkoutSound? selected in state.customSoundsByCue.values) {
+      if (selected != null && !merged.any(selected.hasSameAudio)) {
         merged.add(selected);
       }
     }

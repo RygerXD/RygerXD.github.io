@@ -630,8 +630,8 @@ Requirements:
   - Edit plan.
   - Delete plan.
 - Delete flow:
-  - Confirmation dialog title currently says `Delete Workout?`; web rebuild should correct wording to `Delete Plan?` while preserving destructive confirmation behavior.
-  - Confirmation content includes the plan name.
+  - Confirmation dialog title says `Delete Plan?`.
+  - Confirmation content includes the plan name and states saved workout history remains available.
   - Cancel does nothing.
   - Delete removes plan and returns to `/library`.
 - Main content:
@@ -1374,7 +1374,6 @@ These are present in the Flutter app and should be handled intentionally:
 - Favorites section exists but is always empty.
 - Analysis export icon exists but export is unavailable.
 - `finishEarly` exists in controller/state machine but is not exposed in active workout UI.
-- Plan detail delete dialog currently says `Delete Workout?` even though it deletes a plan; web rebuild should correct this copy.
 - New set defaults `restBetweenLapsSeconds` to 0, and the workout editor exposes a rest-between-laps seconds editor.
 - Plan creation can create a plan with zero workouts and zero moves, even though imported plans require at least one workout and move.
 - Web media paste/save is unsupported in the current Flutter web path; the rebuild should implement browser-native Blob storage if local media is needed.

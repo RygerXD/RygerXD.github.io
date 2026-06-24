@@ -1075,28 +1075,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   Future<_WorkoutExitAction?> _chooseExitAction() {
     return showDialog<_WorkoutExitAction>(
       context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: const Text('Leave Workout?'),
-        content: const Text(
-          'End workout saves the data collected so far. '
-          'Cancel workout discards all data from this session.',
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('KEEP WORKING'),
-          ),
-          TextButton(
-            onPressed: () =>
-                Navigator.of(context).pop(_WorkoutExitAction.cancelWorkout),
-            child: const Text('CANCEL WORKOUT'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(_WorkoutExitAction.end),
-            child: const Text('END WORKOUT'),
-          ),
-        ],
-      ),
+      builder: (BuildContext context) => const _WorkoutExitDialog(),
     );
   }
 
@@ -1126,3 +1105,50 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
 }
 
 enum _WorkoutExitAction { end, cancelWorkout }
+
+class _WorkoutExitDialog extends StatelessWidget {
+  const _WorkoutExitDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme colors = Theme.of(context).colorScheme;
+
+    return AlertDialog(
+      title: const Text('End or Cancel Workout?'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(
+            'End workout saves this session to history. '
+            'Cancel workout does not save workout history or move data.',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 20),
+          FilledButton.icon(
+            onPressed: () => Navigator.of(context).pop(_WorkoutExitAction.end),
+            icon: const Icon(Icons.save_outlined),
+            label: const Text('END WORKOUT AND SAVE'),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: () =>
+                Navigator.of(context).pop(_WorkoutExitAction.cancelWorkout),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: colors.error,
+              side: BorderSide(color: colors.error),
+            ),
+            icon: const Icon(Icons.delete_outline),
+            label: const Text('CANCEL WITHOUT SAVING'),
+          ),
+        ],
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('KEEP WORKING'),
+        ),
+      ],
+    );
+  }
+}

@@ -184,9 +184,9 @@ void main() {
     await tester.tap(find.text('Workout A'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byTooltip('Archive workout'));
+    await tester.tap(find.byTooltip('Delete workout'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, 'Archive'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
     await tester.pumpAndSettle();
 
     expect(find.text('Workout not found'), findsNothing);

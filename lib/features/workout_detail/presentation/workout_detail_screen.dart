@@ -77,7 +77,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
                 icon: const Icon(Icons.delete_outline),
                 onPressed: () async {
                   final bool shouldDelete =
-                      await _confirmDeleteWorkout(context, plan.name);
+                      await _confirmDeletePlan(context, plan.name);
                   if (!shouldDelete || !context.mounted) {
                     return;
                   }
@@ -249,11 +249,12 @@ class _PlanWorkoutCard extends StatelessWidget {
   }
 }
 
-Future<bool> _confirmDeleteWorkout(
-    BuildContext context, String workoutName) async {
+Future<bool> _confirmDeletePlan(BuildContext context, String planName) async {
   return confirmDestructiveAction(
     context,
-    title: 'Delete Workout?',
-    message: 'Are you sure you want to delete "$workoutName"?',
+    title: 'Delete Plan?',
+    message:
+        'Delete "$planName" and every workout in it? Saved workout history will stay available.',
+    confirmLabel: 'Delete',
   );
 }

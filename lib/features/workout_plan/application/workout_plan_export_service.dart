@@ -53,14 +53,8 @@ class WorkoutPlanExportService {
   }
 
   Map<String, dynamic> _exportableJson(WorkoutPlan plan) {
-    final List<Workout> workouts = plan.workouts
-        .where((Workout workout) => !workout.isArchived)
-        .toList(growable: false);
-    final Set<String> moveIds = <String>{
-      for (final Workout workout in workouts)
-        for (final WorkoutSet set in workout.sets)
-          for (final WorkoutMove move in set.moves) move.moveId,
-    };
+    final List<Workout> workouts = plan.activeWorkouts;
+    final Set<String> moveIds = plan.referencedMoveIds(fromWorkouts: workouts);
 
     return plan
         .copyWith(

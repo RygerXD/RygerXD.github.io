@@ -211,15 +211,7 @@ class SoundsScreen extends ConsumerWidget {
     final List<CustomWorkoutSound> result = <CustomWorkoutSound>[
       ...settings.customSoundLibrary,
     ];
-    for (final CustomWorkoutSound? sound in <CustomWorkoutSound?>[
-      settings.metronomeClickCustomSound,
-      settings.getReadyCountdownCustomSound,
-      settings.getReadyDingCustomSound,
-      settings.moveHalfwayCustomSound,
-      settings.moveFinishedDingCustomSound,
-      settings.workoutCompleteCustomSound,
-      settings.workoutEndedEarlyCustomSound,
-    ]) {
+    for (final CustomWorkoutSound? sound in settings.customSoundsByCue.values) {
       if (sound != null && !_containsSound(result, sound)) result.add(sound);
     }
     return result;
@@ -227,9 +219,7 @@ class SoundsScreen extends ConsumerWidget {
 
   static bool _containsSound(
           List<CustomWorkoutSound> sounds, CustomWorkoutSound sound) =>
-      sounds.any((CustomWorkoutSound item) =>
-          item.mimeType == sound.mimeType &&
-          item.base64Data == sound.base64Data);
+      sounds.any(sound.hasSameAudio);
 
   static Future<void> _addSound(
     BuildContext context,
@@ -326,11 +316,8 @@ class _SoundSetting extends StatelessWidget {
     final int builtInIndex = builtInSounds.indexWhere(
       (BuiltInWorkoutSound sound) => sound.matches(builtInSound),
     );
-    final int customIndex = value == null
-        ? -1
-        : library.indexWhere((CustomWorkoutSound item) =>
-            item.mimeType == value!.mimeType &&
-            item.base64Data == value!.base64Data);
+    final int customIndex =
+        value == null ? -1 : library.indexWhere(value!.hasSameAudio);
     final int selected =
         value == null ? builtInIndex : builtInCount + customIndex;
     return Card(

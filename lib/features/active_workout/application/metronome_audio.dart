@@ -66,9 +66,8 @@ class WorkoutAudio {
     CustomWorkoutSound sound,
     double volume,
   ) async {
-    final String key = '${sound.mimeType}:${sound.base64Data}';
     final AudioPool pool = await _customPools.putIfAbsent(
-      key,
+      sound.audioIdentity,
       () => AudioPool.create(
         source: BytesSource(sound.bytes, mimeType: sound.mimeType),
         maxPlayers: 3,

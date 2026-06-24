@@ -34,6 +34,10 @@ class CustomWorkoutSound {
   final String base64Data;
 
   Uint8List get bytes => base64Decode(base64Data);
+  String get audioIdentity => '$mimeType:$base64Data';
+
+  bool hasSameAudio(CustomWorkoutSound other) =>
+      mimeType == other.mimeType && base64Data == other.base64Data;
 
   factory CustomWorkoutSound.fromBytes({
     required String fileName,
@@ -406,6 +410,17 @@ class WorkoutPlan {
   final List<String> tags;
   final List<Workout> workouts;
   final List<Move> moves;
+
+  List<Workout> get activeWorkouts => workouts
+      .where((Workout workout) => !workout.isArchived)
+      .toList(growable: false);
+
+  Set<String> referencedMoveIds({Iterable<Workout>? fromWorkouts}) => <String>{
+        for (final Workout workout in fromWorkouts ?? activeWorkouts)
+          if (!workout.isArchived)
+            for (final WorkoutSet set in workout.sets)
+              for (final WorkoutMove move in set.moves) move.moveId,
+      };
 
   WorkoutPlan copyWith({
     int? schemaVersion,

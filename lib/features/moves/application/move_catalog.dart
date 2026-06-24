@@ -20,10 +20,7 @@ List<ReferencedMoveEntry> collectReferencedMoves(
 
   for (final WorkoutPlan plan in plans) {
     final Map<String, int> moveCountsByMoveId = <String, int>{};
-    for (final Workout workout in plan.workouts) {
-      if (workout.isArchived) {
-        continue;
-      }
+    for (final Workout workout in plan.activeWorkouts) {
       for (final WorkoutSet set in workout.sets) {
         for (final WorkoutMove move in set.moves) {
           moveCountsByMoveId.update(
@@ -75,8 +72,7 @@ List<ExistingMoveSelection> collectUniqueExistingMoveSelections(
     final Map<String, Move> movesById = <String, Move>{
       for (final Move move in plan.moves) move.moveId: move,
     };
-    for (final Workout workout in plan.workouts) {
-      if (workout.isArchived) continue;
+    for (final Workout workout in plan.activeWorkouts) {
       for (final WorkoutSet set in workout.sets) {
         for (final WorkoutMove workoutMove in set.moves) {
           final Move? move = movesById[workoutMove.moveId];

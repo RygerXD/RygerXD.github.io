@@ -21,8 +21,7 @@ Map<String, dynamic> encodeSoundSettings(AppSettings settings) {
   final Map<String, String> soundIds = <String, String>{};
 
   String addSound(CustomWorkoutSound sound) {
-    final String identity = '${sound.mimeType}:${sound.base64Data}';
-    return soundIds.putIfAbsent(identity, () {
+    return soundIds.putIfAbsent(sound.audioIdentity, () {
       sounds.add(sound);
       return 'sound-${sounds.length}';
     });
@@ -33,18 +32,8 @@ Map<String, dynamic> encodeSoundSettings(AppSettings settings) {
   }
 
   final Map<String, String> selections = <String, String>{};
-  final Map<String, CustomWorkoutSound?> selectedSounds =
-      <String, CustomWorkoutSound?>{
-    WorkoutSoundCue.metronome: settings.metronomeClickCustomSound,
-    WorkoutSoundCue.getReadyCountdown: settings.getReadyCountdownCustomSound,
-    WorkoutSoundCue.getReadyDing: settings.getReadyDingCustomSound,
-    WorkoutSoundCue.moveHalfway: settings.moveHalfwayCustomSound,
-    WorkoutSoundCue.moveFinished: settings.moveFinishedDingCustomSound,
-    WorkoutSoundCue.workoutComplete: settings.workoutCompleteCustomSound,
-    WorkoutSoundCue.workoutEndedEarly: settings.workoutEndedEarlyCustomSound,
-  };
   for (final MapEntry<String, CustomWorkoutSound?> entry
-      in selectedSounds.entries) {
+      in settings.customSoundsByCue.entries) {
     if (entry.value != null) selections[entry.key] = addSound(entry.value!);
   }
 
