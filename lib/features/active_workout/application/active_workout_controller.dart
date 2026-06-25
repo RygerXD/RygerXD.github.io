@@ -100,7 +100,7 @@ class ActiveWorkoutController extends Notifier<WorkoutState> {
           planSnapshot: planSnapshot,
           sessionId: sessionId,
           startedAt: startedAt,
-          status: 'completed');
+          status: 'completedEarly');
     }
   }
 

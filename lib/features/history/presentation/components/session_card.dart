@@ -158,6 +158,14 @@ class _StatusStyle {
         foregroundColor: colors.primary,
       );
     }
+    if (status == 'completedEarly') {
+      return _StatusStyle(
+        label: 'Ended Early',
+        icon: Icons.flag_outlined,
+        backgroundColor: colors.tertiaryContainer,
+        foregroundColor: colors.tertiary,
+      );
+    }
     if (status == 'abandoned') {
       return _StatusStyle(
         label: 'Abandoned',

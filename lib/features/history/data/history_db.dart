@@ -13,7 +13,8 @@ class WorkoutSessions extends Table {
   IntColumn get startedAt => integer()();
   IntColumn get endedAt => integer().nullable()();
   IntColumn get durationSeconds => integer()();
-  TextColumn get status => text()(); // 'completed' or 'abandoned'
+  TextColumn get status =>
+      text()(); // 'completed', 'completedEarly', or 'abandoned'
 
   @override
   Set<Column<Object>> get primaryKey => <Column<Object>>{sessionId};

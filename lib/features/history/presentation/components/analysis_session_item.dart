@@ -24,5 +24,7 @@ class AnalysisSessionItem {
 
   bool get isCompleted => session.status == 'completed';
 
+  bool get isCompletedEarly => session.status == 'completedEarly';
+
   bool get isAbandoned => session.status == 'abandoned';
 }

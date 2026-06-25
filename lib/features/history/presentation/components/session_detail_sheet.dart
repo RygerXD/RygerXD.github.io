@@ -98,6 +98,7 @@ class SessionDetailSheet extends StatelessWidget {
   static String _statusLabel(String status) {
     return switch (status) {
       'completed' => 'Completed',
+      'completedEarly' => 'Ended Early',
       'abandoned' => 'Abandoned',
       _ => 'In Progress',
     };

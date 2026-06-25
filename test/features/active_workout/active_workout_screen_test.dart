@@ -14,7 +14,7 @@ import 'package:workout_app_rewrite/features/workout_plan/data/in_memory_workout
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
 
 void main() {
-  test('ending a workout saves the session as completed', () async {
+  test('ending a workout early saves the session as completedEarly', () async {
     final HistoryDatabase database = HistoryDatabase(NativeDatabase.memory());
     addTearDown(database.close);
     final ProviderContainer container = ProviderContainer(
@@ -45,7 +45,7 @@ void main() {
     await Future<void>.delayed(Duration.zero);
     final List<WorkoutSessionEntity> sessions = await database.getAllSessions();
     expect(sessions, hasLength(1));
-    expect(sessions.single.status, 'completed');
+    expect(sessions.single.status, 'completedEarly');
     expect(sessions.single.workoutName, plan.workouts.single.title);
   });
 
@@ -157,6 +157,10 @@ void main() {
     await tester.tap(find.byIcon(Icons.close));
     await tester.pumpAndSettle();
 
+    expect(
+      container.read(activeWorkoutControllerProvider).phase,
+      WorkoutPhase.paused,
+    );
     expect(find.text('End or Cancel Workout?'), findsOneWidget);
     expect(
       find.text(
@@ -170,6 +174,11 @@ void main() {
 
     await tester.tap(find.text('KEEP WORKING'));
     await tester.pumpAndSettle();
+
+    expect(
+      container.read(activeWorkoutControllerProvider).phase,
+      WorkoutPhase.move,
+    );
   });
 
   testWidgets('rep and weight controls fit in a tight active workout viewport',

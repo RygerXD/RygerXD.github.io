@@ -26,10 +26,12 @@ class ActiveWorkoutScreen extends ConsumerStatefulWidget {
       _ActiveWorkoutScreenState();
 }
 
-class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
+class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen>
+    with WidgetsBindingObserver {
   Timer? _ticker;
   Timer? _metronomeTimer;
   int _timerSeconds = 0;
+  DateTime? _countdownEndsAt;
   int _currentReps = 0;
   double _currentWeight = 0;
   bool _isProcessing = false;
@@ -47,6 +49,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     unawaited(WorkoutAudio.preloadBuiltInSounds(
       ref.read(appSettingsProvider).soundSelections.values,
     ));
@@ -58,10 +61,18 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _ticker?.cancel();
     _stopMetronome();
     _moveStopwatch.stop();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_tickTimer());
+    }
   }
 
   @override
@@ -437,10 +448,22 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   }
 
   Future<void> _confirmAndExit() async {
-    final _WorkoutExitAction? action = await _chooseExitAction();
-    if (action == null || !mounted) return;
     final ActiveWorkoutController controller =
         ref.read(activeWorkoutControllerProvider.notifier);
+    final WorkoutState state = ref.read(activeWorkoutControllerProvider);
+    final bool pausedForDialog =
+        !isInactiveWorkoutState(state) && state.phase != WorkoutPhase.paused;
+    if (pausedForDialog) {
+      controller.pause();
+    }
+
+    final _WorkoutExitAction? action = await _chooseExitAction();
+    if (action == null || !mounted) {
+      if (pausedForDialog) {
+        controller.resume();
+      }
+      return;
+    }
     if (action == _WorkoutExitAction.end) {
       controller.endWorkout();
     } else {
@@ -451,43 +474,57 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
 
   void _startTicker() {
     _ticker?.cancel();
-    _ticker = Timer.periodic(const Duration(seconds: 1), (_) async {
-      if (!mounted || _isProcessing) {
-        return;
-      }
+    _ticker = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) => unawaited(_tickTimer()),
+    );
+  }
 
-      final WorkoutState state = ref.read(activeWorkoutControllerProvider);
-      if (state.phase == WorkoutPhase.paused || isInactiveWorkoutState(state)) {
-        return;
-      }
+  Future<void> _tickTimer() async {
+    if (!mounted || _isProcessing) {
+      return;
+    }
 
-      final WorkoutMove? currentMove =
-          ref.read(activeWorkoutControllerProvider.notifier).currentMove;
-      if (displayWorkoutPhase(state) == WorkoutPhase.move &&
-          currentMove?.type == MoveType.stopwatch) {
+    final WorkoutState state = ref.read(activeWorkoutControllerProvider);
+    if (state.phase == WorkoutPhase.paused || isInactiveWorkoutState(state)) {
+      return;
+    }
+
+    final WorkoutMove? currentMove =
+        ref.read(activeWorkoutControllerProvider.notifier).currentMove;
+    if (currentMove == null) {
+      return;
+    }
+
+    if (displayWorkoutPhase(state) == WorkoutPhase.move &&
+        currentMove.type == MoveType.stopwatch) {
+      final int elapsedSeconds = _elapsedSecondsForMove(currentMove);
+      if (elapsedSeconds != _timerSeconds) {
         setState(() {
-          _timerSeconds += 1;
+          _timerSeconds = elapsedSeconds;
         });
-        return;
       }
+      return;
+    }
 
-      if (_timerSeconds <= 0) {
-        return;
-      }
+    if (!_usesCountdownTimer(state, currentMove) || _countdownEndsAt == null) {
+      return;
+    }
 
+    final int nextSeconds = _remainingCountdownSeconds();
+    if (nextSeconds != _timerSeconds) {
       setState(() {
-        _timerSeconds -= 1;
+        _timerSeconds = nextSeconds;
       });
+    }
 
-      if (_timerSeconds > 0) {
-        _playGetReadyCountdownCueIfNeeded(state, _timerSeconds);
-        _playMoveHalfwayCueIfNeeded(state, currentMove, _timerSeconds);
-      }
+    if (nextSeconds > 0) {
+      _playGetReadyCountdownCueIfNeeded(state, nextSeconds);
+      _playMoveHalfwayCueIfNeeded(state, currentMove, nextSeconds);
+      return;
+    }
 
-      if (_timerSeconds == 0) {
-        await _onTimerComplete();
-      }
-    });
+    await _onTimerComplete();
   }
 
   Future<void> _onTimerComplete() async {
@@ -722,8 +759,13 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
 
     _syncMetronomeWithState(next, move: move);
     _syncMoveStopwatch(next, moveChanged: moveChanged);
+    final bool shouldStartCountdownClock =
+        resumedFromPause && _usesCountdownTimer(next, move);
+    if (next.phase == WorkoutPhase.paused) {
+      _countdownEndsAt = null;
+    }
 
-    if (!moveChanged && nextTimer == null) {
+    if (!moveChanged && nextTimer == null && !shouldStartCountdownClock) {
       return;
     }
 
@@ -742,6 +784,10 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
         _timerSeconds = nextTimer;
       }
     });
+
+    if (nextTimer != null || shouldStartCountdownClock) {
+      _syncCountdownClock(next, move);
+    }
 
     if (nextTimer != null) {
       _playGetReadyCountdownCueIfNeeded(next, nextTimer);
@@ -936,6 +982,34 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       return _moveStopwatch.elapsed.inSeconds;
     }
     return (durationSeconds - _timerSeconds).clamp(0, durationSeconds);
+  }
+
+  bool _usesCountdownTimer(WorkoutState state, WorkoutMove move) {
+    final WorkoutPhase phase = displayWorkoutPhase(state);
+    return phase == WorkoutPhase.prep ||
+        phase == WorkoutPhase.rest ||
+        phase == WorkoutPhase.restBetweenLaps ||
+        (phase == WorkoutPhase.move && move.type == MoveType.duration);
+  }
+
+  int _remainingCountdownSeconds() {
+    final DateTime? endsAt = _countdownEndsAt;
+    if (endsAt == null) {
+      return _timerSeconds;
+    }
+    final int milliseconds = endsAt.difference(DateTime.now()).inMilliseconds;
+    if (milliseconds <= 0) {
+      return 0;
+    }
+    return (milliseconds + 999) ~/ 1000;
+  }
+
+  void _syncCountdownClock(WorkoutState state, WorkoutMove move) {
+    if (!_usesCountdownTimer(state, move)) {
+      _countdownEndsAt = null;
+      return;
+    }
+    _countdownEndsAt = DateTime.now().add(Duration(seconds: _timerSeconds));
   }
 
   void _syncMoveStopwatch(WorkoutState state, {required bool moveChanged}) {

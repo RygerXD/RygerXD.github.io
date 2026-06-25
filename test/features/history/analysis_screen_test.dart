@@ -59,6 +59,17 @@ void main() {
         durationSeconds: 1200,
         status: 'completed',
       ),
+      WorkoutSessionEntity(
+        sessionId: 'session-3',
+        planId: 'plan-1',
+        workoutId: 'workout-1',
+        planName: 'Strength',
+        workoutName: 'Push Day',
+        startedAt: now.subtract(const Duration(days: 2)).millisecondsSinceEpoch,
+        endedAt: now.subtract(const Duration(days: 2)).millisecondsSinceEpoch,
+        durationSeconds: 300,
+        status: 'completedEarly',
+      ),
     ];
     final List<WorkoutMovePerformanceEntity> performances =
         <WorkoutMovePerformanceEntity>[
@@ -131,6 +142,7 @@ void main() {
     expect(find.text('Workout'), findsOneWidget);
     expect(find.text('Move'), findsOneWidget);
     expect(find.text('90d'), findsOneWidget);
+    expect(find.text('Ended Early'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }
