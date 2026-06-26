@@ -24,8 +24,10 @@ class WorkoutHeatmap extends StatefulWidget {
 
 class _WorkoutHeatmapState extends State<WorkoutHeatmap> {
   static const double _cellStep = 14;
+  static const double _cellSize = 12;
   static const double _monthLabelHeight = 18;
   static const double _weekdayLabelWidth = 30;
+  static const double _gridGap = AppSpacing.xs;
   static const double _heatmapHeight = _monthLabelHeight + (_cellStep * 7);
 
   late final ScrollController _scrollController;
@@ -90,6 +92,8 @@ class _WorkoutHeatmapState extends State<WorkoutHeatmap> {
         .toSet();
 
     final bool canGoForward = _pivotDate.isBefore(today);
+    final double heatmapWidth =
+        _weekdayLabelWidth + _gridGap + (weeks.length * _cellStep);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -139,57 +143,35 @@ class _WorkoutHeatmapState extends State<WorkoutHeatmap> {
         ),
         SizedBox(
           height: _heatmapHeight,
-          child: SingleChildScrollView(
-            controller: _scrollController,
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                const Column(
-                  children: <Widget>[
-                    SizedBox(height: _monthLabelHeight),
-                    SizedBox(height: _cellStep),
-                    _WeekdayLabel('Mon'),
-                    SizedBox(height: _cellStep),
-                    _WeekdayLabel('Wed'),
-                    SizedBox(height: _cellStep),
-                    _WeekdayLabel('Fri'),
-                    SizedBox(height: _cellStep),
-                  ],
-                ),
-                const SizedBox(width: AppSpacing.xs),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Row(
-                      children: weeks
-                          .map((_HeatmapWeek week) =>
-                              _MonthLabel(week.monthLabel))
-                          .toList(),
-                    ),
-                    Row(
-                      children: weeks.map((_HeatmapWeek week) {
-                        return Column(
-                          children: week.days.map((_HeatmapDay day) {
-                            return _HeatmapSquare(
-                              date: day.date,
-                              hasWorkout: workoutDays.contains(day.date),
-                              isEmpty: !day.isInRange,
-                              isSelected: _isSameDay(
-                                day.date,
-                                widget.selectedDate ?? DateTime(0),
-                              ),
-                              onTap: widget.onDateSelected,
-                            );
-                          }).toList(),
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+          child: LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+              final Widget heatmap = _HeatmapCanvas(
+                width: heatmapWidth,
+                height: _heatmapHeight,
+                weeks: weeks,
+                workoutDays: workoutDays,
+                selectedDate: widget.selectedDate,
+                colorScheme: colorScheme,
+                textDirection: Directionality.of(context),
+                onDateSelected: widget.onDateSelected,
+                dateAtOffset: (Offset offset) => _dateAtOffset(offset, weeks),
+              );
+              const EdgeInsets padding =
+                  EdgeInsets.symmetric(horizontal: AppSpacing.md);
+              if (heatmapWidth + padding.horizontal <= constraints.maxWidth) {
+                return Padding(
+                  padding: padding,
+                  child: heatmap,
+                );
+              }
+
+              return SingleChildScrollView(
+                controller: _scrollController,
+                scrollDirection: Axis.horizontal,
+                padding: padding,
+                child: heatmap,
+              );
+            },
           ),
         ),
       ],
@@ -244,6 +226,26 @@ class _WorkoutHeatmapState extends State<WorkoutHeatmap> {
     return null;
   }
 
+  DateTime? _dateAtOffset(Offset offset, List<_HeatmapWeek> weeks) {
+    final double gridX = offset.dx - _weekdayLabelWidth - _gridGap;
+    final double gridY = offset.dy - _monthLabelHeight;
+    if (gridX < 0 || gridY < 0) {
+      return null;
+    }
+
+    final int weekIndex = gridX ~/ _cellStep;
+    final int dayIndex = gridY ~/ _cellStep;
+    if (weekIndex < 0 ||
+        weekIndex >= weeks.length ||
+        dayIndex < 0 ||
+        dayIndex >= DateTime.daysPerWeek) {
+      return null;
+    }
+
+    final _HeatmapDay day = weeks[weekIndex].days[dayIndex];
+    return day.isInRange ? day.date : null;
+  }
+
   bool _isSameDay(DateTime first, DateTime second) {
     return first.year == second.year &&
         first.month == second.month &&
@@ -251,102 +253,50 @@ class _WorkoutHeatmapState extends State<WorkoutHeatmap> {
   }
 }
 
-class _WeekdayLabel extends StatelessWidget {
-  const _WeekdayLabel(this.label);
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: _WorkoutHeatmapState._cellStep,
-      width: _WorkoutHeatmapState._weekdayLabelWidth,
-      child: Center(
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 9,
-            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.7),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _MonthLabel extends StatelessWidget {
-  const _MonthLabel(this.label);
-
-  final String? label;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: _WorkoutHeatmapState._monthLabelHeight,
-      width: _WorkoutHeatmapState._cellStep,
-      child: label == null
-          ? null
-          : Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                label!,
-                softWrap: false,
-                overflow: TextOverflow.visible,
-                style: TextStyle(
-                  fontSize: 10,
-                  color: Theme.of(context)
-                      .colorScheme
-                      .outline
-                      .withValues(alpha: 0.75),
-                ),
-              ),
-            ),
-    );
-  }
-}
-
-class _HeatmapSquare extends StatelessWidget {
-  const _HeatmapSquare({
-    required this.date,
-    this.hasWorkout = false,
-    this.isEmpty = false,
-    this.isSelected = false,
-    this.onTap,
+class _HeatmapCanvas extends StatelessWidget {
+  const _HeatmapCanvas({
+    required this.width,
+    required this.height,
+    required this.weeks,
+    required this.workoutDays,
+    required this.selectedDate,
+    required this.colorScheme,
+    required this.textDirection,
+    required this.onDateSelected,
+    required this.dateAtOffset,
   });
 
-  static const double _size = 12;
-
-  final DateTime date;
-  final bool hasWorkout;
-  final bool isEmpty;
-  final bool isSelected;
-  final ValueChanged<DateTime>? onTap;
+  final double width;
+  final double height;
+  final List<_HeatmapWeek> weeks;
+  final Set<DateTime> workoutDays;
+  final DateTime? selectedDate;
+  final ColorScheme colorScheme;
+  final TextDirection textDirection;
+  final ValueChanged<DateTime>? onDateSelected;
+  final DateTime? Function(Offset offset) dateAtOffset;
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme colorScheme = Theme.of(context).colorScheme;
-
-    if (isEmpty) {
-      return const SizedBox(width: _size + 2, height: _size + 2);
-    }
-
-    return Tooltip(
-      message: '${date.month}/${date.day}/${date.year}',
-      child: InkWell(
-        onTap: onTap == null ? null : () => onTap!(date),
-        borderRadius: BorderRadius.circular(2),
-        child: Container(
-          width: _size,
-          height: _size,
-          margin: const EdgeInsets.all(1),
-          decoration: BoxDecoration(
-            color: hasWorkout
-                ? colorScheme.primary
-                : colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(2),
-            border: isSelected
-                ? Border.all(color: colorScheme.onSurface, width: 1.5)
-                : null,
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapUp: onDateSelected == null
+          ? null
+          : (TapUpDetails details) {
+              final DateTime? date = dateAtOffset(details.localPosition);
+              if (date != null) {
+                onDateSelected!(date);
+              }
+            },
+      child: RepaintBoundary(
+        child: CustomPaint(
+          size: Size(width, height),
+          painter: _HeatmapPainter(
+            weeks: weeks,
+            workoutDays: workoutDays,
+            selectedDate: selectedDate,
+            colorScheme: colorScheme,
+            textDirection: textDirection,
           ),
         ),
       ),
@@ -372,4 +322,158 @@ class _HeatmapWeek {
 
   final List<_HeatmapDay> days;
   final String? monthLabel;
+}
+
+class _HeatmapPainter extends CustomPainter {
+  _HeatmapPainter({
+    required this.weeks,
+    required this.workoutDays,
+    required this.selectedDate,
+    required this.colorScheme,
+    required this.textDirection,
+  });
+
+  final List<_HeatmapWeek> weeks;
+  final Set<DateTime> workoutDays;
+  final DateTime? selectedDate;
+  final ColorScheme colorScheme;
+  final TextDirection textDirection;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    _paintWeekdayLabels(canvas);
+    _paintMonthLabels(canvas);
+    _paintDays(canvas);
+  }
+
+  void _paintWeekdayLabels(Canvas canvas) {
+    final TextStyle labelStyle = TextStyle(
+      fontSize: 9,
+      color: colorScheme.outline.withValues(alpha: 0.7),
+    );
+    const Map<int, String> labels = <int, String>{
+      1: 'Mon',
+      3: 'Wed',
+      5: 'Fri',
+    };
+    for (final MapEntry<int, String> label in labels.entries) {
+      _paintText(
+        canvas,
+        text: label.value,
+        offset: Offset(
+          0,
+          _WorkoutHeatmapState._monthLabelHeight +
+              (label.key * _WorkoutHeatmapState._cellStep),
+        ),
+        width: _WorkoutHeatmapState._weekdayLabelWidth,
+        height: _WorkoutHeatmapState._cellStep,
+        style: labelStyle,
+        alignment: Alignment.center,
+      );
+    }
+  }
+
+  void _paintMonthLabels(Canvas canvas) {
+    final TextStyle labelStyle = TextStyle(
+      fontSize: 10,
+      color: colorScheme.outline.withValues(alpha: 0.75),
+    );
+    for (int weekIndex = 0; weekIndex < weeks.length; weekIndex++) {
+      final String? label = weeks[weekIndex].monthLabel;
+      if (label == null) {
+        continue;
+      }
+      _paintText(
+        canvas,
+        text: label,
+        offset:
+            Offset(_gridLeft + (weekIndex * _WorkoutHeatmapState._cellStep), 0),
+        width: _WorkoutHeatmapState._cellStep * 4,
+        height: _WorkoutHeatmapState._monthLabelHeight,
+        style: labelStyle,
+        alignment: Alignment.centerLeft,
+      );
+    }
+  }
+
+  void _paintDays(Canvas canvas) {
+    final Paint inactivePaint = Paint()
+      ..color = colorScheme.surfaceContainerHighest.withValues(alpha: 0.3);
+    final Paint activePaint = Paint()..color = colorScheme.primary;
+    final Paint selectedPaint = Paint()
+      ..color = colorScheme.onSurface
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+    const Radius radius = Radius.circular(2);
+
+    for (int weekIndex = 0; weekIndex < weeks.length; weekIndex++) {
+      final _HeatmapWeek week = weeks[weekIndex];
+      for (int dayIndex = 0; dayIndex < week.days.length; dayIndex++) {
+        final _HeatmapDay day = week.days[dayIndex];
+        if (!day.isInRange) {
+          continue;
+        }
+
+        final RRect rect = RRect.fromRectAndRadius(
+          Rect.fromLTWH(
+            _gridLeft + (weekIndex * _WorkoutHeatmapState._cellStep) + 1,
+            _WorkoutHeatmapState._monthLabelHeight +
+                (dayIndex * _WorkoutHeatmapState._cellStep) +
+                1,
+            _WorkoutHeatmapState._cellSize,
+            _WorkoutHeatmapState._cellSize,
+          ),
+          radius,
+        );
+        canvas.drawRRect(
+          rect,
+          workoutDays.contains(day.date) ? activePaint : inactivePaint,
+        );
+        if (_isSameDay(day.date, selectedDate)) {
+          canvas.drawRRect(rect, selectedPaint);
+        }
+      }
+    }
+  }
+
+  void _paintText(
+    Canvas canvas, {
+    required String text,
+    required Offset offset,
+    required double width,
+    required double height,
+    required TextStyle style,
+    required Alignment alignment,
+  }) {
+    final TextPainter painter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      textDirection: textDirection,
+      maxLines: 1,
+    )..layout(maxWidth: width);
+    final Offset alignedOffset = Offset(
+      offset.dx + ((width - painter.width) * (alignment.x + 1) / 2),
+      offset.dy + ((height - painter.height) * (alignment.y + 1) / 2),
+    );
+    painter.paint(canvas, alignedOffset);
+  }
+
+  double get _gridLeft =>
+      _WorkoutHeatmapState._weekdayLabelWidth + _WorkoutHeatmapState._gridGap;
+
+  @override
+  bool shouldRepaint(covariant _HeatmapPainter oldDelegate) {
+    return oldDelegate.weeks != weeks ||
+        oldDelegate.workoutDays != workoutDays ||
+        !_isSameDay(oldDelegate.selectedDate, selectedDate) ||
+        oldDelegate.colorScheme != colorScheme ||
+        oldDelegate.textDirection != textDirection;
+  }
+}
+
+bool _isSameDay(DateTime? first, DateTime? second) {
+  return first != null &&
+      second != null &&
+      first.year == second.year &&
+      first.month == second.month &&
+      first.day == second.day;
 }

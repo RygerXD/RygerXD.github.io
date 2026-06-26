@@ -3,8 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:workout_app_rewrite/features/history/presentation/components/workout_heatmap.dart';
 
 void main() {
-  testWidgets('renders month labels and one square for each day in range',
+  testWidgets('renders heatmap as one painted grid and supports date taps',
       (WidgetTester tester) async {
+    DateTime? selectedDate;
+
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -14,6 +16,9 @@ void main() {
               workoutDates: <DateTime>[DateTime(2026, 2, 24)],
               daysToShow: 10,
               initialPivotDate: DateTime(2026, 3),
+              onDateSelected: (DateTime date) {
+                selectedDate = date;
+              },
             ),
           ),
         ),
@@ -21,24 +26,14 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.text('Feb'), findsOneWidget);
-    expect(find.text('Mar'), findsOneWidget);
-
-    final Iterable<Container> daySquares = tester.widgetList<Container>(
-      find.byWidgetPredicate((Widget widget) {
-        if (widget is! Container) {
-          return false;
-        }
-        final Decoration? decoration = widget.decoration;
-        final BoxConstraints? constraints = widget.constraints;
-        return constraints?.minWidth == 12 &&
-            constraints?.maxWidth == 12 &&
-            constraints?.minHeight == 12 &&
-            constraints?.maxHeight == 12 &&
-            decoration is BoxDecoration &&
-            decoration.borderRadius != null;
-      }),
+    final Finder heatmapCanvas = find.byWidgetPredicate(
+      (Widget widget) =>
+          widget is CustomPaint && widget.size == const Size(76, 116),
     );
-    expect(daySquares.length, 10);
+    expect(heatmapCanvas, findsOneWidget);
+
+    final Offset gridTopLeft = tester.getTopLeft(heatmapCanvas);
+    await tester.tapAt(gridTopLeft + const Offset(68, 24));
+    expect(selectedDate, DateTime(2026, 3));
   });
 }
