@@ -7,8 +7,8 @@ import 'package:workout_app_rewrite/features/history/application/history_provide
 import 'package:workout_app_rewrite/features/history/data/history_db.dart';
 import 'package:workout_app_rewrite/features/history/domain/workout_streak.dart';
 import 'package:workout_app_rewrite/features/history/presentation/components/analysis_session_item.dart';
-import 'package:workout_app_rewrite/features/history/presentation/components/date_group.dart';
 import 'package:workout_app_rewrite/features/history/presentation/components/empty_history.dart';
+import 'package:workout_app_rewrite/features/history/presentation/components/session_card.dart';
 import 'package:workout_app_rewrite/features/history/presentation/components/workout_heatmap.dart';
 import 'package:workout_app_rewrite/features/workout_plan/application/workout_plan_providers.dart';
 import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_models.dart';
@@ -67,78 +67,111 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
           final _AnalysisSummary summary = _buildSummary(allItems);
           final _PersonalRecords records =
               _buildRecords(performances, moveNames);
-          final Map<String, List<AnalysisSessionItem>> grouped =
-              _groupSessionsByDate(filtered);
           final List<DateTime> workoutDates = allItems
               .where((AnalysisSessionItem item) => item.isCompleted)
               .map((AnalysisSessionItem item) => item.startedAt)
               .toList(growable: false);
 
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.xl,
-              AppSpacing.md,
-              AppSpacing.xl,
-              AppSpacing.xxl,
-            ),
-            children: <Widget>[
-              _SummaryGrid(summary: summary),
-              const SizedBox(height: AppSpacing.lg),
-              _TrendCard(summary: summary),
-              const SizedBox(height: AppSpacing.lg),
-              _RecordsCard(records: records),
-              const SizedBox(height: AppSpacing.lg),
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
-                decoration: _analysisDecoration(context),
-                child: WorkoutHeatmap(
-                  workoutDates: workoutDates,
-                  daysToShow: 365,
-                  selectedDate: _selectedDate,
-                  onDateSelected: (DateTime date) {
-                    setState(() {
-                      _selectedDate =
-                          _sameDay(_selectedDate, date) ? null : date;
-                    });
-                  },
+          return CustomScrollView(
+            slivers: <Widget>[
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.xl,
+                  AppSpacing.md,
+                  AppSpacing.xl,
+                  0,
+                ),
+                sliver: SliverList.list(
+                  children: <Widget>[
+                    _SummaryGrid(summary: summary),
+                    const SizedBox(height: AppSpacing.lg),
+                    _TrendCard(summary: summary),
+                    const SizedBox(height: AppSpacing.lg),
+                    _RecordsCard(records: records),
+                    const SizedBox(height: AppSpacing.lg),
+                    Container(
+                      padding:
+                          const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                      decoration: _analysisDecoration(context),
+                      child: WorkoutHeatmap(
+                        workoutDates: workoutDates,
+                        daysToShow: 365,
+                        selectedDate: _selectedDate,
+                        onDateSelected: (DateTime date) {
+                          setState(() {
+                            _selectedDate =
+                                _sameDay(_selectedDate, date) ? null : date;
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    Text(
+                      'History',
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleLarge
+                          ?.copyWith(fontWeight: FontWeight.w800),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    _AnalysisFilters(
+                      workoutNames: workoutNames,
+                      moveNames: moveNames,
+                      workoutId: _workoutId,
+                      moveId: _moveId,
+                      range: _range,
+                      selectedDate: _selectedDate,
+                      onWorkoutChanged: (String? value) =>
+                          setState(() => _workoutId = value),
+                      onMoveChanged: (String? value) =>
+                          setState(() => _moveId = value),
+                      onRangeChanged: (_HistoryRange value) => setState(() {
+                        _range = value;
+                        _selectedDate = null;
+                      }),
+                      onClearDate: () => setState(() => _selectedDate = null),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: AppSpacing.lg),
-              Text(
-                'History',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleLarge
-                    ?.copyWith(fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              _AnalysisFilters(
-                workoutNames: workoutNames,
-                moveNames: moveNames,
-                workoutId: _workoutId,
-                moveId: _moveId,
-                range: _range,
-                selectedDate: _selectedDate,
-                onWorkoutChanged: (String? value) =>
-                    setState(() => _workoutId = value),
-                onMoveChanged: (String? value) =>
-                    setState(() => _moveId = value),
-                onRangeChanged: (_HistoryRange value) => setState(() {
-                  _range = value;
-                  _selectedDate = null;
-                }),
-                onClearDate: () => setState(() => _selectedDate = null),
-              ),
               if (filtered.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: AppSpacing.xxl),
-                  child:
-                      Center(child: Text('No sessions match these filters.')),
+                const SliverPadding(
+                  padding: EdgeInsets.fromLTRB(
+                    AppSpacing.xl,
+                    AppSpacing.xxl,
+                    AppSpacing.xl,
+                    AppSpacing.xxl,
+                  ),
+                  sliver: SliverToBoxAdapter(
+                    child:
+                        Center(child: Text('No sessions match these filters.')),
+                  ),
                 )
               else
-                ...grouped.entries.map(
-                  (MapEntry<String, List<AnalysisSessionItem>> entry) =>
-                      DateGroup(dateLabel: entry.key, sessions: entry.value),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.xl,
+                    0,
+                    AppSpacing.xl,
+                    AppSpacing.xxl,
+                  ),
+                  sliver: SliverList.builder(
+                    itemCount: filtered.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      final AnalysisSessionItem item = filtered[index];
+                      final bool showDateHeader = index == 0 ||
+                          !_sameDay(
+                            item.startedAt,
+                            filtered[index - 1].startedAt,
+                          );
+                      return _HistorySessionRow(
+                        dateLabel: showDateHeader
+                            ? formatRelativeDateLabel(item.startedAt)
+                            : null,
+                        item: item,
+                      );
+                    },
+                  ),
                 ),
             ],
           );
@@ -165,7 +198,8 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
       _HistoryRange.year => now.subtract(const Duration(days: 365)),
       _HistoryRange.all => null,
     };
-    return items.where((AnalysisSessionItem item) {
+    final List<AnalysisSessionItem> filtered =
+        items.where((AnalysisSessionItem item) {
       if (_workoutId != null && item.session.workoutId != _workoutId) {
         return false;
       }
@@ -183,6 +217,9 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
       }
       return true;
     }).toList(growable: false);
+    filtered.sort((AnalysisSessionItem a, AnalysisSessionItem b) =>
+        b.session.startedAt.compareTo(a.session.startedAt));
+    return filtered;
   }
 }
 
@@ -210,24 +247,6 @@ List<AnalysisSessionItem> _buildSessionItems(
       workoutName: workoutName,
     );
   }).toList(growable: false);
-}
-
-Map<String, List<AnalysisSessionItem>> _groupSessionsByDate(
-  List<AnalysisSessionItem> sessions,
-) {
-  final List<AnalysisSessionItem> sorted = List<AnalysisSessionItem>.from(
-    sessions,
-  )..sort((AnalysisSessionItem a, AnalysisSessionItem b) =>
-      b.session.startedAt.compareTo(a.session.startedAt));
-  final Map<String, List<AnalysisSessionItem>> grouped =
-      <String, List<AnalysisSessionItem>>{};
-  for (final AnalysisSessionItem item in sorted) {
-    grouped
-        .putIfAbsent(formatRelativeDateLabel(item.startedAt),
-            () => <AnalysisSessionItem>[])
-        .add(item);
-  }
-  return grouped;
 }
 
 _AnalysisSummary _buildSummary(List<AnalysisSessionItem> sessions) {
@@ -337,6 +356,47 @@ _PerformanceTrend? _latestTrend(
     currentValue: formatValue(currentValue, current),
     direction: direction,
   );
+}
+
+class _HistorySessionRow extends StatelessWidget {
+  const _HistorySessionRow({
+    required this.dateLabel,
+    required this.item,
+  });
+
+  final String? dateLabel;
+  final AnalysisSessionItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme colors = theme.colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        if (dateLabel != null)
+          Padding(
+            padding: const EdgeInsets.only(
+              top: AppSpacing.lg,
+              bottom: AppSpacing.sm,
+            ),
+            child: Text(
+              dateLabel!,
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                color: colors.primary,
+                letterSpacing: 0.4,
+              ),
+            ),
+          ),
+        SessionCard(
+          key: ValueKey<String>(item.session.sessionId),
+          item: item,
+        ),
+      ],
+    );
+  }
 }
 
 class _AnalysisSummary {

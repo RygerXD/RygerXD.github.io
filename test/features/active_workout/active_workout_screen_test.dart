@@ -2,6 +2,7 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/active_workout_controller.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/rep_history_service.dart';
@@ -147,12 +148,7 @@ void main() {
         .startWithWorkout(plan.workouts.single, plan.planId);
     container.read(activeWorkoutControllerProvider.notifier).startPrepNow();
 
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: const MaterialApp(home: ActiveWorkoutScreen()),
-      ),
-    );
+    await tester.pumpWidget(_activeWorkoutRouter(container));
     await tester.pump();
     await tester.tap(find.byIcon(Icons.close));
     await tester.pumpAndSettle();
@@ -179,6 +175,73 @@ void main() {
       container.read(activeWorkoutControllerProvider).phase,
       WorkoutPhase.move,
     );
+  });
+
+  testWidgets('ending from exit dialog records skipped moves as zero entries',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    final SharedPreferences preferences = await SharedPreferences.getInstance();
+    final HistoryDatabase database = HistoryDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
+    final WorkoutPlan plan = _planWithMoves(
+      const <WorkoutMove>[
+        WorkoutMove(
+          workoutMoveId: 'move-1',
+          moveId: 'move-1',
+          type: MoveType.duration,
+          durationSeconds: 30,
+        ),
+        WorkoutMove(
+          workoutMoveId: 'move-2',
+          moveId: 'move-2',
+          type: MoveType.reps,
+          repCount: 15,
+        ),
+      ],
+    );
+    await repository.savePlan(plan);
+
+    final ProviderContainer container = ProviderContainer(
+      overrides: <Override>[
+        historyDatabaseProvider.overrideWithValue(database),
+        workoutRepositoryProvider.overrideWithValue(repository),
+        sharedPreferencesProvider.overrideWithValue(preferences),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container.read(loadedWorkoutPlansNotifierProvider.future);
+    container.read(activeWorkoutControllerProvider.notifier).startWithWorkout(
+          plan.workouts.single,
+          plan.planId,
+          planSnapshot: plan,
+        );
+    container.read(activeWorkoutControllerProvider.notifier).startPrepNow();
+
+    await tester.pumpWidget(_activeWorkoutRouter(container));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 2));
+    await tester.tap(find.byIcon(Icons.close));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('END WORKOUT AND SAVE'));
+    await tester.pumpAndSettle();
+
+    final List<WorkoutSessionEntity> sessions = await database.getAllSessions();
+    expect(sessions, hasLength(1));
+    expect(sessions.single.status, 'completedEarly');
+
+    final List<WorkoutMovePerformanceEntity> performances =
+        await database.getAllMovePerformances();
+    expect(performances, hasLength(2));
+    final WorkoutMovePerformanceEntity completedMove = performances.singleWhere(
+        (WorkoutMovePerformanceEntity performance) =>
+            performance.workoutMoveId == 'move-1');
+    final WorkoutMovePerformanceEntity skippedMove = performances.singleWhere(
+        (WorkoutMovePerformanceEntity performance) =>
+            performance.workoutMoveId == 'move-2');
+    expect(completedMove.elapsedSeconds, lessThan(30));
+    expect(skippedMove.repCount, 0);
+    expect(skippedMove.elapsedSeconds, 0);
   });
 
   testWidgets('rep and weight controls fit in a tight active workout viewport',
@@ -303,7 +366,39 @@ void main() {
   });
 }
 
+Widget _activeWorkoutRouter(ProviderContainer container) {
+  final GoRouter router = GoRouter(
+    initialLocation: '/',
+    routes: <RouteBase>[
+      GoRoute(
+        path: '/',
+        builder: (BuildContext context, GoRouterState state) =>
+            const ActiveWorkoutScreen(),
+      ),
+      GoRoute(
+        path: '/library/detail/:planId',
+        builder: (BuildContext context, GoRouterState state) =>
+            const Scaffold(),
+      ),
+      GoRoute(
+        path: '/dashboard',
+        builder: (BuildContext context, GoRouterState state) =>
+            const Scaffold(),
+      ),
+    ],
+  );
+
+  return UncontrolledProviderScope(
+    container: container,
+    child: MaterialApp.router(routerConfig: router),
+  );
+}
+
 WorkoutPlan _planWithMove(WorkoutMove move) {
+  return _planWithMoves(<WorkoutMove>[move]);
+}
+
+WorkoutPlan _planWithMoves(List<WorkoutMove> moves) {
   return WorkoutPlan(
     schemaVersion: 1,
     planId: 'plan-1',
@@ -317,7 +412,7 @@ WorkoutPlan _planWithMove(WorkoutMove move) {
             setId: 'set-1',
             lapCount: 1,
             restBetweenLapsSeconds: 0,
-            moves: <WorkoutMove>[move],
+            moves: moves,
           ),
         ],
       ),
@@ -327,6 +422,11 @@ WorkoutPlan _planWithMove(WorkoutMove move) {
         moveId: 'move-1',
         name: 'Pushups',
         imageUrl: 'missing-pushup.gif',
+      ),
+      Move(
+        moveId: 'move-2',
+        name: 'Squats',
+        imageUrl: 'missing-squat.gif',
       ),
     ],
   );

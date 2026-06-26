@@ -465,6 +465,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen>
       return;
     }
     if (action == _WorkoutExitAction.end) {
+      await _saveEarlyExitMovePerformances(state);
       controller.endWorkout();
     } else {
       await controller.cancelWorkout();
@@ -638,67 +639,231 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen>
       if (!controller.isFinalMove) {
         await _playMoveFinishedDing();
       }
-      final int? metronomeReps = metronomeRepsForElapsedTime(
-        move: currentMove,
-        elapsedSeconds: _elapsedSecondsForMove(currentMove),
-      );
-      final int? repsToSave =
-          currentMove.type == MoveType.reps ? _currentReps : metronomeReps;
-      final bool tracksDuration = currentMove.type == MoveType.stopwatch;
-      final WeightUnit? weightUnit = currentMove.targetWeightUnit;
-      final bool hasTrackedWeight =
-          currentMove.targetWeight != null && weightUnit != null;
       if (currentSet != null && workout != null) {
-        final int elapsedSeconds = _elapsedSecondsForMove(currentMove);
-        if (repsToSave != null) {
-          await ref.read(repHistoryServiceProvider).saveReps(
-                workoutId: workout.workoutId,
-                setId: currentSet.setId,
-                lapIndex: state.lapIndex,
-                moveId: currentMove.moveId,
-                reps: repsToSave,
-              );
-          _lastRepsForCurrentMove = repsToSave;
-        }
-        if (tracksDuration) {
-          await ref.read(repHistoryServiceProvider).saveDuration(
-                workoutId: workout.workoutId,
-                setId: currentSet.setId,
-                lapIndex: state.lapIndex,
-                moveId: currentMove.moveId,
-                seconds: elapsedSeconds,
-              );
-          _lastDurationForCurrentMove = elapsedSeconds;
-        }
-        if (hasTrackedWeight) {
-          await ref.read(repHistoryServiceProvider).saveWeight(
-                workoutId: workout.workoutId,
-                setId: currentSet.setId,
-                lapIndex: state.lapIndex,
-                moveId: currentMove.moveId,
-                weightUnit: weightUnit.name,
-                weight: _currentWeight,
-              );
-          _lastWeightForCurrentMove = _currentWeight;
-        }
-        if (sessionId != null) {
-          await ref.read(historyServiceProvider).saveMovePerformance(
-                sessionId: sessionId,
-                workoutId: workout.workoutId,
-                setId: currentSet.setId,
-                lapIndex: state.lapIndex,
-                workoutMoveId: currentMove.workoutMoveId,
-                moveId: currentMove.moveId,
-                repCount: repsToSave ?? 0,
-                actualWeight: hasTrackedWeight ? _currentWeight : null,
-                actualWeightUnit: hasTrackedWeight ? weightUnit.name : null,
-                elapsedSeconds: elapsedSeconds,
-                completedAt: DateTime.now(),
-              );
-        }
+        await _saveCurrentMoveProgress(
+          state: state,
+          workout: workout,
+          set: currentSet,
+          move: currentMove,
+          sessionId: sessionId,
+          completedAt: DateTime.now(),
+        );
       }
       controller.completeMove();
     });
+  }
+
+  Future<void> _saveCurrentMoveProgress({
+    required WorkoutState state,
+    required Workout workout,
+    required WorkoutSet set,
+    required WorkoutMove move,
+    required String? sessionId,
+    required DateTime completedAt,
+  }) async {
+    final int elapsedSeconds = _elapsedSecondsForMove(move);
+    final int? metronomeReps = metronomeRepsForElapsedTime(
+      move: move,
+      elapsedSeconds: elapsedSeconds,
+    );
+    final int? repsToSave =
+        move.type == MoveType.reps ? _currentReps : metronomeReps;
+    final bool tracksDuration = move.type == MoveType.stopwatch;
+    final WeightUnit? weightUnit = move.targetWeightUnit;
+    final bool hasTrackedWeight =
+        move.targetWeight != null && weightUnit != null;
+
+    if (repsToSave != null) {
+      await ref.read(repHistoryServiceProvider).saveReps(
+            workoutId: workout.workoutId,
+            setId: set.setId,
+            lapIndex: state.lapIndex,
+            moveId: move.moveId,
+            reps: repsToSave,
+          );
+      _lastRepsForCurrentMove = repsToSave;
+    }
+    if (tracksDuration) {
+      await ref.read(repHistoryServiceProvider).saveDuration(
+            workoutId: workout.workoutId,
+            setId: set.setId,
+            lapIndex: state.lapIndex,
+            moveId: move.moveId,
+            seconds: elapsedSeconds,
+          );
+      _lastDurationForCurrentMove = elapsedSeconds;
+    }
+    if (hasTrackedWeight) {
+      await ref.read(repHistoryServiceProvider).saveWeight(
+            workoutId: workout.workoutId,
+            setId: set.setId,
+            lapIndex: state.lapIndex,
+            moveId: move.moveId,
+            weightUnit: weightUnit.name,
+            weight: _currentWeight,
+          );
+      _lastWeightForCurrentMove = _currentWeight;
+    }
+    if (sessionId == null) {
+      return;
+    }
+
+    await ref.read(historyServiceProvider).saveMovePerformance(
+          sessionId: sessionId,
+          workoutId: workout.workoutId,
+          setId: set.setId,
+          lapIndex: state.lapIndex,
+          workoutMoveId: move.workoutMoveId,
+          moveId: move.moveId,
+          repCount: repsToSave ?? 0,
+          actualWeight: hasTrackedWeight ? _currentWeight : null,
+          actualWeightUnit: hasTrackedWeight ? weightUnit.name : null,
+          elapsedSeconds: elapsedSeconds,
+          completedAt: completedAt,
+        );
+  }
+
+  Future<void> _saveEarlyExitMovePerformances(WorkoutState exitState) async {
+    final ActiveWorkoutController controller =
+        ref.read(activeWorkoutControllerProvider.notifier);
+    final Workout? workout = controller.workout;
+    final String? sessionId = controller.sessionId;
+    if (workout == null || sessionId == null) {
+      return;
+    }
+
+    final WorkoutPhase phase = displayWorkoutPhase(exitState);
+    final DateTime completedAt = DateTime.now();
+    if (phase == WorkoutPhase.move) {
+      final _MoveSlot? currentSlot = _normalizeMoveSlot(
+        workout,
+        setIndex: exitState.setIndex,
+        lapIndex: exitState.lapIndex,
+        moveIndex: exitState.moveIndex,
+      );
+      if (currentSlot != null) {
+        await _saveCurrentMoveProgress(
+          state: exitState,
+          workout: workout,
+          set: currentSlot.set,
+          move: currentSlot.move,
+          sessionId: sessionId,
+          completedAt: completedAt,
+        );
+      }
+    }
+
+    final _MoveSlot? firstSkippedSlot = _firstSkippedMoveSlot(
+      workout,
+      state: exitState,
+      phase: phase,
+    );
+    if (firstSkippedSlot == null) {
+      return;
+    }
+
+    for (final _MoveSlot slot in _moveSlotsFrom(
+      workout,
+      startSetIndex: firstSkippedSlot.setIndex,
+      startLapIndex: firstSkippedSlot.lapIndex,
+      startMoveIndex: firstSkippedSlot.moveIndex,
+    )) {
+      await ref.read(historyServiceProvider).saveMovePerformance(
+            sessionId: sessionId,
+            workoutId: workout.workoutId,
+            setId: slot.set.setId,
+            lapIndex: slot.lapIndex,
+            workoutMoveId: slot.move.workoutMoveId,
+            moveId: slot.move.moveId,
+            repCount: 0,
+            elapsedSeconds: 0,
+            completedAt: completedAt,
+          );
+    }
+  }
+
+  _MoveSlot? _firstSkippedMoveSlot(
+    Workout workout, {
+    required WorkoutState state,
+    required WorkoutPhase phase,
+  }) {
+    int moveIndex = state.moveIndex;
+    if (phase == WorkoutPhase.move || phase == WorkoutPhase.rest) {
+      moveIndex += 1;
+    }
+    return _normalizeMoveSlot(
+      workout,
+      setIndex: state.setIndex,
+      lapIndex: state.lapIndex,
+      moveIndex: moveIndex,
+    );
+  }
+
+  Iterable<_MoveSlot> _moveSlotsFrom(
+    Workout workout, {
+    required int startSetIndex,
+    required int startLapIndex,
+    required int startMoveIndex,
+  }) sync* {
+    for (int setIndex = startSetIndex;
+        setIndex < workout.sets.length;
+        setIndex += 1) {
+      final WorkoutSet set = workout.sets[setIndex];
+      final int firstLap = setIndex == startSetIndex ? startLapIndex : 0;
+      for (int lapIndex = firstLap; lapIndex < set.lapCount; lapIndex += 1) {
+        final int firstMove = setIndex == startSetIndex && lapIndex == firstLap
+            ? startMoveIndex
+            : 0;
+        for (int moveIndex = firstMove;
+            moveIndex < set.moves.length;
+            moveIndex += 1) {
+          yield _MoveSlot(
+            setIndex: setIndex,
+            lapIndex: lapIndex,
+            moveIndex: moveIndex,
+            set: set,
+            move: set.moves[moveIndex],
+          );
+        }
+      }
+    }
+  }
+
+  _MoveSlot? _normalizeMoveSlot(
+    Workout workout, {
+    required int setIndex,
+    required int lapIndex,
+    required int moveIndex,
+  }) {
+    int normalizedSetIndex = setIndex;
+    int normalizedLapIndex = lapIndex;
+    int normalizedMoveIndex = moveIndex;
+
+    while (normalizedSetIndex < workout.sets.length) {
+      final WorkoutSet set = workout.sets[normalizedSetIndex];
+      if (normalizedLapIndex >= set.lapCount) {
+        normalizedSetIndex += 1;
+        normalizedLapIndex = 0;
+        normalizedMoveIndex = 0;
+        continue;
+      }
+      if (normalizedMoveIndex >= set.moves.length) {
+        normalizedLapIndex += 1;
+        normalizedMoveIndex = 0;
+        continue;
+      }
+      if (normalizedLapIndex < 0 || normalizedMoveIndex < 0) {
+        return null;
+      }
+      return _MoveSlot(
+        setIndex: normalizedSetIndex,
+        lapIndex: normalizedLapIndex,
+        moveIndex: normalizedMoveIndex,
+        set: set,
+        move: set.moves[normalizedMoveIndex],
+      );
+    }
+    return null;
   }
 
   Future<void> _runGuarded(FutureOr<void> Function() action) async {
@@ -1179,6 +1344,22 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen>
 }
 
 enum _WorkoutExitAction { end, cancelWorkout }
+
+class _MoveSlot {
+  const _MoveSlot({
+    required this.setIndex,
+    required this.lapIndex,
+    required this.moveIndex,
+    required this.set,
+    required this.move,
+  });
+
+  final int setIndex;
+  final int lapIndex;
+  final int moveIndex;
+  final WorkoutSet set;
+  final WorkoutMove move;
+}
 
 class _WorkoutExitDialog extends StatelessWidget {
   const _WorkoutExitDialog();
