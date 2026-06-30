@@ -33,6 +33,7 @@ void main() {
       expect(settings.getReadyCountdownSound, CountdownSound.click);
       expect(settings.getReadyDingSound, GetReadyDingSound.classic);
       expect(settings.moveFinishedDingSound, MoveFinishedDingSound.classic);
+      expect(settings.keepScreenOnDuringWorkout, isFalse);
       expect(settings.customSoundLibrary, isEmpty);
       expect(settings.moveHalfwayCustomSound, isNull);
       expect(settings.metronomeClickCustomSound, isNull);
@@ -68,6 +69,7 @@ void main() {
       await controller.setGetReadyCountdownSound(CountdownSound.wood);
       await controller.setGetReadyDingSound(GetReadyDingSound.bright);
       await controller.setMoveFinishedDingSound(MoveFinishedDingSound.bell);
+      await controller.setKeepScreenOnDuringWorkout(true);
       await controller.setSoundSelection(
           WorkoutSoundCue.moveHalfway, 'wood.ogg');
       final CustomWorkoutSound customSound = CustomWorkoutSound.fromBytes(
@@ -102,6 +104,7 @@ void main() {
       expect(reloadedSettings.getReadyDingSound, GetReadyDingSound.bright);
       expect(
           reloadedSettings.moveFinishedDingSound, MoveFinishedDingSound.bell);
+      expect(reloadedSettings.keepScreenOnDuringWorkout, isTrue);
       expect(
           reloadedSettings.metronomeClickCustomSound?.fileName, 'custom.mp3');
       expect(

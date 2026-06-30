@@ -42,6 +42,9 @@ void main() {
       await container
           .read(appSettingsProvider.notifier)
           .setThemePreference(AppThemePreference.dark);
+      await container
+          .read(appSettingsProvider.notifier)
+          .setKeepScreenOnDuringWorkout(true);
       const CustomWorkoutSound sharedSound = CustomWorkoutSound(
         fileName: 'shared.mp3',
         mimeType: 'audio/mpeg',
@@ -73,6 +76,10 @@ void main() {
       expect(json['formatVersion'], 1);
       expect((json['settings'] as Map<String, dynamic>)['themePreference'],
           'dark');
+      expect(
+          (json['settings']
+              as Map<String, dynamic>)['keepScreenOnDuringWorkout'],
+          isTrue);
       expect(json['workoutPlans'], hasLength(1));
       expect(
           (json['history'] as Map<String, dynamic>)['sessions'], hasLength(1));
@@ -142,6 +149,10 @@ void main() {
           AppThemePreference.dark);
       expect(container.read(appSettingsProvider).unitSystem,
           AppUnitSystem.imperial);
+      expect(
+        container.read(appSettingsProvider).keepScreenOnDuringWorkout,
+        isTrue,
+      );
       expect(
         container.read(appSettingsProvider).moveHalfwayCustomSound?.fileName,
         'move-halfway.mp3',
@@ -256,6 +267,7 @@ Map<String, dynamic> _backupJson() {
     getReadyCountdownSound: CountdownSound.wood,
     getReadyDingSound: GetReadyDingSound.bright,
     moveFinishedDingSound: MoveFinishedDingSound.bell,
+    keepScreenOnDuringWorkout: true,
     moveHalfwayCustomSound: CustomWorkoutSound(
       fileName: 'move-halfway.mp3',
       mimeType: 'audio/mpeg',

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:workout_app_rewrite/core/utils/app_formatters.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/active_workout_controller.dart';
 import 'package:workout_app_rewrite/features/active_workout/application/metronome_audio.dart';
@@ -44,6 +45,8 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen>
   int? _lastRepsForCurrentMove;
   double? _lastWeightForCurrentMove;
   int? _lastDurationForCurrentMove;
+  bool _workoutWakeLockEnabled = false;
+  int _workoutWakeLockRequestId = 0;
   final Stopwatch _moveStopwatch = Stopwatch();
 
   @override
@@ -52,6 +55,9 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen>
     WidgetsBinding.instance.addObserver(this);
     unawaited(WorkoutAudio.preloadBuiltInSounds(
       ref.read(appSettingsProvider).soundSelections.values,
+    ));
+    unawaited(_setWorkoutWakeLock(
+      ref.read(appSettingsProvider).keepScreenOnDuringWorkout,
     ));
     _startTicker();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -65,6 +71,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen>
     _ticker?.cancel();
     _stopMetronome();
     _moveStopwatch.stop();
+    unawaited(_setWorkoutWakeLock(false));
     super.dispose();
   }
 
@@ -85,6 +92,10 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen>
     final WorkoutMove? currentWorkoutMove = controller.currentMove;
 
     ref.listen<WorkoutState>(activeWorkoutControllerProvider, _syncUiWithState);
+    ref.listen<bool>(
+      keepScreenOnDuringWorkoutProvider,
+      (_, bool value) => unawaited(_setWorkoutWakeLock(value)),
+    );
 
     if (workout == null ||
         currentSet == null ||
@@ -623,6 +634,28 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen>
           volume: settings.audioVolume,
         );
       });
+
+  Future<void> _setWorkoutWakeLock(bool enabled) async {
+    if (_workoutWakeLockEnabled == enabled) {
+      return;
+    }
+    _workoutWakeLockEnabled = enabled;
+    final int requestId = ++_workoutWakeLockRequestId;
+    try {
+      if (enabled) {
+        await WakelockPlus.enable();
+      } else {
+        await WakelockPlus.disable();
+      }
+      if (enabled &&
+          requestId != _workoutWakeLockRequestId &&
+          !_workoutWakeLockEnabled) {
+        await WakelockPlus.disable();
+      }
+    } catch (error) {
+      debugPrint('[ActiveWorkoutScreen] Error updating wake lock: $error');
+    }
+  }
 
   Future<void> _completeCurrentMove() {
     return _runGuarded(() async {

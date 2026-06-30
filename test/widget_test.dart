@@ -75,7 +75,9 @@ void main() {
     expect(find.text('Theme'), findsOneWidget);
     expect(find.text('Sounds'), findsOneWidget);
 
-    await tester.tap(find.text('Sounds'));
+    await tester.ensureVisible(find.widgetWithText(ListTile, 'Sounds'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ListTile, 'Sounds'));
     await tester.pumpAndSettle();
 
     expect(find.text('Audio cues'), findsOneWidget);

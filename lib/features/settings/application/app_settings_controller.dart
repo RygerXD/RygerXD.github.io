@@ -78,6 +78,7 @@ class AppSettings {
     required this.getReadyCountdownSound,
     required this.getReadyDingSound,
     required this.moveFinishedDingSound,
+    this.keepScreenOnDuringWorkout = false,
     this.soundSelections = defaultSoundSelections,
     this.customSoundLibrary = const <CustomWorkoutSound>[],
     this.metronomeClickCustomSound,
@@ -105,6 +106,7 @@ class AppSettings {
   final CountdownSound getReadyCountdownSound;
   final GetReadyDingSound getReadyDingSound;
   final MoveFinishedDingSound moveFinishedDingSound;
+  final bool keepScreenOnDuringWorkout;
   final Map<String, String> soundSelections;
   final List<CustomWorkoutSound> customSoundLibrary;
   final CustomWorkoutSound? metronomeClickCustomSound;
@@ -132,6 +134,7 @@ class AppSettings {
     CountdownSound? getReadyCountdownSound,
     GetReadyDingSound? getReadyDingSound,
     MoveFinishedDingSound? moveFinishedDingSound,
+    bool? keepScreenOnDuringWorkout,
     Map<String, String>? soundSelections,
     List<CustomWorkoutSound>? customSoundLibrary,
     Object? metronomeClickCustomSound = _settingsUnset,
@@ -162,6 +165,8 @@ class AppSettings {
       getReadyDingSound: getReadyDingSound ?? this.getReadyDingSound,
       moveFinishedDingSound:
           moveFinishedDingSound ?? this.moveFinishedDingSound,
+      keepScreenOnDuringWorkout:
+          keepScreenOnDuringWorkout ?? this.keepScreenOnDuringWorkout,
       soundSelections: soundSelections ?? this.soundSelections,
       customSoundLibrary: customSoundLibrary ?? this.customSoundLibrary,
       metronomeClickCustomSound:
@@ -254,6 +259,8 @@ class AppSettings {
         values: MoveFinishedDingSound.values,
         fallback: MoveFinishedDingSound.classic,
       ),
+      keepScreenOnDuringWorkout:
+          _readBool(json, key: 'keepScreenOnDuringWorkout', fallback: false),
       soundSelections: _readSoundSelections(json['soundSelections']),
       customSoundLibrary: _readCustomSoundList(json, 'customSoundLibrary'),
       metronomeClickCustomSound:
@@ -297,6 +304,7 @@ class AppSettings {
       'getReadyCountdownSound': getReadyCountdownSound.name,
       'getReadyDingSound': getReadyDingSound.name,
       'moveFinishedDingSound': moveFinishedDingSound.name,
+      'keepScreenOnDuringWorkout': keepScreenOnDuringWorkout,
       'soundSelections': soundSelections,
       'customSoundLibrary': customSoundLibrary
           .map((CustomWorkoutSound sound) => sound.toJson())
@@ -482,6 +490,10 @@ final Provider<AppUnitSystem> appUnitSystemProvider =
 final Provider<int> streakWorkoutsPerWeekProvider =
     _settingsSelector<int>((AppSettings value) => value.streakWorkoutsPerWeek);
 
+final Provider<bool> keepScreenOnDuringWorkoutProvider =
+    _settingsSelector<bool>(
+        (AppSettings value) => value.keepScreenOnDuringWorkout);
+
 class AppSettingsController extends Notifier<AppSettings> {
   static const String _themePreferenceKey = 'settings.theme_preference.v1';
   static const String _unitSystemKey = 'settings.unit_system.v1';
@@ -497,6 +509,8 @@ class AppSettingsController extends Notifier<AppSettings> {
       'settings.get_ready_ding_sound.v1';
   static const String _moveFinishedDingSoundKey =
       'settings.move_finished_ding_sound.v1';
+  static const String _keepScreenOnDuringWorkoutKey =
+      'settings.keep_screen_on_during_workout.v1';
   static const String _metronomeClickCustomSoundKey =
       'settings.metronome_click_custom_sound.v1';
   static const String _getReadyCountdownCustomSoundKey =
@@ -582,6 +596,8 @@ class AppSettingsController extends Notifier<AppSettings> {
         values: MoveFinishedDingSound.values,
         fallback: MoveFinishedDingSound.classic,
       ),
+      keepScreenOnDuringWorkout:
+          prefs.getBool(_keepScreenOnDuringWorkoutKey) ?? false,
       soundSelections: _readSoundSelectionsPreference(prefs),
       customSoundLibrary: _readCustomSoundLibrary(prefs),
       metronomeClickCustomSound:
@@ -698,6 +714,15 @@ class AppSettingsController extends Notifier<AppSettings> {
     );
   }
 
+  Future<void> setKeepScreenOnDuringWorkout(bool value) async {
+    await _setBool(
+      currentValue: state.keepScreenOnDuringWorkout,
+      value: value,
+      key: _keepScreenOnDuringWorkoutKey,
+      update: (bool value) => state.copyWith(keepScreenOnDuringWorkout: value),
+    );
+  }
+
   Future<void> setSoundSelection(String cue, String sound) async {
     final Map<String, String> selections = <String, String>{
       ...state.soundSelections,
@@ -810,6 +835,7 @@ class AppSettingsController extends Notifier<AppSettings> {
     await setAudioCuesEnabled(settings.audioCuesEnabled);
     await setMetronomeClickSound(settings.metronomeClickSound);
     await setAudioVolume(settings.audioVolume);
+    await setKeepScreenOnDuringWorkout(settings.keepScreenOnDuringWorkout);
     await _applyAudioCueSettings(settings);
   }
 

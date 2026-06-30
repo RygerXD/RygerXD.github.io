@@ -109,6 +109,14 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
           ),
+          SwitchListTile(
+            secondary: const Icon(Icons.phone_android_outlined),
+            title: const Text('Keep screen on during workout'),
+            subtitle:
+                const Text('Prevent screen sleep while the workout is open'),
+            value: settings.keepScreenOnDuringWorkout,
+            onChanged: controller.setKeepScreenOnDuringWorkout,
+          ),
           const Divider(),
           const _SettingsSectionHeading('Audio'),
           ListTile(
