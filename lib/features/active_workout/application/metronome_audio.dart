@@ -4,6 +4,13 @@ import 'package:workout_app_rewrite/features/workout_plan/domain/workout_plan_mo
 
 class WorkoutAudio {
   static const String _assetPrefix = 'assets/';
+  static final AudioContext _cueAudioContext = AudioContext(
+    android: const AudioContextAndroid(
+      contentType: AndroidContentType.sonification,
+      usageType: AndroidUsageType.assistanceSonification,
+      audioFocus: AndroidAudioFocus.gainTransientMayDuck,
+    ),
+  );
   static final Map<String, Future<AudioPool>> _builtInPools =
       <String, Future<AudioPool>>{};
   static final Map<String, Future<AudioPool>> _customPools =
@@ -53,10 +60,11 @@ class WorkoutAudio {
     final BuiltInWorkoutSound asset = await BuiltInSoundCatalog.resolve(sound);
     return _builtInPools.putIfAbsent(
       asset.assetPath,
-      () => AudioPool.createFromAsset(
-        path: asset.assetPath.startsWith(_assetPrefix)
+      () => AudioPool.create(
+        source: AssetSource(asset.assetPath.startsWith(_assetPrefix)
             ? asset.assetPath.substring(_assetPrefix.length)
-            : asset.assetPath,
+            : asset.assetPath),
+        audioContext: _cueAudioContext,
         maxPlayers: 3,
       ),
     );
@@ -70,6 +78,7 @@ class WorkoutAudio {
       sound.audioIdentity,
       () => AudioPool.create(
         source: BytesSource(sound.bytes, mimeType: sound.mimeType),
+        audioContext: _cueAudioContext,
         maxPlayers: 3,
       ),
     );
