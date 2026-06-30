@@ -33,7 +33,7 @@ class SessionCard extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(AppRadii.lg),
         onTap: () {
-          context.go('/analysis/session/${item.session.sessionId}');
+          context.push('/analysis/session/${item.session.sessionId}');
         },
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.md),

@@ -137,7 +137,7 @@ class _CreatePlanScreenState extends ConsumerState<CreatePlanScreen> {
           .loadPlan(savedPlan);
 
       if (mounted) {
-        context.go('/library/detail/${savedPlan.planId}');
+        context.replace('/library/detail/${savedPlan.planId}');
       }
     } catch (e) {
       if (mounted) {

@@ -42,8 +42,8 @@ class DashboardScreen extends ConsumerWidget {
             _sortedWorkoutItems(plans, sessions);
         if (workouts.isEmpty) {
           return _FirstRunHome(
-            onCreate: () => context.go('/library/create'),
-            onImport: () => context.go('/library'),
+            onCreate: () => context.push('/library/create'),
+            onImport: () => context.push('/library'),
           );
         }
 
@@ -81,7 +81,7 @@ class DashboardScreen extends ConsumerWidget {
             if (hasActiveWorkout)
               _ContinueWorkoutCard(
                 workoutName: activeController.workout!.title,
-                onContinue: () => context.go('/active'),
+                onContinue: () => context.push('/active'),
               )
             else
               _PrimaryWorkoutCard(
@@ -125,7 +125,7 @@ class DashboardScreen extends ConsumerWidget {
             ],
             const SizedBox(height: AppSpacing.lg),
             TextButton.icon(
-              onPressed: () => context.go('/library'),
+              onPressed: () => context.push('/library'),
               icon: const Icon(Icons.library_books_outlined),
               label: const Text('Open library'),
             ),
@@ -136,7 +136,7 @@ class DashboardScreen extends ConsumerWidget {
   }
 
   void _openWorkout(BuildContext context, _HomeWorkoutItem item) {
-    context.go(
+    context.push(
       '/library/detail/${item.plan.planId}/workout/${item.workout.workoutId}',
     );
   }
@@ -151,7 +151,7 @@ class DashboardScreen extends ConsumerWidget {
           item.plan.planId,
           planSnapshot: item.plan,
         );
-    context.go('/active');
+    context.push('/active');
   }
 }
 

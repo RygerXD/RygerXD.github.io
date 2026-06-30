@@ -67,7 +67,7 @@ class WorkoutSummaryScreen extends ConsumerWidget {
                 if (context.canPop()) {
                   context.pop();
                 } else {
-                  context.go('/dashboard');
+                  context.go('/library/detail/$planId');
                 }
               },
             ),
@@ -84,7 +84,7 @@ class WorkoutSummaryScreen extends ConsumerWidget {
               IconButton(
                 tooltip: 'Edit workout',
                 icon: const Icon(Icons.edit_outlined),
-                onPressed: () => context.go(
+                onPressed: () => context.push(
                   '/library/detail/$planId/edit-workout?workoutId=$workoutId',
                 ),
               ),
@@ -107,7 +107,7 @@ class WorkoutSummaryScreen extends ConsumerWidget {
                 ref
                     .read(activeWorkoutControllerProvider.notifier)
                     .startWithWorkout(workout, planId, planSnapshot: plan);
-                context.go('/active');
+                context.push('/active');
               },
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),

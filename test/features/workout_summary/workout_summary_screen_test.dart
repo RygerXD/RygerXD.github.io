@@ -231,6 +231,110 @@ void main() {
         updatedPlan?.moves.map((Move move) => move.moveId), <String>['squat']);
     expect(find.text('Plan detail plan-1'), findsOneWidget);
   });
+
+  testWidgets('back arrow returns to the route that opened the workout summary',
+      (WidgetTester tester) async {
+    final InMemoryWorkoutRepository repository = InMemoryWorkoutRepository();
+    await repository.savePlan(
+      const WorkoutPlan(
+        schemaVersion: 1,
+        planId: 'plan-1',
+        name: 'Plan 1',
+        workouts: <Workout>[
+          Workout(
+            workoutId: 'workout-a',
+            title: 'Workout A',
+            sets: <WorkoutSet>[
+              WorkoutSet(
+                setId: 'set-a',
+                lapCount: 1,
+                restBetweenLapsSeconds: 0,
+                moves: <WorkoutMove>[
+                  WorkoutMove(
+                    workoutMoveId: 'move-a',
+                    moveId: 'push-up',
+                    type: MoveType.reps,
+                    repCount: 10,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+        moves: <Move>[
+          Move(moveId: 'push-up', name: 'Push Up'),
+        ],
+      ),
+    );
+
+    final ProviderContainer container = ProviderContainer(
+      overrides: <Override>[
+        workoutRepositoryProvider.overrideWithValue(repository),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container.read(loadedWorkoutPlansNotifierProvider.future);
+
+    final GoRouter router = GoRouter(
+      initialLocation: '/dashboard',
+      routes: <RouteBase>[
+        GoRoute(
+          path: '/dashboard',
+          builder: (BuildContext context, GoRouterState state) {
+            return Scaffold(
+              body: Center(
+                child: FilledButton(
+                  onPressed: () => context.push(
+                    '/library/detail/plan-1/workout/workout-a',
+                  ),
+                  child: const Text('Open workout'),
+                ),
+              ),
+            );
+          },
+        ),
+        GoRoute(
+          path: '/library/detail/:planId',
+          builder: (BuildContext context, GoRouterState state) {
+            return Scaffold(
+              body: Text('Plan detail ${state.pathParameters['planId']}'),
+            );
+          },
+          routes: <RouteBase>[
+            GoRoute(
+              path: 'workout/:workoutId',
+              builder: (BuildContext context, GoRouterState state) {
+                return WorkoutSummaryScreen(
+                  planId: state.pathParameters['planId']!,
+                  workoutId: state.pathParameters['workoutId']!,
+                );
+              },
+            ),
+          ],
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Open workout'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Workout A'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.arrow_back));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Open workout'), findsOneWidget);
+    expect(find.text('Plan detail plan-1'), findsNothing);
+  });
 }
 
 class _FakeWorkoutPlanExportService extends WorkoutPlanExportService {

@@ -57,7 +57,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
                 if (context.canPop()) {
                   context.pop();
                 } else {
-                  context.go('/dashboard');
+                  context.go('/library');
                 }
               },
             ),
@@ -70,7 +70,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
               IconButton(
                 tooltip: 'Edit plan',
                 icon: const Icon(Icons.edit_outlined),
-                onPressed: () => context.go('/library/detail/$planId/edit'),
+                onPressed: () => context.push('/library/detail/$planId/edit'),
               ),
               IconButton(
                 tooltip: 'Delete plan',
@@ -92,7 +92,8 @@ class WorkoutDetailScreen extends ConsumerWidget {
             ],
           ),
           floatingActionButton: FloatingActionButton.extended(
-            onPressed: () => context.go('/library/detail/$planId/edit-workout'),
+            onPressed: () =>
+                context.push('/library/detail/$planId/edit-workout'),
             icon: const Icon(Icons.add),
             label: const Text('Add Workout'),
           ),
@@ -135,7 +136,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
                 return _PlanWorkoutCard(
                   workout: workout,
                   performances: performances,
-                  onTap: () => context.go(
+                  onTap: () => context.push(
                     '/library/detail/$planId/workout/${workout.workoutId}',
                   ),
                 );

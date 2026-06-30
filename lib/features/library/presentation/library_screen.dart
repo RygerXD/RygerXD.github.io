@@ -105,7 +105,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: FilledButton.icon(
-                    onPressed: () => context.go('/library/create'),
+                    onPressed: () => context.push('/library/create'),
                     icon: const Icon(Icons.add),
                     label: const Text('Create plan'),
                   ),
@@ -192,7 +192,7 @@ class _PlansView extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.go('/library/detail/${plan.planId}'),
+            onTap: () => context.push('/library/detail/${plan.planId}'),
           ),
         );
       },
@@ -247,7 +247,7 @@ class _WorkoutsView extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.go(
+            onTap: () => context.push(
               '/library/detail/${plan.planId}/workout/${workout.workoutId}',
             ),
           ),
